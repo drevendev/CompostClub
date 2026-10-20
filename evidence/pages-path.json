@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-20T18:44:34.990Z",
+  "path": "/CompostClub/",
+  "published": false,
+  "result": "PASS",
+  "journey": "real recorded sample → keep → reload",
+  "errors": [],
+  "badResponses": [],
+  "external": [],
+  "assets": [
+    "browser.worker-CzBbr6Ae.js",
+    "index-BaU4vMl_.js",
+    "index-C2mo8jKC.css",
+    "ort-wasm-simd-threaded.asyncify-CxOG5pUO.wasm"
+  ]
+}

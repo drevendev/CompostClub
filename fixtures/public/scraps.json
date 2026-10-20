@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "notice": "Fictional examples prepared for this specification; not real model outputs or owner project history.",
+  "scraps": [
+    {
+      "id": "demo-01",
+      "text": "A tiny town whose residents keep solving everyday problems while the player is away. The player only sets three priorities before leaving.",
+      "language": "en",
+      "origin": "authored_demo_fixture",
+      "is_owner_history": false,
+      "content_sha256": "6cee6edb32934c0d4a38358cd9bfc7ffc8d85e51374836caa2a55fbb37f06116"
+    },
+    {
+      "id": "demo-02",
+      "text": "A box of unsent postcards. Each postcard keeps one small observation from a walk, and two forgotten cards can become a new walking route.",
+      "language": "en",
+      "origin": "authored_demo_fixture",
+      "is_owner_history": false,
+      "content_sha256": "032d6d29e4b53e44b09f12984c83534fc787ac44d3b08f05285062ff9b995562"
+    },
+    {
+      "id": "demo-03",
+      "text": "A vending machine for unfinished hobbies. Put in an abandoned plan and receive one very small thing you could still make from its leftovers.",
+      "language": "en",
+      "origin": "authored_demo_fixture",
+      "is_owner_history": false,
+      "content_sha256": "1ec5c482376d1e63375d50167487131a42c3d75ae95fa81a3cb3512ae3902b5f"
+    },
+    {
+      "id": "demo-04",
+      "text": "A library that lends tiny weather systems instead of books. Borrow a pocket-sized fog for a quiet evening and return it when the sun comes out.",
+      "language": "en",
+      "origin": "authored_demo_fixture",
+      "is_owner_history": false,
+      "content_sha256": "9a0a1f8623ffe1a3b38a63e35f63a66887e425dd65d261f21df5def6ee78a33c"
+    },
+    {
+      "id": "demo-05",
+      "text": "Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов он предлагает смешное название нового блюда.",
+      "language": "ru",
+      "origin": "authored_demo_fixture",
+      "is_owner_history": false,
+      "content_sha256": "c92a29c79133ff0cdce34acb1bcb3a171efdbdcfd64ae82bfd3188a37d621807"
+    },
+    {
+      "id": "demo-06",
+      "text": "Сад, где ненужные обещания превращаются в растения. Можно отпустить одно обещание и сохранить маленькую полезную мысль, которая в нём была.",
+      "language": "ru",
+      "origin": "authored_demo_fixture",
+      "is_owner_history": false,
+      "content_sha256": "72e28908c0755fc112581062a150626c8e64c195650dbd843b2dc6b16d1c8b92"
+    }
+  ]
+}

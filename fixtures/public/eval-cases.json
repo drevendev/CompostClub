@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "status": "NOT_RUN",
+  "note": "Holdout means unseen pair combinations, not unseen source texts. Do not report this as a general model benchmark. Fix cases before prompt tuning.",
+  "cases": [
+    {
+      "id": "development-01-02",
+      "split": "development",
+      "a": "demo-01",
+      "b": "demo-02",
+      "repetitions": 2,
+      "outputLanguage": "en"
+    },
+    {
+      "id": "development-01-03",
+      "split": "development",
+      "a": "demo-01",
+      "b": "demo-03",
+      "repetitions": 2,
+      "outputLanguage": "en"
+    },
+    {
+      "id": "development-02-04",
+      "split": "development",
+      "a": "demo-02",
+      "b": "demo-04",
+      "repetitions": 2,
+      "outputLanguage": "en"
+    },
+    {
+      "id": "development-03-04",
+      "split": "development",
+      "a": "demo-03",
+      "b": "demo-04",
+      "repetitions": 2,
+      "outputLanguage": "en"
+    },
+    {
+      "id": "development-04-05",
+      "split": "development",
+      "a": "demo-04",
+      "b": "demo-05",
+      "repetitions": 2,
+      "outputLanguage": "ru"
+    },
+    {
+      "id": "development-05-06",
+      "split": "development",
+      "a": "demo-05",
+      "b": "demo-06",
+      "repetitions": 2,
+      "outputLanguage": "ru"
+    },
+    {
+      "id": "holdout-01-04",
+      "split": "holdout",
+      "a": "demo-01",
+      "b": "demo-04",
+      "repetitions": 2,
+      "outputLanguage": "en"
+    },
+    {
+      "id": "holdout-01-05",
+      "split": "holdout",
+      "a": "demo-01",
+      "b": "demo-05",
+      "repetitions": 2,
+      "outputLanguage": "ru"
+    },
+    {
+      "id": "holdout-02-03",
+      "split": "holdout",
+      "a": "demo-02",
+      "b": "demo-03",
+      "repetitions": 2,
+      "outputLanguage": "en"
+    },
+    {
+      "id": "holdout-02-05",
+      "split": "holdout",
+      "a": "demo-02",
+      "b": "demo-05",
+      "repetitions": 2,
+      "outputLanguage": "ru"
+    },
+    {
+      "id": "holdout-03-06",
+      "split": "holdout",
+      "a": "demo-03",
+      "b": "demo-06",
+      "repetitions": 2,
+      "outputLanguage": "ru"
+    },
+    {
+      "id": "holdout-04-06",
+      "split": "holdout",
+      "a": "demo-04",
+      "b": "demo-06",
+      "repetitions": 2,
+      "outputLanguage": "ru"
+    }
+  ]
+}

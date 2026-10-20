@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "outcome",
+    "title",
+    "concept",
+    "fromA",
+    "fromB"
+  ],
+  "properties": {
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "sprout",
+        "no_blend"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "concept": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 420
+    },
+    "fromA": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "fromB": {
+      "type": "string",
+      "maxLength": 120
+    }
+  }
+}

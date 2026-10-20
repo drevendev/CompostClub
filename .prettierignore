@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-offline
+.local
+brief
+release
+evidence
+package-lock.json
+Compost_Club_GitHub_Pages_Plan_v1_1.md

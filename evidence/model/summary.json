@@ -1,0 +1,254 @@
+[
+  {
+    "file": "ollama-gemma3-1b-2026-10-20T16-34-38.533Z.jsonl",
+    "session": {
+      "type": "session",
+      "date": "2026-10-20T16-34-38.533Z",
+      "version": {
+        "version": "0.40.6"
+      },
+      "model": {
+        "name": "gemma3:1b",
+        "model": "gemma3:1b",
+        "modified_at": "2026-10-20T19:30:48.9946385+03:00",
+        "size": 806067407,
+        "digest": "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
+        "details": {
+          "parent_model": "dhiltgen/gemma3:1b-it-q4_K_M-llamacpp",
+          "format": "gguf",
+          "family": "gemma3",
+          "families": [
+            "gemma3"
+          ],
+          "parameter_size": "999.89M",
+          "quantization_level": "Q4_K_M",
+          "context_length": 32768,
+          "embedding_length": 1152,
+          "runner": "llamacpp"
+        },
+        "capabilities": [
+          "completion"
+        ]
+      },
+      "promptVersion": "splice-1",
+      "hardware": {
+        "cpu": "AMD Ryzen AI 7 350 w/ Radeon 860M              ",
+        "ram": 33597272064,
+        "os": "10.0.26200",
+        "arch": "x64"
+      }
+    },
+    "calls": 48,
+    "primaryCalls": 24,
+    "repairCalls": 24,
+    "originalValidatorValid": 0,
+    "finalValidatorValidCalls": 0,
+    "finalValidatorSuccessfulRuns": 0,
+    "medianMs": 3556.3111999999983,
+    "maxMs": 6359.9933,
+    "firstLoadMs": 2637.8735,
+    "allLoadMs": [
+      2637.8735,
+      52.1232,
+      43.3837,
+      40.7877,
+      23.0403,
+      47.7274,
+      12.4155,
+      7.3102,
+      8.549,
+      7.5998,
+      13.5086,
+      8.0157,
+      27.2648,
+      12.0881,
+      9.3658,
+      8.9251,
+      21.391,
+      16.0619,
+      7.3527,
+      36.9643,
+      46.8993,
+      8.4644,
+      15.5749,
+      17.8111,
+      35.7973,
+      9.1456,
+      49.5343,
+      22.8521,
+      21.1653,
+      21.9782,
+      38.3853,
+      61.0531,
+      30.3069,
+      13.6131,
+      16.2668,
+      10.2976,
+      11.4541,
+      8.1204,
+      8.0184,
+      6.3053,
+      5.7546,
+      8.6828,
+      7.7749,
+      5.8119,
+      6.7634,
+      5.767,
+      7.3174,
+      7.3818
+    ]
+  },
+  {
+    "file": "ollama-gemma3-1b-2026-10-20T16-40-50.005Z.jsonl",
+    "session": {
+      "type": "session",
+      "date": "2026-10-20T16-40-50.005Z",
+      "version": {
+        "version": "0.40.6"
+      },
+      "model": {
+        "name": "gemma3:1b",
+        "model": "gemma3:1b",
+        "modified_at": "2026-10-20T19:30:48.9946385+03:00",
+        "size": 806067407,
+        "digest": "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
+        "details": {
+          "parent_model": "dhiltgen/gemma3:1b-it-q4_K_M-llamacpp",
+          "format": "gguf",
+          "family": "gemma3",
+          "families": [
+            "gemma3"
+          ],
+          "parameter_size": "999.89M",
+          "quantization_level": "Q4_K_M",
+          "context_length": 32768,
+          "embedding_length": 1152,
+          "runner": "llamacpp"
+        },
+        "capabilities": [
+          "completion"
+        ]
+      },
+      "promptVersion": "splice-2",
+      "hardware": {
+        "cpu": "AMD Ryzen AI 7 350 w/ Radeon 860M              ",
+        "ram": 33597272064,
+        "os": "10.0.26200",
+        "arch": "x64"
+      }
+    },
+    "calls": 25,
+    "primaryCalls": 24,
+    "repairCalls": 1,
+    "originalValidatorValid": 24,
+    "finalValidatorValidCalls": 23,
+    "finalValidatorSuccessfulRuns": 23,
+    "medianMs": 2529.025999999998,
+    "maxMs": 6544.103800000001,
+    "firstLoadMs": 1568.0962,
+    "allLoadMs": [
+      1568.0962,
+      8.0341,
+      6.9236,
+      6.5606,
+      5.6044,
+      6.5372,
+      5.3278,
+      6.3997,
+      5.8123,
+      5.7601,
+      6.7692,
+      4.7482,
+      6.1063,
+      7.5991,
+      6.201,
+      5.2565,
+      5.4134,
+      7.8519,
+      6.6389,
+      4.7439,
+      7.2448,
+      6.8244,
+      7.0604,
+      6.4116,
+      6.5205
+    ]
+  },
+  {
+    "file": "ollama-gemma3-4b-2026-10-20T16-45-52.876Z.jsonl",
+    "session": {
+      "type": "session",
+      "date": "2026-10-20T16-45-52.876Z",
+      "version": {
+        "version": "0.40.6"
+      },
+      "model": {
+        "name": "gemma3:4b",
+        "model": "gemma3:4b",
+        "modified_at": "2026-10-20T19:45:04.5827447+03:00",
+        "size": 3350272403,
+        "digest": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+        "details": {
+          "parent_model": "dhiltgen/gemma3:4b-it-q4_K_M-llamacpp",
+          "format": "gguf",
+          "family": "gemma3",
+          "families": [
+            "gemma3",
+            "clip"
+          ],
+          "parameter_size": "3.9B",
+          "quantization_level": "Q4_K_M",
+          "context_length": 131072,
+          "embedding_length": 2560,
+          "runner": "llamacpp"
+        },
+        "capabilities": [
+          "completion",
+          "vision"
+        ]
+      },
+      "promptVersion": "splice-2",
+      "hardware": {
+        "cpu": "AMD Ryzen AI 7 350 w/ Radeon 860M              ",
+        "ram": 33597272064,
+        "os": "10.0.26200",
+        "arch": "x64"
+      }
+    },
+    "calls": 24,
+    "primaryCalls": 24,
+    "repairCalls": 0,
+    "originalValidatorValid": 24,
+    "finalValidatorValidCalls": 24,
+    "finalValidatorSuccessfulRuns": 24,
+    "medianMs": 9046.268500000006,
+    "maxMs": 11745.887699999992,
+    "firstLoadMs": 2880.9488,
+    "allLoadMs": [
+      2880.9488,
+      8.8296,
+      6.1214,
+      12.8101,
+      4.2365,
+      5.7966,
+      7.5447,
+      5.806,
+      6.9305,
+      6.3718,
+      4.9871,
+      5.6891,
+      8.532,
+      6.6709,
+      5.249,
+      7.3575,
+      5.9245,
+      7.2984,
+      5.9156,
+      8.6197,
+      8.9759,
+      7.7996,
+      11.8861,
+      10.3603
+    ]
+  }
+]

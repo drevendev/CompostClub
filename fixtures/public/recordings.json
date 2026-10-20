@@ -1,0 +1,93 @@
+[
+  {
+    "a": "A tiny town whose residents keep solving everyday problems while the player is away. The player only sets three priorities before leaving.",
+    "b": "A box of unsent postcards. Each postcard keeps one small observation from a walk, and two forgotten cards can become a new walking route.",
+    "language": "en",
+    "raw": "{\"outcome\":\"sprout\",\"title\":\"Postcard Echoes\",\"concept\":\"The town’s priorities trigger postcards detailing solved problems, inspiring new walking routes built from linked observations – two forgotten postcards coalesce into a path, echoing the town’s quiet ingenuity.\",\"fromA\":\"A tiny town whose residents keep solving everyday problems while the player is\",\"fromB\":\"A box of unsent postcards. Each postcard keeps one small observation from a\"}",
+    "model": "gemma3:4b",
+    "revision": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    "promptVersion": "splice-2",
+    "receipt": "evidence/model/ollama-gemma3-4b-2026-10-20T16-45-52.876Z.jsonl#development-01-02/rep0/attempt0",
+    "aSha256": "6cee6edb32934c0d4a38358cd9bfc7ffc8d85e51374836caa2a55fbb37f06116",
+    "bSha256": "032d6d29e4b53e44b09f12984c83534fc787ac44d3b08f05285062ff9b995562",
+    "rawSha256": "dcc903128d110cd5041d2086bad5cc0591d827dce3de122987d515033f93fae3"
+  },
+  {
+    "a": "A tiny town whose residents keep solving everyday problems while the player is away. The player only sets three priorities before leaving.",
+    "b": "A vending machine for unfinished hobbies. Put in an abandoned plan and receive one very small thing you could still make from its leftovers.",
+    "language": "en",
+    "raw": "{\"outcome\":\"sprout\",\"title\":\"Clockwork Curios\",\"concept\":\"The town’s automated repair drones, dispatched by the player’s priorities, fix miniature malfunctions in the hobby vending machine, yielding a single, perfectly crafted component from the discarded project’s remnants.\",\"fromA\":\"A tiny town whose residents keep solving everyday problems while the player is\",\"fromB\":\"A vending machine for unfinished hobbies. Put in an abandoned plan and receive\"}",
+    "model": "gemma3:4b",
+    "revision": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    "promptVersion": "splice-2",
+    "receipt": "evidence/model/ollama-gemma3-4b-2026-10-20T16-45-52.876Z.jsonl#development-01-03/rep0/attempt0",
+    "aSha256": "6cee6edb32934c0d4a38358cd9bfc7ffc8d85e51374836caa2a55fbb37f06116",
+    "bSha256": "1ec5c482376d1e63375d50167487131a42c3d75ae95fa81a3cb3512ae3902b5f",
+    "rawSha256": "dee8a5fd0c5425edbb047a3ed9d6225c2c20580d7add0e32badbe572863052bb"
+  },
+  {
+    "a": "A box of unsent postcards. Each postcard keeps one small observation from a walk, and two forgotten cards can become a new walking route.",
+    "b": "A library that lends tiny weather systems instead of books. Borrow a pocket-sized fog for a quiet evening and return it when the sun comes out.",
+    "language": "en",
+    "raw": "{\"outcome\":\"sprout\",\"title\":\"Cartographic Echoes\",\"concept\":\"Postcards become coordinates within borrowed weather systems, charting ephemeral routes through fog and rain, reflecting forgotten walks and shaping new, transient landscapes based on observed details.\",\"fromA\":\"A box of unsent postcards. Each postcard keeps one small observation from a\",\"fromB\":\"A library that lends tiny weather systems instead of books. Borrow a\"}",
+    "model": "gemma3:4b",
+    "revision": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    "promptVersion": "splice-2",
+    "receipt": "evidence/model/ollama-gemma3-4b-2026-10-20T16-45-52.876Z.jsonl#development-02-04/rep0/attempt0",
+    "aSha256": "032d6d29e4b53e44b09f12984c83534fc787ac44d3b08f05285062ff9b995562",
+    "bSha256": "9a0a1f8623ffe1a3b38a63e35f63a66887e425dd65d261f21df5def6ee78a33c",
+    "rawSha256": "3d456a11a87db384b318a60795fca0403f201a39f97a5da1a5ff191ebd026b1d"
+  },
+  {
+    "a": "A library that lends tiny weather systems instead of books. Borrow a pocket-sized fog for a quiet evening and return it when the sun comes out.",
+    "b": "Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов он предлагает смешное название нового блюда.",
+    "language": "ru",
+    "raw": "{\"outcome\":\"sprout\",\"title\":\"Небесный Повар\",\"concept\":\"Робот-повар, вдохновленный потерянными словами, создает блюда, используя миниатюрные, по-погодному настроенные облака для ароматизации и текстуры – например, 'Туманный Суп из Забытых Названий'.\",\"fromA\":\"A library that lends tiny weather systems instead of books. Borrow a\",\"fromB\":\"Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов\"}",
+    "model": "gemma3:4b",
+    "revision": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    "promptVersion": "splice-2",
+    "receipt": "evidence/model/ollama-gemma3-4b-2026-10-20T16-45-52.876Z.jsonl#development-04-05/rep0/attempt0",
+    "aSha256": "9a0a1f8623ffe1a3b38a63e35f63a66887e425dd65d261f21df5def6ee78a33c",
+    "bSha256": "c92a29c79133ff0cdce34acb1bcb3a171efdbdcfd64ae82bfd3188a37d621807",
+    "rawSha256": "ef7139af6a3ab6a01702741640f8960ae0587a1a8ba01e27dbcc1791b7f4991c"
+  },
+  {
+    "a": "Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов он предлагает смешное название нового блюда.",
+    "b": "Сад, где ненужные обещания превращаются в растения. Можно отпустить одно обещание и сохранить маленькую полезную мысль, которая в нём была.",
+    "language": "ru",
+    "raw": "{\"outcome\":\"sprout\",\"title\":\"Слова-Цветы\",\"concept\":\"Тихий робот из случайных кухонных слов формирует обещание, которое сажается в сад, превращаясь в растение, символизирующее освобождение от невыполненного и сохранение его сути.\",\"fromA\":\"Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов\",\"fromB\":\"Сад, где ненужные обещания превращаются в растения. Можно отпустить одно\"}",
+    "model": "gemma3:4b",
+    "revision": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    "promptVersion": "splice-2",
+    "receipt": "evidence/model/ollama-gemma3-4b-2026-10-20T16-45-52.876Z.jsonl#development-05-06/rep0/attempt0",
+    "aSha256": "c92a29c79133ff0cdce34acb1bcb3a171efdbdcfd64ae82bfd3188a37d621807",
+    "bSha256": "72e28908c0755fc112581062a150626c8e64c195650dbd843b2dc6b16d1c8b92",
+    "rawSha256": "a07243be7945f51c314efd979a91a5c7851c43967606fd4b9d69579a1e260148"
+  },
+  {
+    "a": "A tiny town whose residents keep solving everyday problems while the player is away. The player only sets three priorities before leaving.",
+    "b": "Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов он предлагает смешное название нового блюда.",
+    "language": "ru",
+    "raw": "{\"outcome\":\"sprout\",\"title\":\"Городской Шеф\",\"concept\":\"Когда игрок уходит, тихий робот формирует названия блюд из случайных слов, а жители города, вдохновленные этими названиями, готовят и решают, что приготовить из имеющихся ингредиентов – создавая неожиданные кулинарные шедевры.\",\"fromA\":\"A tiny town whose residents keep solving everyday problems while the player is\",\"fromB\":\"Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов\"}",
+    "model": "gemma3:4b",
+    "revision": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    "promptVersion": "splice-2",
+    "receipt": "evidence/model/ollama-gemma3-4b-2026-10-20T16-45-52.876Z.jsonl#holdout-01-05/rep0/attempt0",
+    "aSha256": "6cee6edb32934c0d4a38358cd9bfc7ffc8d85e51374836caa2a55fbb37f06116",
+    "bSha256": "c92a29c79133ff0cdce34acb1bcb3a171efdbdcfd64ae82bfd3188a37d621807",
+    "rawSha256": "a35ca2ce603fde3d489b79c0c45906311fb6090485b518740dc2f7ccfdc42a3f"
+  },
+  {
+    "a": "A box of unsent postcards. Each postcard keeps one small observation from a walk, and two forgotten cards can become a new walking route.",
+    "b": "Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов он предлагает смешное название нового блюда.",
+    "language": "ru",
+    "raw": "{\"outcome\":\"sprout\",\"title\":\"Потерянные Вкусы\",\"concept\":\"Робот собирает выпавшие слова из стола, а затем, используя маршруты из открыток, формирует новые блюда, сочетая наблюдения и случайные названия, как будто создавая новые приключения на кухне.\",\"fromA\":\"A box of unsent postcards. Each postcard keeps one small observation from a\",\"fromB\":\"Тихий робот собирает потерянные слова с кухонного стола. Из двух случайных слов\"}",
+    "model": "gemma3:4b",
+    "revision": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    "promptVersion": "splice-2",
+    "receipt": "evidence/model/ollama-gemma3-4b-2026-10-20T16-45-52.876Z.jsonl#holdout-02-05/rep0/attempt0",
+    "aSha256": "032d6d29e4b53e44b09f12984c83534fc787ac44d3b08f05285062ff9b995562",
+    "bSha256": "c92a29c79133ff0cdce34acb1bcb3a171efdbdcfd64ae82bfd3188a37d621807",
+    "rawSha256": "1548b651257e977888e2cf951a0074a3f06a37657e1daa3e0b8942df0e3dacd8"
+  }
+]

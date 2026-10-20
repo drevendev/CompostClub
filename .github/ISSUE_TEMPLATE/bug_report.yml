@@ -1,0 +1,37 @@
+name: Bug report
+description: Report a reproducible problem using fictional or redacted inputs.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please search existing issues first. Do not attach a private garden backup, secrets, personal text or sensitive vulnerability details.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Explain the observed behavior and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use a minimal fictional example. Include the mode (sample, Ollama or browser AI).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Version and environment
+      description: Commit/version, OS, browser; model/GPU only if relevant. No personal paths or device identifiers.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Optional sanitized evidence
+      description: Redacted error text or a screenshot. Never upload a real idea archive.

@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-20T17:08:42.693Z",
+  "browser": "Playwright Chromium 156 on Windows",
+  "stats": {
+    "startTime": "2026-10-20T17:06:39.419Z",
+    "duration": 26080.385,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "loopback bridge rejects foreign origins, missing tokens and oversized requests",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 67
+        }
+      ]
+    },
+    {
+      "title": "a simulated transport failure keeps the slot; an explicit retry uses the real model",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 6635
+        }
+      ]
+    },
+    {
+      "title": "real local model: add → blend → keep → reload → export and restore",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 6200
+        }
+      ]
+    },
+    {
+      "title": "sample garden replays only verified pairs; edit/recompost/clock/reload work",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2834
+        }
+      ]
+    },
+    {
+      "title": "mobile, keyboard, reduced motion and large text fit the viewport",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 767
+        }
+      ]
+    },
+    {
+      "title": "a second tab is read-only and a corrupt import cannot overwrite a garden",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 982
+        }
+      ]
+    },
+    {
+      "title": "offline HTML runs from file with network blocked, denied storage and a renamed copy",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7809
+        }
+      ]
+    }
+  ],
+  "unitTests": 31,
+  "liveInference": "Real Ollama calls in two separate production journeys; test-only transport failure explicitly injected, then real retry"
+}
