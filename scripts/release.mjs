@@ -55,6 +55,7 @@ files.push(
   'evidence/recovery-verification.json',
   'evidence/inference-history.png',
   'evidence/p1-verification.json',
+  'evidence/workflow-verification.json',
 );
 const manifest = {};
 for (const file of files.sort())

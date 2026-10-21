@@ -2,7 +2,9 @@
 
 The next milestone is a dependable small creative workflow and an evidence-backed project story. [Current audit](AUDIT-2026-10-21.md). [Release tracking issue #29](https://github.com/drevendev/CompostClub/issues/29).
 
-The first P1 implementation batch addresses #31, #32 and #36: persisted inference transcripts, stale-restore protection and evidence-derived acceptance receipts. It is prepared for review; issue closure follows merge. [Fresh live acceptance](../evidence/p1-verification.json) contains 63 unit results and seven Chromium journeys with two real local-model outputs. Six additional P1 diagnostics and eight recovery scenarios passed separately. The earlier [real model error](../evidence/model/p1-live-failure.json) is retained alongside the later successful run; neither run is a new creative-quality benchmark.
+The first P1 implementation batch merged in [PR #37](https://github.com/drevendev/CompostClub/pull/37), closing #31, #32 and #36: persisted inference transcripts, stale-restore protection and evidence-derived acceptance receipts. Its [live acceptance](../evidence/p1-verification.json) contains 63 unit results and seven Chromium journeys with two real local-model outputs. Six additional P1 diagnostics and eight recovery scenarios passed separately. The earlier [real model error](../evidence/model/p1-live-failure.json) is retained alongside the later successful run; neither run is a new creative-quality benchmark.
+
+The next implementation batch addresses #11, #12, #13 and #21: explicit retries after reload, independent add/edit drafts, access to all discoveries and order-independent JSON field comparison. It is prepared locally for review; those issues remain open until merge. Validation covers 76 unit tests, eleven P1/workflow Chromium scenarios and eight recovery cases. The [new sample/offline receipt](../evidence/workflow-verification.json) records four ordinary Chromium journeys and identifies the tested source/build. This batch did not rerun live inference.
 
 ## Baseline delivered
 
