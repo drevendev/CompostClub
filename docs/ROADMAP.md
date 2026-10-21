@@ -87,7 +87,7 @@ Continue without accounts, cloud inference, analytics, paid integrations or hidd
 
 ### 6C. Consent, provenance, deletion and backups — [#44](https://github.com/drevendev/CompostClub/issues/44)
 
-- Parent identity becomes `(gardenId, scrapId, revision)`; immutable cross-garden text snapshots must validate against the exact generation request. Garden names can change without losing source history.
+- Parent identity becomes `(gardenId, scrapId, revision)` with unambiguous structured encoding; fix the current imported-ID delimiter collision [#47](https://github.com/drevendev/CompostClub/issues/47) **before** migrating pair keys across gardens. Immutable cross-garden text snapshots must validate against the exact generation request. Garden names can change without losing source history.
 - Full-workspace and per-garden exports/imports need versioned, bounded, atomic migration/restore with a clear dependency policy and preview. No orphaned snapshots or silent private garden copies.
 - Consent OFF stops **future** borrowing; existing results that contain borrowed text remain until the user deliberately removes them. Show retention and provide a reviewed cross-garden cascade/purge, aligned with [#39](https://github.com/drevendev/CompostClub/issues/39) and [#40](https://github.com/drevendev/CompostClub/issues/40). Preserve generated/replayed/imported status from [#22](https://github.com/drevendev/CompostClub/issues/22).
 - No private source content in public demos, GitHub Issues, CI logs or preloaded Sample Garden.
