@@ -22,7 +22,7 @@ Never make personal birth time, weather, location or mood part of inherited gene
 
 ## 3. Real tiny genetic algorithm — steady-state, not random prompt roulette
 
-Population: 4–8 user-selected ideas/candidates, 2 minimum to start. Only confirmed semantic genes can be recombined. User can manually mark genes; no local model install required to inspect ancestry or rate candidates.
+Population: 4–8 user-selected ideas/candidates, 2 minimum to start. Only confirmed semantic genes can be recombined. User can manually mark genes; no local model install required to inspect ancestry or rate candidates. For low-friction onboarding, a separate user-triggered **Decode DNA** button can make one short local Gemma classification call to propose 2–4 typed genes for owner approval, never silently on save (#51); if the model fails, one or two manual gene chips still allow the GA. Automatic tags on add and batch tagging remain a later option (#55).
 
 Selection: seeded tournament selection (size 2) preferring user-rated or explicitly kept candidates, with bounded deterministic exploration of unrated/diverse candidates. Fitness is user feedback: Keep/Discard and optional 1–5 usefulness, novelty, would-build ratings. Unrated means unknown, not zero. A simple deterministic allele-overlap diversity heuristic is allowed but is NOT a measured quality score.
 
