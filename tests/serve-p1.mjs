@@ -32,6 +32,11 @@ const upstream = http.createServer(async (req, res) => {
     void chunk;
   }
   const index = calls++;
+  if (mode === 'transport') {
+    res.statusCode = 503;
+    res.end(JSON.stringify({ error: 'TEST-ONLY simulated transport failure.' }));
+    return;
+  }
   if (mode === 'cancel' && index) await new Promise((resolve) => setTimeout(resolve, 5000));
   const response =
     mode === 'oversized'

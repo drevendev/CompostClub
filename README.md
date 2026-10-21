@@ -45,6 +45,7 @@ This first run needs no account, API key or model download. Dependency installat
 - One welcome pairing, then a slot every 15 minutes, capped at three. Time away earns slots; it never generates outputs in the background.
 - Deterministic pair selection, source revisions, exact quotes and immutable parent snapshots.
 - Keep, edit, recompost, Markdown export, versioned JSON backup and validated restore.
+- Revisit every discovery through **Collection → All discoveries**, including results you have not kept. Retry an unfinished pairing explicitly after reload while its sources remain unchanged.
 - IndexedDB persistence, competing-tab checks and a visible memory-only fallback.
 - A self-contained offline HTML sample, without model weights or startup network dependencies.
 
@@ -74,7 +75,7 @@ npm run build
 npm run package:single
 ```
 
-`verify` runs strict TypeScript, ESLint, 63 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath, [eight recovery scenarios](docs/RECOVERY.md#regression-verification) and six P1 transport/storage scenarios in Chromium. Run `npm run test:recovery` and `npm run test:p1` after building both variants. Diagnostic stubs are explicitly labelled and never counted as live-model evidence. These checks do not download models or certify live model quality.
+`verify` runs strict TypeScript, ESLint, 76 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath, [eight recovery scenarios](docs/RECOVERY.md#regression-verification) and eleven P1/workflow scenarios in Chromium. Run `npm run test:recovery` and `npm run test:p1` after building both variants. Diagnostic stubs are explicitly labelled and never counted as live-model evidence. These checks do not download models or certify live model quality. The [workflow acceptance receipt](evidence/workflow-verification.json) records a fresh sample/offline run; its live-inference status is `not-run`.
 
 The earlier [local acceptance receipt](evidence/verification.json) records seven Chromium journeys, including real Ollama inference. Live e2e tests require an explicitly installed model and running bridge; see [running and verification](docs/RUNNING.md#verify-and-package). Unit/CI checks, local browser tests and model evaluation are separate evidence.
 

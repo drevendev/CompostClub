@@ -173,6 +173,47 @@ export function availablePairs(g: Garden): [Snapshot, Snapshot][] {
       hash(g.seed + pairKey(a)) - hash(g.seed + pairKey(b)) || pairKey(a).localeCompare(pairKey(b)),
   );
 }
+export function retryablePairs(g: Garden): [Snapshot, Snapshot][] {
+  const failed = new Map(g.attempts.filter((a) => a.status === 'failed').map((a) => [a.key, a]));
+  if (!failed.size) return [];
+  const successful = new Set(g.attempts.filter((a) => a.status === 'success').map((a) => a.key));
+  const runs = new Map((g.generations ?? []).map((run) => [run.id, run]));
+  const pairs: [Snapshot, Snapshot][] = [];
+  for (let i = 0; i < g.scraps.length; i++)
+    for (let j = i + 1; j < g.scraps.length; j++) {
+      const a = g.scraps[i]!,
+        b = g.scraps[j]!;
+      if (a.text === b.text) continue;
+      const pair: [Snapshot, Snapshot] = [
+        { id: a.id, text: a.text, revision: a.revision },
+        { id: b.id, text: b.text, revision: b.revision },
+      ];
+      const key = pairKey(pair),
+        attempt = failed.get(key);
+      if (!attempt || successful.has(key)) continue;
+      const run = runs.get(attempt.requestId);
+      if (run) {
+        // Preserve A/B orientation, but never revive a request for edited sources.
+        if (
+          run.key !== key ||
+          run.parents.some(
+            (p) =>
+              !pair.some(
+                (current) =>
+                  current.id === p.id && current.revision === p.revision && current.text === p.text,
+              ),
+          )
+        )
+          continue;
+        pairs.push(run.parents);
+      } else {
+        // Legacy backups have pairing records but no inference journal. Offer the
+        // unchanged pair without inventing a historical request or model response.
+        pairs.push(pair);
+      }
+    }
+  return pairs;
+}
 export function beginRequest(
   garden: Garden,
   now: number,
@@ -483,9 +524,9 @@ function validateGarden(data: unknown): Garden {
         throw new Error('A source snapshot is missing or invalid.');
     if (s.key !== pairKey(s.parents)) throw new Error('A source pair does not match its record.');
     const parsed = parseOutput(s.rawOutput, s.parents[0].text, s.parents[1].text);
+    const stored = validateOutput(s.output, s.parents[0].text, s.parents[1].text);
     if (
-      JSON.stringify(parsed) !==
-        JSON.stringify(validateOutput(s.output, s.parents[0].text, s.parents[1].text)) ||
+      (Object.keys(parsed) as (keyof ModelOutput)[]).some((key) => parsed[key] !== stored[key]) ||
       parsed.outcome !== 'sprout'
     )
       throw new Error('The original model result was changed.');

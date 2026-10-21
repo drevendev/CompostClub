@@ -4,6 +4,12 @@ Changes describe the source tree. A version heading does not imply an npm packag
 
 ## Unreleased
 
+- Derive explicit retry choices from saved failed pairs after reload, retaining exact source revisions and previous transcripts, including legacy backups without invented history.
+- Keep the add-scrap draft independent of scrap/sprout edit buffers across dismissal, validation failures and successful edits.
+- Add an all-discoveries filter alongside kept ideas, so earlier unkept results remain inspectable, editable, exportable and recompostable.
+- Accept semantically unchanged output fields in any JSON key order while rejecting actual changes to the original model result.
+- Extend Chromium diagnostics to cover reload retries, draft preservation and discovery navigation; retain standalone/offline recovery coverage.
+
 - Retain immutable inference transcripts across retries/reload, including invalid primary/repair responses, no_blend, cancellation and no-response transport errors; add inspection and export.
 - Reserve evidence capacity before generation and retain unexpectedly oversized responses in a separate, explicitly managed recovery copy.
 - Reject stale normal restores even without Web Locks; keep a distinct before-restore copy without replacing damaged startup-recovery originals.

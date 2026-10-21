@@ -34,6 +34,10 @@ Raw downloads may contain all of your original ideas. Keep them private; use fic
 
 Each response is committed before requesting a repair. A new run needs 192 KiB of backup headroom and one of the 100 transcript records; reaching a limit blocks generation before a model call. Export history before removing a source; the deletion preview counts dependent transcripts as well as sprouts. The normal 2 MiB save check still applies to every write.
 
+After an error, cancellation, no_blend or interrupted reload, **Try an unfinished pairing** remains in the garden. Inspect its two sources, choose a pair if several are available, reconnect your chosen local engine if needed, and select **Retry this pairing**. Reload never starts inference automatically. Retrying creates a new request and retains earlier responses. Editing or deleting a parent invalidates the old retry; a successful pair cannot be spent again. Legacy backups can recover failed pair choices from their pairing records without reconstructing missing model responses.
+
+The add form keeps its draft when a scrap or sprout editor is saved or dismissed. **Collection → All discoveries** retains access to earlier unkept results; the **Kept ideas** filter remains available. Restoring a backup accepts identical output fields regardless of JSON property order, while still validating every value against the unchanged original response.
+
 An unexpectedly large response that cannot fit is retained under a separate inference recovery key, and can be downloaded from Backup and export after reload. It is outside the normal garden backup. Further generation is blocked until this copy is handled. Removing it requires a preview and explicit confirmation. If IndexedDB itself rejects the recovery write (for example, disk quota exhaustion), the page keeps the response in memory and explicitly asks for download before closing; persistence cannot be promised when storage rejects all writes.
 
 Normal backup restore compares the locally previewed revision in both IndexedDB and memory mode. A stale preview or subsequent stale writer is rejected even without Web Locks. Successful replacement advances the current local revision and atomically retains the replaced garden as **Download before-restore copy**. A later normal restore replaces that one copy. The damaged original retained by startup recovery is separate and remains available as **Download previous recovery copy**.
@@ -55,7 +59,7 @@ The dedicated Chromium suite uses isolated contexts and fictional IndexedDB faul
 
 Unit regressions additionally cover original UTF-8 byte limits, a boundary-sized pretty backup across revision 9 → 10, accumulated history/count limits, memory fallback, preserved pending requests and an aborted recovery transaction.
 
-The P1 suite uses fictional data and an explicitly labelled loopback transport stub. It checks invalid primary/repair, no_blend, cancellation, oversized response recovery, reload/export, and stale normal restore/saves without Web Locks. Stub responses are not live model evidence. Repository CI runs this suite independently of real Ollama acceptance.
+`test:p1` runs eleven Chromium cases. Seven transport/storage cases check invalid primary/repair, no_blend, transport failure, cancellation, explicit retries after reload, oversized response recovery, and stale normal restore/saves without Web Locks. Four workflow cases check independent drafts across Escape/close/backdrop/save/validation, two-result discovery navigation and immutable model text when JSON properties are reordered. They use fictional inputs, exact labelled public recordings or an explicitly labelled loopback transport stub. Stub responses are not live model evidence. Repository CI runs this suite independently of real Ollama acceptance.
 
 ![Inference history showing an unchanged public recorded sample, exact parent revisions and raw response](../evidence/inference-history.png)
 

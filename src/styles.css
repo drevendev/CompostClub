@@ -2013,6 +2013,39 @@ input,
     scroll-behavior: auto !important;
   }
 }
+.retry-panel {
+  margin: 0 0 24px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  overflow-wrap: anywhere;
+}
+.retry-panel h2 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.retry-panel p {
+  margin: 8px 0 16px;
+}
+.retry-panel select {
+  max-width: 100%;
+  width: 100%;
+}
+.retry-sources {
+  margin-bottom: 16px;
+}
+.discovery-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.discovery-filters [aria-pressed='true'] {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 /* Original model text remains readable without rendering it as HTML. */
 .inference-history pre {
   white-space: pre-wrap;

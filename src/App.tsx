@@ -13,13 +13,14 @@ import {
   MAX_BACKUP_BYTES,
   reconcile,
   recordResponse,
+  retryablePairs,
+  pairKey,
   recompost,
   removeScrap,
   serializeGarden,
   type Backend,
   type Garden,
   type GardenKind,
-  type Request,
   type Sprout,
 } from './domain/garden';
 import { storage } from './application/storage';
@@ -68,8 +69,10 @@ export default function App() {
     ref = useRef<Garden | null>(null);
   const [kind, setKind] = useState<GardenKind>(initialKind),
     [tab, setTab] = useState<'garden' | 'collection'>('garden');
+  const [collectionView, setCollectionView] = useState<'kept' | 'all'>('kept');
   const [dialog, setDialog] = useState<Dialog>(null),
     [text, setText] = useState(''),
+    [editText, setEditText] = useState(''),
     [editId, setEditId] = useState(''),
     [sproutEdit, setSproutEdit] = useState(false),
     [editTitle, setEditTitle] = useState('');
@@ -77,7 +80,7 @@ export default function App() {
     [startupError, setStartupError] = useState(''),
     [notice, setNotice] = useState(''),
     [storageWarning, setStorageWarning] = useState('');
-  const [failedRequest, setFailedRequest] = useState<Request | null>(null);
+  const [retryKey, setRetryKey] = useState('');
   const [backend, setBackend] = useState<Backend>('ollama'),
     [modelKey, setModelKey] = useState<ModelKey>('1b'),
     [language, setLanguage] = useState<Language>('en');
@@ -273,7 +276,7 @@ export default function App() {
       setWelcome(false);
       setNotice('');
       setError('');
-      setFailedRequest(null);
+      setRetryKey('');
       setDialog(null);
     });
   }
@@ -286,7 +289,7 @@ export default function App() {
       inputRef.current?.focus();
     });
   }
-  async function grow(retry = false) {
+  async function grow(retry?: string) {
     if (busyRef.current || locked || saving || document.hidden) return;
     busyRef.current = true;
     setBusy(true);
@@ -295,7 +298,6 @@ export default function App() {
     const abort = new AbortController();
     controller.current = abort;
     let requestId = '';
-    let activeRequest: Request | null = null;
     try {
       const current = ref.current;
       if (!current) return;
@@ -310,9 +312,12 @@ export default function App() {
         );
       let model = '',
         revision = '';
-      let preferred: ReturnType<typeof availablePairs>[number] | undefined = retry
-        ? failedRequest?.parents
-        : undefined;
+      let preferred: ReturnType<typeof availablePairs>[number] | undefined =
+        retry !== undefined
+          ? retryablePairs(current).find((pair) => pairKey(pair) === retry)
+          : undefined;
+      if (retry !== undefined && !preferred)
+        throw new Error('The selected sources have changed or this pairing has already grown.');
       if (mode === 'replay') {
         const pairs = preferred ? [preferred] : availablePairs(current);
         for (const p of pairs) {
@@ -331,7 +336,7 @@ export default function App() {
             break;
           }
         }
-        if (!preferred)
+        if (!preferred || !model || !revision)
           throw new Error(
             'No unused recording matches these exact scraps and this language. Your own scraps need live local AI. Try another language or start your own pile.',
           );
@@ -356,7 +361,6 @@ export default function App() {
       const request = active.pending;
       if (!request) throw new Error('Could not start the pairing.');
       requestId = request.id;
-      activeRequest = request;
       const checkpoint = async (raw: string) => {
         const current = ref.current;
         if (!current) throw new Error('The garden closed before saving the response.');
@@ -390,14 +394,12 @@ export default function App() {
       if (mode === 'replay') await checkpoint(raw);
       if (abort.signal.aborted) throw new Error('Cancelled. Your pairing slot is still here.');
       await commit((g) => completeRequest(g, request.id, raw, Date.now()));
-      setFailedRequest(null);
       setNotice(
         mode === 'replay'
           ? 'A recorded Gemma idea has sprouted.'
           : 'A new idea has sprouted. See what you think.',
       );
     } catch (e) {
-      setFailedRequest(activeRequest);
       if (requestId)
         try {
           await commit((g) => failRequest(g, requestId, errorText(e), abort.signal.aborted));
@@ -453,9 +455,9 @@ export default function App() {
     setSproutEdit(isSprout);
     if (isSprout) {
       const s = g.sprouts.find((s) => s.id === id);
-      setText(s?.edited?.concept ?? s?.output.concept ?? '');
+      setEditText(s?.edited?.concept ?? s?.output.concept ?? '');
       setEditTitle(s?.edited?.title ?? s?.output.title ?? '');
-    } else setText(g.scraps.find((s) => s.id === id)?.raw ?? '');
+    } else setEditText(g.scraps.find((s) => s.id === id)?.raw ?? '');
     setDialog('edit');
   }
   async function saveEdit() {
@@ -464,18 +466,18 @@ export default function App() {
         if (
           !editTitle.trim() ||
           [...editTitle].length > 60 ||
-          !text.trim() ||
-          [...text].length > 420
+          !editText.trim() ||
+          [...editText].length > 420
         )
           throw new Error('Use a title of 1–60 characters and a concept of 1–420 characters.');
         await commit((g) => ({
           ...g,
           sprouts: g.sprouts.map((s) =>
-            s.id === editId ? { ...s, edited: { title: editTitle, concept: text } } : s,
+            s.id === editId ? { ...s, edited: { title: editTitle, concept: editText } } : s,
           ),
         }));
-      } else await commit((g) => editScrap(g, editId, text));
-      setText('');
+      } else await commit((g) => editScrap(g, editId, editText));
+      setEditText('');
       setDialog(null);
       setNotice('Your edit is saved. Original model text stays in the provenance.');
     });
@@ -542,7 +544,11 @@ export default function App() {
     remaining = Math.max(0, INTERVAL - elapsed);
   const kept = garden.sprouts.filter((s) => s.kept).length,
     collection =
-      tab === 'collection' ? garden.sprouts.filter((s) => s.kept) : garden.sprouts.slice(-1);
+      tab === 'collection'
+        ? garden.sprouts.filter((s) => collectionView === 'all' || s.kept)
+        : garden.sprouts.slice(-1);
+  const retries = retryablePairs(garden);
+  const retrySelection = retries.find((pair) => pairKey(pair) === retryKey) ?? retries[0];
   const affected = deletionSet(garden, editId);
   return (
     <div className="app-shell">
@@ -563,7 +569,10 @@ export default function App() {
           </button>
           <button
             className={tab === 'collection' ? 'active' : ''}
-            onClick={() => setTab('collection')}
+            onClick={() => {
+              setCollectionView('kept');
+              setTab('collection');
+            }}
           >
             <Icon name="book" size={17} />
             Collection <span className="nav-count">{kept}</span>
@@ -715,15 +724,6 @@ export default function App() {
           <div className="message error" role="alert">
             <Icon name="info" />
             <span>{error}</span>
-            {failedRequest && (
-              <button
-                className="text-button"
-                disabled={busy || saving || locked}
-                onClick={() => void grow(true)}
-              >
-                Retry this pairing
-              </button>
-            )}
             <button className="icon-button" aria-label="Dismiss error" onClick={() => setError('')}>
               <Icon name="close" size={16} />
             </button>
@@ -734,6 +734,43 @@ export default function App() {
             <Icon name="check" size={16} />
             {notice}
           </div>
+        )}
+        {tab === 'garden' && retrySelection && (
+          <section className="retry-panel" aria-label="Unfinished pairings">
+            <h2>Try an unfinished pairing</h2>
+            <p>An unsuccessful blend keeps its slot. Retry only when you choose.</p>
+            {retries.length > 1 && (
+              <label className="field-label">
+                Pairing to retry
+                <select
+                  value={pairKey(retrySelection)}
+                  onChange={(e) => setRetryKey(e.target.value)}
+                >
+                  {retries.map((pair, index) => (
+                    <option key={pairKey(pair)} value={pairKey(pair)}>
+                      {index + 1}. {pair[0].text.slice(0, 60)} + {pair[1].text.slice(0, 60)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <details className="retry-sources">
+              <summary>View retry sources</summary>
+              <p>
+                A · revision {retrySelection[0].revision}: {retrySelection[0].text}
+              </p>
+              <p>
+                B · revision {retrySelection[1].revision}: {retrySelection[1].text}
+              </p>
+            </details>
+            <button
+              className="button secondary"
+              disabled={busy || saving || locked || shown.readySlots === 0 || !!inferenceRecovery}
+              onClick={() => void grow(pairKey(retrySelection))}
+            >
+              Retry this pairing
+            </button>
+          </section>
         )}
         {tab === 'garden' ? (
           <div className="garden-layout">
@@ -756,7 +793,7 @@ export default function App() {
                   <textarea
                     id="new-scrap"
                     ref={inputRef}
-                    value={dialog === 'edit' ? '' : text}
+                    value={text}
                     onChange={(e) => setText(e.target.value)}
                     placeholder="A half-baked game, a strange tool, something you heard…"
                     rows={4}
@@ -1000,8 +1037,14 @@ export default function App() {
                 ))
               )}
               {garden.sprouts.length > 1 && (
-                <button className="text-button all-sprouts" onClick={() => setTab('collection')}>
-                  Open collection <Icon name="arrow" size={16} />
+                <button
+                  className="text-button all-sprouts"
+                  onClick={() => {
+                    setCollectionView('all');
+                    setTab('collection');
+                  }}
+                >
+                  View all discoveries <Icon name="arrow" size={16} />
                 </button>
               )}
               <div className="quiet-note">
@@ -1015,42 +1058,64 @@ export default function App() {
             </section>
           </div>
         ) : (
-          <section className="collection-grid">
-            {collection.length ? (
-              collection.map((s) => (
-                <SproutCard
-                  key={s.id}
-                  sprout={s}
-                  disabled={locked || busy || saving}
-                  onKeep={() =>
-                    void action(async () => {
-                      await commit((g) => ({
-                        ...g,
-                        sprouts: g.sprouts.map((item) =>
-                          item.id === s.id ? { ...item, kept: false } : item,
-                        ),
-                      }));
-                    })
-                  }
-                  onCompost={() =>
-                    void action(async () => {
-                      await commit((g) => recompost(g, s.id, Date.now()));
-                    })
-                  }
-                  onExport={() => exportSprout(s)}
-                  onEdit={() => showEdit(s.id, true)}
-                />
-              ))
-            ) : (
-              <div className="collection-empty">
-                <Icon name="book" size={46} />
-                <h2>Your herbarium of possibilities.</h2>
-                <p>Tap Keep on a sprout to give it a place here.</p>
-                <button className="button primary" onClick={() => setTab('garden')}>
-                  Back to the garden <Icon name="arrow" size={16} />
-                </button>
-              </div>
-            )}
+          <section aria-label="Discoveries">
+            <div className="discovery-filters" role="group" aria-label="Discovery filter">
+              <button
+                className="button secondary"
+                aria-pressed={collectionView === 'kept'}
+                onClick={() => setCollectionView('kept')}
+              >
+                Kept ideas ({kept})
+              </button>
+              <button
+                className="button secondary"
+                aria-pressed={collectionView === 'all'}
+                onClick={() => setCollectionView('all')}
+              >
+                All discoveries ({garden.sprouts.length})
+              </button>
+            </div>
+            <div className="collection-grid">
+              {collection.length ? (
+                collection.map((s) => (
+                  <SproutCard
+                    key={s.id}
+                    sprout={s}
+                    disabled={locked || busy || saving}
+                    onKeep={() =>
+                      void action(async () => {
+                        await commit((g) => ({
+                          ...g,
+                          sprouts: g.sprouts.map((item) =>
+                            item.id === s.id ? { ...item, kept: !item.kept } : item,
+                          ),
+                        }));
+                      })
+                    }
+                    onCompost={() =>
+                      void action(async () => {
+                        await commit((g) => recompost(g, s.id, Date.now()));
+                      })
+                    }
+                    onExport={() => exportSprout(s)}
+                    onEdit={() => showEdit(s.id, true)}
+                  />
+                ))
+              ) : (
+                <div className="collection-empty">
+                  <Icon name="book" size={46} />
+                  <h2>Your herbarium of possibilities.</h2>
+                  <p>
+                    {collectionView === 'all'
+                      ? 'Every discovery stays here, even before you keep it.'
+                      : 'Tap Keep on a sprout to give it a place here.'}
+                  </p>
+                  <button className="button primary" onClick={() => setTab('garden')}>
+                    Back to the garden <Icon name="arrow" size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
           </section>
         )}
         <section className="how-strip">
@@ -1472,7 +1537,7 @@ export default function App() {
         <Modal
           title={sproutEdit ? 'Make this thought your own.' : 'A thought can change.'}
           onClose={() => {
-            setText('');
+            setEditText('');
             setDialog(null);
           }}
         >
@@ -1491,8 +1556,8 @@ export default function App() {
             <textarea
               aria-label={sproutEdit ? 'Your version' : 'Idea scrap'}
               rows={6}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
             />
           </label>
           <p className="small-print">

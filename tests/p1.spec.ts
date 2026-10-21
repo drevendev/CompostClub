@@ -35,7 +35,7 @@ async function prepare(page: Page, mode: string) {
   await expect(page.getByText('Connected: gemma3:1b')).toBeVisible();
   await page.getByRole('button', { name: 'Close dialog' }).click();
 }
-for (const mode of ['invalid', 'no_blend', 'repair_no_blend']) {
+for (const mode of ['invalid', 'no_blend', 'repair_no_blend', 'transport']) {
   test(`transport diagnostic: ${mode} responses survive reload and export without spending a slot`, async ({
     page,
   }) => {
@@ -46,22 +46,55 @@ for (const mode of ['invalid', 'no_blend', 'repair_no_blend']) {
     ).toBeVisible();
     const before = await record(page);
     const run = before.generations![0]!;
-    expect(run.responses).toHaveLength(mode === 'no_blend' ? 1 : 2);
-    expect(run.status).toBe(mode === 'invalid' ? 'failed' : 'no_blend');
-    if (mode !== 'no_blend') expect(run.responses[0]!.raw).toBe('TEST-ONLY invalid primary 🌱\r\n');
+    expect(run.responses).toHaveLength(mode === 'transport' ? 0 : mode === 'no_blend' ? 1 : 2);
+    expect(run.status).toBe(
+      mode === 'transport' ? 'transport_error' : mode === 'invalid' ? 'failed' : 'no_blend',
+    );
+    if (['invalid', 'repair_no_blend'].includes(mode))
+      expect(run.responses[0]!.raw).toBe('TEST-ONLY invalid primary 🌱\r\n');
     expect(before.readySlots).toBe(1);
     await page.reload();
     await expect(page.locator('.count-badge')).toHaveText('2');
     expect((await record(page)).generations).toEqual(before.generations);
+    await expect(
+      page.getByRole('button', { name: 'Retry this pairing', exact: true }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Backup and export' }).click();
     await page.getByRole('button', { name: 'Inspect inference history' }).click();
     await page.getByRole('dialog').locator('summary').click();
-    await expect(page.getByRole('dialog').locator('pre').first()).toContainText('TEST-ONLY');
+    if (run.responses.length)
+      await expect(page.getByRole('dialog').locator('pre').first()).toContainText('TEST-ONLY');
     const event = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download inference history', exact: true }).click();
     const file = await (await event).path();
     const exported = JSON.parse(await readFile(file!, 'utf8')) as { generations: unknown[] };
     expect(exported.generations).toEqual(before.generations);
+    await page.getByRole('button', { name: 'Close dialog' }).click();
+    await page.request.get('http://127.0.0.1:4193/control/no_blend');
+    await page.getByRole('button', { name: 'Choose your local AI', exact: true }).click();
+    await page.getByRole('button', { name: 'Connect local Gemma', exact: true }).click();
+    await expect(page.getByText('Connected: gemma3:1b')).toBeVisible();
+    await page.getByRole('button', { name: 'Close dialog' }).click();
+    await page.getByRole('button', { name: 'Retry this pairing', exact: true }).click();
+    await expect
+      .poll(async () => (await record(page)).generations?.at(-1)?.status)
+      .toBe('no_blend');
+    const retried = await record(page);
+    expect(retried.generations).toHaveLength(2);
+    expect(retried.generations![0]).toEqual(run);
+    expect(retried.generations![1]!.parents).toEqual(run.parents);
+    expect(retried.generations![1]!.id).not.toBe(run.id);
+    expect(retried.readySlots).toBe(1);
+    await page.getByRole('button', { name: 'Edit scrap 1', exact: true }).click();
+    await page
+      .getByRole('dialog')
+      .getByLabel('Idea scrap', { exact: true })
+      .fill('A revised fictional source with a different mechanism.');
+    await page.getByRole('button', { name: 'Save edit', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Retry this pairing', exact: true })).toHaveCount(
+      0,
+    );
+    expect((await record(page)).readySlots).toBe(1);
   });
 }
 test('transport diagnostic: cancelling repair retains the original primary response', async ({
@@ -73,10 +106,22 @@ test('transport diagnostic: cancelling repair retains the original primary respo
   await page.getByRole('button', { name: 'Cancel · keep my slot', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Retry this pairing', exact: true })).toBeVisible();
   await page.reload();
+  await expect(page.getByRole('button', { name: 'Retry this pairing', exact: true })).toBeVisible();
   const garden = await record(page);
   expect(garden.readySlots).toBe(1);
   expect(garden.generations![0]!.status).toBe('cancelled');
   expect(garden.generations![0]!.responses[0]!.raw).toBe('TEST-ONLY invalid primary 🌱\r\n');
+  await page.request.get('http://127.0.0.1:4193/control/no_blend');
+  await page.getByRole('button', { name: 'Choose your local AI', exact: true }).click();
+  await page.getByRole('button', { name: 'Connect local Gemma', exact: true }).click();
+  await expect(page.getByText('Connected: gemma3:1b')).toBeVisible();
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+  await page.getByRole('button', { name: 'Retry this pairing', exact: true }).click();
+  await expect.poll(async () => (await record(page)).generations?.at(-1)?.status).toBe('no_blend');
+  const retried = await record(page);
+  expect(retried.generations).toHaveLength(2);
+  expect(retried.generations![0]).toEqual(garden.generations![0]);
+  expect(retried.readySlots).toBe(1);
 });
 test('transport diagnostic: oversized raw output is recoverable separately after reload', async ({
   page,
