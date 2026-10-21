@@ -26,7 +26,7 @@ test('real local model: add → blend → keep → reload → export and restore
     .getByLabel('Your idea scrap', { exact: true })
     .fill('A robot turns lost kitchen words into labels for new plants.');
   await page.getByRole('button', { name: 'Toss it in', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '1 pairing is ready' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '1 slot is ready' })).toBeVisible();
   await page.getByRole('button', { name: 'Choose your local AI', exact: true }).click();
   await page.getByRole('button', { name: 'Connect local Gemma', exact: true }).click();
   await expect(page.getByText('Connected: gemma3:1b')).toBeVisible();
@@ -54,7 +54,9 @@ test('real local model: add → blend → keep → reload → export and restore
   const title = await page.locator('.sprout-card h3').innerText();
   await page.reload();
   await expect(page.locator('.sprout-card h3')).toHaveText(title);
-  await expect(page.getByRole('heading', { name: 'Let time do its thing' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Your pile needs a new ingredient' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Backup and export' }).click();
   const jsonDownload = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Save JSON backup', exact: true }).click();
@@ -92,7 +94,7 @@ test('sample garden replays only verified pairs; edit/recompost/clock/reload wor
   await page.getByRole('button', { name: 'Compost again', exact: true }).click();
   await expect(page.locator('.count-badge')).toHaveText('7');
   await page.getByRole('button', { name: 'Demo clock: +15 min', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '1 pairing is ready' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '1 slot is ready' })).toBeVisible();
   await page.reload();
   await expect(page.locator('.count-badge')).toHaveText('7');
   await page.getByRole('button', { name: 'Edit scrap 1', exact: true }).click();

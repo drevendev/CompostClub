@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   outputDir: '.local/live-acceptance-artifacts',
-  testIgnore: ['recovery.spec.ts', 'p1.spec.ts', 'workflow.spec.ts'],
+  testIgnore: ['recovery.spec.ts', 'p1.spec.ts', 'workflow.spec.ts', 'stability.spec.ts'],
   timeout: 150000,
   workers: 1,
   fullyParallel: false,

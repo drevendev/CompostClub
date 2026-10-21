@@ -4,6 +4,13 @@ Changes describe the source tree. A version heading does not imply an npm packag
 
 ## Unreleased
 
+- Retain up to 100 exact raw/text revisions per source, including edits before generation; inspect/download history, include it in backups and Markdown, disclose missing legacy revisions and count saved revisions in cascade deletion previews.
+- Keep keyboard skip focus independent from the garden URL and restore garden selection during browser back/forward navigation.
+- Distinguish ready slots from unused combinations, disable exhausted growth and offer another ingredient or source edit at the 200-source cap.
+- Index attempted keys once and precompute deterministic pair ranks; bound retry-choice rendering to 50 options per page at supported capacity.
+- Reserve a pairing-history record before a new request; at the record cap, preserve existing retries and offer explicit cascade review with pairing-record counts.
+- Add source-history, capacity, navigation and idle-slot regressions, including original-preserving rejection at byte/count limits.
+
 - Derive explicit retry choices from saved failed pairs after reload, retaining exact source revisions and previous transcripts, including legacy backups without invented history.
 - Keep the add-scrap draft independent of scrap/sprout edit buffers across dismissal, validation failures and successful edits.
 - Add an all-discoveries filter alongside kept ideas, so earlier unkept results remain inspectable, editable, exportable and recompostable.

@@ -62,7 +62,7 @@ test('a simulated transport failure keeps the slot; an explicit retry uses the r
   });
   await page.getByRole('button', { name: 'Let it ferment', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Test-only transport failure');
-  await expect(page.getByRole('heading', { name: '1 pairing is ready' })).toBeVisible();
+  await expect(page.getByLabel('1 of 3 slots ready', { exact: true })).toBeVisible();
   expect(await page.locator('.sprout-card').count()).toBe(0);
   await page.getByRole('button', { name: 'Retry this pairing', exact: true }).click();
   await expect(page.locator('.sprout-card')).toBeVisible({ timeout: 125000 });

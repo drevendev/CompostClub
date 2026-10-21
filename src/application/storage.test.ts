@@ -5,6 +5,7 @@ import { GardenStorage } from './storage';
 import {
   createGarden,
   addScrap,
+  editScrap,
   beginRequest,
   completeRequest,
   pairKey,
@@ -79,6 +80,24 @@ it('rejects oversized original text before replacing a valid IndexedDB save', as
   bad.scraps[0]!.raw += ' '.repeat(MAX_BACKUP_BYTES);
   await expect(store.save(bad, saved.revision)).rejects.toThrow('8 KiB');
   expect(await store.load('personal')).toEqual(saved);
+});
+it('rejects an edit whose retained source history exceeds the backup budget without replacing the original', async () => {
+  const store = new GardenStorage();
+  await store.open();
+  const g = addScrap(
+    createGarden('personal', 100),
+    'An original fictional café.\r\n' + ' '.repeat(7000),
+    100,
+  );
+  const overhead = Buffer.byteLength(
+    JSON.stringify({ ...g, seed: '', revision: Number.MAX_SAFE_INTEGER }, null, 2),
+  );
+  g.seed = 'x'.repeat(MAX_BACKUP_BYTES - overhead - 32);
+  const saved = await store.save(g, 0);
+  const edited = editScrap(saved, saved.scraps[0]!.id, 'A revised fictional café.');
+  await expect(store.save(edited, saved.revision)).rejects.toThrow('2 MiB');
+  expect(await store.load('personal')).toEqual(saved);
+  expect((await store.load('personal')).scraps[0]!.raw).toBe(g.scraps[0]!.raw);
 });
 it('roundtrips the largest allowed pretty backup across a revision digit boundary', async () => {
   const store = new GardenStorage();

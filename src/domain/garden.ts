@@ -18,9 +18,16 @@ export const INTERVAL = 900_000;
 export const MAX_SCRAPS = 200;
 export const MAX_SPROUTS = 1000;
 export const MAX_ATTEMPTS = 19900;
+export const MAX_SOURCE_REVISIONS = 100;
 export const MAX_BACKUP_BYTES = 2 * 1024 * 1024;
 export type GardenKind = 'personal' | 'sample';
 export type Backend = 'browser' | 'ollama' | 'replay';
+export interface SourceRevision {
+  raw: string;
+  text: string;
+  revision: number;
+  origin: 'user' | 'fixture' | 'sprout';
+}
 export interface Scrap {
   id: string;
   raw: string;
@@ -29,6 +36,7 @@ export interface Scrap {
   createdAt: number;
   origin: 'user' | 'fixture' | 'sprout';
   parentSproutId?: string;
+  history?: SourceRevision[];
 }
 export interface Snapshot {
   id: string;
@@ -122,7 +130,16 @@ export function addScrap(
       ...garden,
       scraps: [
         ...garden.scraps,
-        { id: uid(), raw, text, revision: 1, createdAt: now, origin: 'user', ...extra },
+        {
+          id: uid(),
+          raw,
+          text,
+          revision: 1,
+          createdAt: now,
+          origin: 'user',
+          history: [],
+          ...extra,
+        },
       ],
     },
     now,
@@ -134,12 +151,27 @@ export function editScrap(g: Garden, id: string, raw: string): Garden {
   const text = validateScrap(raw);
   if (g.scraps.some((s) => s.id !== id && s.text === text))
     throw new Error('That thought is already in your pile.');
+  const scrap = g.scraps.find((s) => s.id === id);
+  if (!scrap) throw new Error('This source no longer exists.');
+  if (scrap.raw === raw) return g;
+  if ((scrap.history?.length ?? 0) >= MAX_SOURCE_REVISIONS - 1)
+    throw new Error(
+      'This source holds 100 saved text revisions. Export its history before removing the source; nothing was trimmed or changed.',
+    );
   return {
     ...g,
     scraps: g.scraps.map((s) =>
-      s.id === id ? { ...s, raw, text, revision: s.revision + 1, origin: 'user' } : s,
+      s.id === id
+        ? { ...s, raw, text, revision: s.revision + 1, origin: 'user', history: sourceRevisions(s) }
+        : s,
     ),
   };
+}
+export function sourceRevisions(s: Scrap): SourceRevision[] {
+  return [
+    ...(s.history ?? []),
+    { raw: s.raw, text: s.text, revision: s.revision, origin: s.origin },
+  ];
 }
 export function pairKey(parents: [Snapshot, Snapshot]): string {
   return parents
@@ -156,7 +188,8 @@ export function hash(text: string): number {
   return h >>> 0;
 }
 export function availablePairs(g: Garden): [Snapshot, Snapshot][] {
-  const pairs: [Snapshot, Snapshot][] = [];
+  const attempted = new Set(g.attempts.map((attempt) => attempt.key));
+  const pairs: { parents: [Snapshot, Snapshot]; key: string; rank: number }[] = [];
   for (let i = 0; i < g.scraps.length; i++)
     for (let j = i + 1; j < g.scraps.length; j++) {
       const a = g.scraps[i],
@@ -166,12 +199,12 @@ export function availablePairs(g: Garden): [Snapshot, Snapshot][] {
         { id: a.id, text: a.text, revision: a.revision },
         { id: b.id, text: b.text, revision: b.revision },
       ];
-      if (!g.attempts.some((p) => p.key === pairKey(pair))) pairs.push(pair);
+      const key = pairKey(pair);
+      if (!attempted.has(key)) pairs.push({ parents: pair, key, rank: hash(g.seed + key) });
     }
-  return pairs.sort(
-    (a, b) =>
-      hash(g.seed + pairKey(a)) - hash(g.seed + pairKey(b)) || pairKey(a).localeCompare(pairKey(b)),
-  );
+  return pairs
+    .sort((a, b) => a.rank - b.rank || a.key.localeCompare(b.key))
+    .map((pair) => pair.parents);
 }
 export function retryablePairs(g: Garden): [Snapshot, Snapshot][] {
   const failed = new Map(g.attempts.filter((a) => a.status === 'failed').map((a) => [a.key, a]));
@@ -240,6 +273,10 @@ export function beginRequest(
     throw new Error('The selected sources have changed.');
   if (g.attempts.some((a) => a.key === pairKey(parents) && a.status === 'success'))
     throw new Error('That pairing has already grown.');
+  if (g.attempts.length >= MAX_ATTEMPTS && !g.attempts.some((a) => a.key === pairKey(parents)))
+    throw new Error(
+      'Pairing history holds 19,900 records. Export your garden, then review a source and its dependent history for removal before starting a new pair. Existing failed pairs can still be retried.',
+    );
   const request: Request = {
     id: uid(),
     key: pairKey(parents),
@@ -368,7 +405,13 @@ export function recompost(g: Garden, id: string, now: number): Garden {
 export function deletionSet(
   g: Garden,
   id: string,
-): { scraps: Set<string>; sprouts: Set<string>; generations: Set<string> } {
+): {
+  scraps: Set<string>;
+  sprouts: Set<string>;
+  generations: Set<string>;
+  revisions: number;
+  pairings: number;
+} {
   const scraps = new Set([id]),
     sprouts = new Set<string>();
   let changed = true;
@@ -388,7 +431,13 @@ export function deletionSet(
   const generations = new Set(
     (g.generations ?? []).filter((r) => r.parents.some((p) => scraps.has(p.id))).map((r) => r.id),
   );
-  return { scraps, sprouts, generations };
+  const revisions = g.scraps
+    .filter((s) => scraps.has(s.id))
+    .reduce((count, s) => count + 1 + (s.history?.length ?? 0), 0);
+  const pairings = g.attempts.filter((a) =>
+    a.key.split('|').some((p) => scraps.has(p.split('@')[0] ?? '')),
+  ).length;
+  return { scraps, sprouts, generations, revisions, pairings };
 }
 export function removeScrap(g: Garden, id: string): Garden {
   if (g.pending) throw new Error('Cancel the current blend before removing a source.');
@@ -412,8 +461,19 @@ export function exportMarkdown(g: Garden): string {
         return `## ${content.title}\n\n${content.concept}\n\n${s.edited ? 'Edited by you. Original model result preserved in JSON backup.\n\n' : ''}Grew from:\n\n- A: ${s.parents[0].text}\n- B: ${s.parents[1].text}\n\nExact contributions: “${s.output.fromA}” + “${s.output.fromB}”\n\nMode: ${s.backend === 'replay' ? 'Recorded demo — no live AI' : s.backend}. Model: ${s.model}, revision: ${s.modelRevision}. Prompt: ${s.promptVersion}. Request: ${s.id}.\n`;
       })
       .join('\n') +
-    `\n## Original scraps\n\n` +
+    `\n## Current scraps\n\n` +
     g.scraps.map((s) => `- ${s.raw}`).join('\n') +
+    `\n\n## Source revisions\n\n` +
+    g.scraps
+      .map(
+        (s) =>
+          `### ${s.id}\n\n${(s.history?.[0]?.revision ?? s.revision) > 1 ? 'Earlier revisions were not present in the imported legacy record.\n\n' : ''}${sourceRevisions(
+            s,
+          )
+            .map((r) => `Revision ${r.revision} · ${r.origin}\n${JSON.stringify(r.raw)}\n`)
+            .join('\n')}`,
+      )
+      .join('\n') +
     `\n\n## Inference history\n\n${(g.generations ?? []).map((r) => `${r.id} · ${r.status} · ${r.backend === 'replay' ? 'Recorded demo — no live AI' : r.backend}\nModel: ${r.model} @ ${r.modelRevision}; prompt: ${r.promptVersion}; language: ${r.language}\nA (revision ${r.parents[0].revision}): ${r.parents[0].text}\nB (revision ${r.parents[1].revision}): ${r.parents[1].text}\n${r.error ?? ''}\n${r.responses.map((s) => `${s.phase}: ${s.validationError ?? 'Structure valid; usefulness not certified'}\n${JSON.stringify(s.raw)}\n`).join('\n')}`).join('\n')}`
   );
 }
@@ -492,6 +552,24 @@ function validateGarden(data: unknown): Garden {
     )
       throw new Error('Malformed or duplicate scrap.');
     ids.add(s.id);
+    if (s.history !== undefined) {
+      if (!Array.isArray(s.history) || s.history.length >= MAX_SOURCE_REVISIONS)
+        throw new Error(
+          'A source may contain at most 100 saved text revisions, including the current text.',
+        );
+      for (const [i, r] of s.history.entries()) {
+        if (
+          !r ||
+          typeof r.raw !== 'string' ||
+          r.text !== validateScrap(r.raw) ||
+          !Number.isSafeInteger(r.revision) ||
+          r.revision < 1 ||
+          !['user', 'fixture', 'sprout'].includes(r.origin) ||
+          r.revision + 1 !== (s.history[i + 1]?.revision ?? s.revision)
+        )
+          throw new Error('Malformed or out-of-order source revision history.');
+      }
+    }
   }
   const resultIds = new Set<string>();
   for (const s of g.sprouts) {
