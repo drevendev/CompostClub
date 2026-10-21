@@ -1,0 +1,247 @@
+{
+  "date": "2026-10-21T07:52:04.683Z",
+  "scope": "live",
+  "stats": {
+    "startTime": "2026-10-21T07:51:20.154Z",
+    "duration": 21687.368,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "loopback bridge rejects foreign origins, missing tokens and oversized requests",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 249
+        }
+      ]
+    },
+    {
+      "title": "a simulated transport failure keeps the slot; an explicit retry uses the real model",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 4208
+        }
+      ]
+    },
+    {
+      "title": "real local model: add → blend → keep → reload → export and restore",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 4798
+        }
+      ]
+    },
+    {
+      "title": "sample garden replays only verified pairs; edit/recompost/clock/reload work",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2673
+        }
+      ]
+    },
+    {
+      "title": "mobile, keyboard, reduced motion and large text fit the viewport",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 853
+        }
+      ]
+    },
+    {
+      "title": "a second tab is read-only and a corrupt import cannot overwrite a garden",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 911
+        }
+      ]
+    },
+    {
+      "title": "offline HTML runs from file with network blocked, denied storage and a renamed copy",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7310
+        }
+      ]
+    }
+  ],
+  "runtime": {
+    "browser": {
+      "name": "chromium",
+      "version": "156.0.8078.4"
+    },
+    "platform": "win32",
+    "node": "v24.19.0"
+  },
+  "verifiedIdentity": {
+    "commit": "acb0d69fc4cd66bc839fbfb2de456c0061f9e28c",
+    "dirty": true,
+    "sourceSha256": "0962a41b1375ed5fa6914272bc317a0f8f784cf31043cc7c65d99733538a6c5d",
+    "buildSha256": "e950b7d7ddb7f4ed5b94abcda386da19f7c6b0d9da912e27770c15b683657c9e",
+    "standaloneSha256": "3925e8634886a5c1724cb840d0bd049b2192e444cfab82232a843e6e8fa8ca34",
+    "source": {
+      "fixtures/public/eval-cases.json": "923c76837b1f05ac331f60355c1e8b05633b3a8f64798826f70f83e7075b88f4",
+      "fixtures/public/recordings.json": "09f552c5484a16d7bc30d7524b2b1d032f8216c3ff6ab3e39ea5307f00652634",
+      "fixtures/public/scraps.json": "76730a6d22214f63d74616ebeb148e4086ddeffe8e0b848095966981453c0d47",
+      "package-lock.json": "7712f98b33d7698481e63577d07e5f9833c9ffa9a91ca9600ed115f07ff407ab",
+      "package.json": "f823e4ab977300a0f6982f55dc977cd2545dd77d555b82d95f27b96aa0aa68b0",
+      "playwright.config.ts": "cfe076e9e5cd9f1eace3f2d8db33622e6352b1375f1a22d95aec8e43add8a0f7",
+      "playwright.p1.config.ts": "55ed6a82c56843fe0e7ae8f63536fd1b23d8f04729d24759e69525bfc735993c",
+      "playwright.recovery.config.ts": "1cff487960ee74759325e9ceb737f7773ede1f4a118f89f09c9a6006d793bbeb",
+      "prompts/model-output.schema.json": "e2267d7d9f22d057c99504f9b1fa6204ac4310808c091722f0d30f539a6eaebd",
+      "prompts/README.md": "7c7406271af675b304c16a54dda2973b958d68d8aa968faf239e4b9fb2f38d19",
+      "prompts/splice-1.md": "f3c498c857b373793441fac7ee6390c9d18b4785df7a6a2a243602e5484650e3",
+      "public/ONNX-RUNTIME-LICENSE.txt": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+      "public/THIRD_PARTY_LICENSES.txt": "39aea3a2009f1856b2d208ede6f2b463387f60f8c486e8c893c710976e2f0536",
+      "scripts/acceptance-identity.ts": "db20b0eab507864895c7512b7ca531244667a14f36585ee8d26ca9b2bf28a8f9",
+      "scripts/docs-check.mjs": "70873298359ddec81279150979fedaf19d3c1f3d1b992af9f041db137b896d01",
+      "scripts/eval-browser.mjs": "2b25f98f480959ea89be337627cae7f4969f982a12900794e6400f074d5e530d",
+      "scripts/eval-local.ts": "8271cbcb2657c0efe33581e088a477856879d4aa4bb52ec266ddbcbed3691b30",
+      "scripts/licences.mjs": "6f54f40ed86ea977c280ed7dda23691b4fa97aab42117041bc6e473b75adca22",
+      "scripts/model-report.ts": "f21404f9f827850421dc71233f9f60bb3978728a3e52258043f1d85eec11941a",
+      "scripts/package-single.mjs": "dda0c59917256ea1bf5d78fefa45806b4a44d9cfc841cfad307ea11feed04219",
+      "scripts/pages-smoke.mjs": "17157ec5f8c17b58f00be2fdf65b0ff3f29d067f9fb4b3beeecf169038d3c17c",
+      "scripts/release.mjs": "24e8d8324c705f98ebf78802c2b6b386096c856c87be5c1c35159a6284e9a845",
+      "scripts/select-recordings.ts": "67e531afa7e9ccf9cb1952f73d035b1a6e74453578d688865c32e013ae97d8f9",
+      "scripts/verification-receipt.mjs": "1d466015f70194185c107450c5060d470d1543d3c8c364b84950d5dc35dc99d8",
+      "scripts/verification.ts": "bc892fef23e584209cc2686f27e496f9d8e0d11e7ab75a97d0c371c408ed9d8d",
+      "server/index.mjs": "526cb183c0fd90b20df4c89013e2006b5a47d292cf92755f04b581e378b966e3",
+      "src/App.tsx": "26993e1227588d5bfe76f57633fa306c284c01d0c69eb83c02d8d1bd47c05244",
+      "src/application/storage.test.ts": "0c630883ce153637f057eb2f765a5b1d1766c6e8c8700c4a9fa4f6a579e68798",
+      "src/application/storage.ts": "dbf18da8c3aa649b980e6807bed86f1bb019aaa114d7f87827552105a9621173",
+      "src/application/verification.test.ts": "c3513f43752d97fc173d2b01fc232f7bc11fd33e45cff4dcc574ea28ef8e48e2",
+      "src/domain/garden.test.ts": "168264fe6222af1912b0193029aaf1a2f069e9493d45e2aa198653f2632996fa",
+      "src/domain/garden.ts": "4751642772792951d1ba0ac262efea42fbc8b70ea7ba6d0ca43da7559f83f814",
+      "src/domain/generation.ts": "025a96cfb1abc32bdd71a768a403f27dcf23a711c5300d424a9b371a528285ec",
+      "src/env.d.ts": "cf5d5e55fe004ccd4cc6ce5e7be95f8d764e4b53c26b4f988fc23dc93ce6d0d3",
+      "src/Experiment.tsx": "e1b4ecca3ffd8fdb028c3e2529b35dad50860652c68366fbbc94d0a01588cb56",
+      "src/inference/browser.worker.ts": "539fde08c0acd1bd773c3545527258299dfbd1aca4e6a6f6a3abd208b98b5db1",
+      "src/inference/contract.ts": "095cae76515ae3763dfe1a880391100029912d85d9782b0e873a908c4a2ece33",
+      "src/inference/generate.test.ts": "ffde7ee9f3f47813861769bfb9a3469e5988d7193f338108695c413af038db59",
+      "src/inference/generate.ts": "e65cadd7c0ea6c887f97b4e57a85a9f30b2b600565355d456333f52271bf77b3",
+      "src/inference/models.ts": "db6dce5246b88751bc8b2aca12fa6a22364e6e71493f5a913e302d9b9afe6251",
+      "src/inference/provider.ts": "a21027ea3f86e09f83cc084d6b80c06e6576b428ece51d237a15aedc41cf3683",
+      "src/main.tsx": "b3e31492fb4bec933674150b739812b255cc1258800c1861fa0c33630d01027c",
+      "src/styles.css": "76584cdca2a4786b1c964189d43b736b60f537515a6261b52a8b79b4dcf862f0",
+      "src/ui/GardenScene.tsx": "10916eaf3d1c8ab0237c340fc51831361f40f55396c0298d1d5a0817f384857d",
+      "src/ui/Icons.tsx": "21665711c702dec31e83c31dc01786be476743cca6fe309af1a0bc5336d02135",
+      "src/ui/InferenceHistory.tsx": "f082b4033b35f75f995a24ddb744babdda094d5c366301370cc1720b0643db42",
+      "src/ui/Modal.tsx": "469b97d1c4191a9bea8bc9d30b96302ce309eeff43df78469c7bfe0912bab5f1",
+      "src/ui/Recovery.tsx": "ad69b57760bc9f714c630b3a9432f97ced083154bd3b1715947b20752c1e07b6",
+      "tests/acceptance.ts": "0996cb94b00f8e0e1d3068ab944efd9dda50b4245411f4b52ed13cc15cbe429d",
+      "tests/bridge.spec.ts": "5ae2b780e4f0d70afdb4f9d967373f1c98373ddf7458ade15ec065e629e338b8",
+      "tests/journey.spec.ts": "a5b995d93cc14addadbbb5cd74b3e2fb65b81fc5c04fb7bbe984bc728b6a2dc5",
+      "tests/p1.spec.ts": "37c1186ea42b261fa627699f1c652691a1f419aceff3257be79f2e1b0160d149",
+      "tests/recovery.spec.ts": "1aa42e55f0e712a5184e232a8a1e33a163cb8194cda6b1f2ebc9d8ba955e49fb",
+      "tests/serve-p1.mjs": "bf234c1c1cab6f56619c92e9966f3dc73c7b695ff62739ee27c2f915e837fb7d",
+      "tsconfig.json": "26d1171f9837e84c6258c1ea9bf9cd7da0a627bf7a22c88e2a04ced71720c392",
+      "vite.config.ts": "0e9dac54fd7e446598fa135d604e89129ac569e069d1c9b5f50ed2ef03e4178e"
+    },
+    "build": {
+      "dist/assets/browser.worker-CzBbr6Ae.js": "7f2eb6c1fdaa84b9bfa8db21187d1ad7473c4fbd3ef601ce86d35683cb97f65d",
+      "dist/assets/index-0cOOszlw.js": "9937535fec1b15df0b5fe5e7c08493e3d4a27559107a91a6eed395a7debfd2fa",
+      "dist/assets/index-BtWBe9Ns.css": "84adfc9ef40f4bd19cabc26d4a3af4fc82abc57ad8e33f3c52e83892eac41447",
+      "dist/assets/ort-wasm-simd-threaded.asyncify-CxOG5pUO.wasm": "49871f5a4409519797e127440868a6d1923339d9185907f301a5b2a1d90af082",
+      "dist/index.html": "ac854d2d56084f6f1f95069a78027ac1bcf909e3a1cfddfabcc756200d78c864",
+      "dist/ONNX-RUNTIME-LICENSE.txt": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+      "dist/THIRD_PARTY_LICENSES.txt": "39aea3a2009f1856b2d208ede6f2b463387f60f8c486e8c893c710976e2f0536",
+      "release/compost-club-preview.html": "3925e8634886a5c1724cb840d0bd049b2192e444cfab82232a843e6e8fa8ca34"
+    }
+  },
+  "unitTests": 63,
+  "liveInference": {
+    "status": "verified-from-run-attachments",
+    "journeys": 2,
+    "evidence": [
+      {
+        "test": "a simulated transport failure keeps the slot; an explicit retry uses the real model",
+        "generation": {
+          "id": "025012cb-3d98-49bc-8d1d-b32dc3456c70",
+          "key": "18e08667-a08d-4b11-9f7c-8f91f7b4122a@1|bd066778-4b1c-4103-8c2f-6215fa5eaed4@1",
+          "parents": [
+            {
+              "id": "bd066778-4b1c-4103-8c2f-6215fa5eaed4",
+              "text": "A tiny library lends pocket rainstorms to gardeners.",
+              "revision": 1
+            },
+            {
+              "id": "18e08667-a08d-4b11-9f7c-8f91f7b4122a",
+              "text": "A robot turns lost kitchen words into funny recipe names.",
+              "revision": 1
+            }
+          ],
+          "backend": "ollama",
+          "model": "gemma3:1b",
+          "modelRevision": "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
+          "language": "en",
+          "promptVersion": "splice-2",
+          "createdAt": 1792569081671,
+          "status": "success",
+          "responses": [
+            {
+              "phase": "primary",
+              "raw": "{\"outcome\":\"sprout\",\"title\":\"Rainy Recipe Remix\",\"concept\":\"A tiny library delivers pockets of rain to gardeners, sparking hilarious recipe creations from lost kitchen words.\",\"fromA\":\"A tiny library lends pocket rainstorms to gardeners.\", \"fromB\":\"A robot turns lost kitchen words into funny recipe names.\"}",
+              "validationError": null
+            }
+          ],
+          "error": null
+        },
+        "rawSha256": "00cf1c56a666c67a5bf6a60d45872f48e4c96ab9b1207c103e54267d7e29d1b1",
+        "source": "real-loopback-ollama"
+      },
+      {
+        "test": "real local model: add → blend → keep → reload → export and restore",
+        "generation": {
+          "id": "4ef807ae-935c-4f8b-bb8f-d2cd4908e135",
+          "key": "27bf05ff-ed40-438b-845d-a2f3848549d4@1|941c30cf-bc3c-4b5d-aa6a-92ac9bd09904@1",
+          "parents": [
+            {
+              "id": "941c30cf-bc3c-4b5d-aa6a-92ac9bd09904",
+              "text": "A tiny library lends pocket weather to people taking evening walks.",
+              "revision": 1
+            },
+            {
+              "id": "27bf05ff-ed40-438b-845d-a2f3848549d4",
+              "text": "A robot turns lost kitchen words into labels for new plants.",
+              "revision": 1
+            }
+          ],
+          "backend": "ollama",
+          "model": "gemma3:1b",
+          "modelRevision": "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
+          "language": "en",
+          "promptVersion": "splice-2",
+          "createdAt": 1792569086020,
+          "status": "success",
+          "responses": [
+            {
+              "phase": "primary",
+              "raw": "{\"outcome\":\"sprout\",\"title\":\"Lost Words Bloom\",\"concept\":\"A tiny library dispenses gentle, personalized weather, encouraging mindful exploration through plant identification.\",\"fromA\":\"A tiny library lends pocket weather to people taking evening walks.\",\"fromB\":\"A robot turns lost kitchen words into labels for new plants.\"}",
+              "validationError": null
+            }
+          ],
+          "error": null
+        },
+        "rawSha256": "e937b666dc02bd5c70a5668acaf55ee1a751492d8f767cb6e91b0b7d1d3f5a3b",
+        "source": "real-loopback-ollama"
+      }
+    ]
+  },
+  "disclosure": "Test-only transport diagnostics are not model evidence. Structural validity does not certify creative usefulness. Missing metadata is unverified."
+}

@@ -5,6 +5,7 @@ import {
   type Garden,
   type GardenKind,
 } from '../domain/garden';
+import type { Generation } from '../domain/generation';
 
 function matchesOriginal(value: unknown, original: string): boolean {
   try {
@@ -18,6 +19,8 @@ export class GardenStorage {
   private db: IDBDatabase | undefined;
   private memory = new Map<GardenKind, Garden>();
   private recovery = new Map<GardenKind, unknown>();
+  private beforeRestore = new Map<GardenKind, Garden>();
+  private unfiled = new Map<GardenKind, Generation>();
   persistent = false;
   warning = '';
   async open(): Promise<void> {
@@ -38,9 +41,13 @@ export class GardenStorage {
   private async read(key: string): Promise<unknown> {
     if (!this.db)
       return structuredClone(
-        key.startsWith('recovery:')
-          ? this.recovery.get(key.slice(9) as GardenKind)
-          : this.memory.get(key as GardenKind),
+        key.startsWith('before-restore:')
+          ? this.beforeRestore.get(key.slice(15) as GardenKind)
+          : key.startsWith('inference:')
+            ? this.unfiled.get(key.slice(10) as GardenKind)
+            : key.startsWith('recovery:')
+              ? this.recovery.get(key.slice(9) as GardenKind)
+              : this.memory.get(key as GardenKind),
       );
     return new Promise<unknown>((resolve, reject) => {
       const r = this.db?.transaction('gardens', 'readonly').objectStore('gardens').get(key);
@@ -57,6 +64,11 @@ export class GardenStorage {
   async recoveryJSON(kind: GardenKind, previous = false): Promise<string> {
     const raw = await this.read(previous ? `recovery:${kind}` : kind);
     if (raw === undefined) throw new Error('There is no saved recovery record to download.');
+    return JSON.stringify(raw, null, 2);
+  }
+  async beforeRestoreJSON(kind: GardenKind): Promise<string> {
+    const raw = await this.read(`before-restore:${kind}`);
+    if (raw === undefined) throw new Error('There is no saved before-restore copy.');
     return JSON.stringify(raw, null, 2);
   }
   async restoreFromRecovery(garden: Garden, original: string): Promise<Garden> {
@@ -113,14 +125,81 @@ export class GardenStorage {
     });
     return next;
   }
-  async save(garden: Garden, expected: number, replace = false): Promise<Garden> {
+  async inferenceRecovery(kind: GardenKind): Promise<Generation | undefined> {
+    return (await this.read(`inference:${kind}`)) as Generation | undefined;
+  }
+  async retainInference(kind: GardenKind, run: Generation): Promise<void> {
+    const current = await this.inferenceRecovery(kind);
+    if (current && current.id !== run.id)
+      throw new Error('Download the existing inference recovery copy first.');
+    if (!this.db) {
+      this.unfiled.set(kind, structuredClone(run));
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const tx = this.db!.transaction('gardens', 'readwrite');
+      const store = tx.objectStore('gardens');
+      const get = store.get(`inference:${kind}`);
+      let conflict = false;
+      get.onsuccess = () => {
+        const previous = get.result as Generation | undefined;
+        if (previous && previous.id !== run.id) {
+          conflict = true;
+          tx.abort();
+          return;
+        }
+        store.put(run, `inference:${kind}`);
+      };
+      tx.oncomplete = () => resolve();
+      tx.onabort = () =>
+        reject(
+          new Error(
+            conflict
+              ? 'An inference recovery copy already exists.'
+              : 'Could not retain inference evidence. Download it before closing.',
+          ),
+        );
+      tx.onerror = () => reject(tx.error ?? new Error('Could not retain inference evidence.'));
+    });
+  }
+  async discardInference(kind: GardenKind, original: Generation): Promise<void> {
+    if (!this.db) {
+      if (!matchesOriginal(this.unfiled.get(kind), JSON.stringify(original, null, 2)))
+        throw new Error('The recovery copy changed. Reload first.');
+      this.unfiled.delete(kind);
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const tx = this.db!.transaction('gardens', 'readwrite'),
+        store = tx.objectStore('gardens');
+      const get = store.get(`inference:${kind}`);
+      get.onsuccess = () => {
+        if (!matchesOriginal(get.result, JSON.stringify(original, null, 2))) {
+          tx.abort();
+          return;
+        }
+        store.delete(`inference:${kind}`);
+      };
+      tx.oncomplete = () => resolve();
+      tx.onabort = () => reject(new Error('The recovery copy changed. Reload before removing it.'));
+      tx.onerror = () => reject(tx.error ?? new Error('Could not remove the recovery copy.'));
+    });
+  }
+  async save(garden: Garden, expected: number): Promise<Garden> {
+    return this.write(garden, expected, false);
+  }
+  async restore(garden: Garden, expected: number): Promise<Garden> {
+    return this.write({ ...garden, pending: null }, expected, true);
+  }
+  private async write(garden: Garden, expected: number, keepPrevious: boolean): Promise<Garden> {
     const next = { ...garden, revision: expected + 1 };
     // Validate the exact revision and pretty-printed backup before any write.
     serializeGarden(next);
     if (!this.db) {
       const current = this.memory.get(garden.kind);
-      if (current && current.revision !== expected && !replace)
+      if ((current?.revision ?? 0) !== expected)
         throw new Error('This garden changed in another tab. Reload before continuing.');
+      if (keepPrevious && current) this.beforeRestore.set(garden.kind, structuredClone(current));
       this.memory.set(next.kind, structuredClone(next));
       return next;
     }
@@ -132,11 +211,12 @@ export class GardenStorage {
       let conflict = false;
       r.onsuccess = () => {
         const current = r.result as Garden | undefined;
-        if (current && current.revision !== expected && !replace) {
+        if ((current?.revision ?? 0) !== expected) {
           conflict = true;
           tx.abort();
           return;
         }
+        if (keepPrevious && current) store.put(current, `before-restore:${garden.kind}`);
         store.put(next, garden.kind);
       };
       tx.oncomplete = () => resolve();

@@ -12,6 +12,7 @@ import {
   INTERVAL,
   MAX_BACKUP_BYTES,
   reconcile,
+  recordResponse,
   recompost,
   removeScrap,
   serializeGarden,
@@ -37,10 +38,21 @@ import { GardenScene } from './ui/GardenScene';
 import { Icon } from './ui/Icons';
 import { Modal } from './ui/Modal';
 import { Recovery } from './ui/Recovery';
+import { InferenceHistory } from './ui/InferenceHistory';
+import type { Generation } from './domain/generation';
 import './styles.css';
 import licenceTexts from '../public/THIRD_PARTY_LICENSES.txt?raw';
 
-type Dialog = 'about' | 'engine' | 'backup' | 'edit' | 'delete' | 'import' | null;
+type Dialog =
+  | 'about'
+  | 'engine'
+  | 'backup'
+  | 'edit'
+  | 'delete'
+  | 'import'
+  | 'history'
+  | 'discard-evidence'
+  | null;
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 function download(name: string, content: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type })),
@@ -83,6 +95,9 @@ export default function App() {
   const [pendingImport, setPendingImport] = useState<Garden | null>(null),
     [welcome, setWelcome] = useState(true);
   const [hasRecoveryCopy, setHasRecoveryCopy] = useState(false);
+  const [hasRestoreCopy, setHasRestoreCopy] = useState(false);
+  const [inferenceRecovery, setInferenceRecovery] = useState<Generation | null>(null);
+  const [importRevision, setImportRevision] = useState(0);
   const controller = useRef<AbortController | null>(null),
     serial = useRef(false),
     inputRef = useRef<HTMLTextAreaElement>(null);
@@ -112,6 +127,20 @@ export default function App() {
       browserAI.cancel();
     };
   }, [setCurrent]);
+  useEffect(() => {
+    let cancelled = false;
+    void storage
+      .inferenceRecovery(kind)
+      .then((run) => {
+        if (!cancelled) setInferenceRecovery(run ?? null);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(errorText(e));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [kind, garden?.id]);
   useEffect(() => {
     if (!navigator.locks) {
       setStorageWarning(
@@ -144,6 +173,15 @@ export default function App() {
     if (dialog !== 'backup') return;
     let cancelled = false;
     setHasRecoveryCopy(false);
+    setHasRestoreCopy(false);
+    void storage.beforeRestoreJSON(kind).then(
+      () => {
+        if (!cancelled) setHasRestoreCopy(true);
+      },
+      () => {
+        if (!cancelled) setHasRestoreCopy(false);
+      },
+    );
     void storage.recoveryJSON(kind, true).then(
       () => {
         if (!cancelled) setHasRecoveryCopy(true);
@@ -157,7 +195,7 @@ export default function App() {
     };
   }, [dialog, kind]);
   const commit = useCallback(
-    async (fn: (g: Garden) => Garden, replace = false): Promise<Garden> => {
+    async (fn: (g: Garden) => Garden, restoreRevision?: number): Promise<Garden> => {
       if (serial.current)
         throw new Error('Your previous change is still saving. Please try again.');
       const current = ref.current;
@@ -166,7 +204,10 @@ export default function App() {
       setSaving(true);
       try {
         const next = fn(current);
-        const saved = await storage.save(next, current.revision, replace);
+        const saved =
+          restoreRevision === undefined
+            ? await storage.save(next, current.revision)
+            : await storage.restore(next, restoreRevision);
         setCurrent(saved);
         return saved;
       } finally {
@@ -258,6 +299,10 @@ export default function App() {
     try {
       const current = ref.current;
       if (!current) return;
+      if (inferenceRecovery || (await storage.inferenceRecovery(current.kind)))
+        throw new Error(
+          'An inference recovery copy needs attention. Open Backup and export before growing again.',
+        );
       const mode = current.kind === 'sample' ? 'replay' : backend;
       if (__OFFLINE__ && mode !== 'replay')
         throw new Error(
@@ -312,12 +357,37 @@ export default function App() {
       if (!request) throw new Error('Could not start the pairing.');
       requestId = request.id;
       activeRequest = request;
+      const checkpoint = async (raw: string) => {
+        const current = ref.current;
+        if (!current) throw new Error('The garden closed before saving the response.');
+        const next = recordResponse(current, request.id, raw);
+        try {
+          await commit(() => next);
+        } catch (e) {
+          const run = next.generations!.find((r) => r.id === request.id)!;
+          const recovery: Generation = { ...run, status: 'failed', error: errorText(e) };
+          setInferenceRecovery(recovery);
+          try {
+            await storage.retainInference(current.kind, recovery);
+          } catch {
+            throw new Error(
+              'Evidence could not be saved. Download the inference recovery copy from Backup and export before closing this page.',
+            );
+          }
+          throw new Error(
+            'The response is retained in a separate inference recovery copy. Open Backup and export. ' +
+              errorText(e),
+            { cause: e },
+          );
+        }
+      };
       const raw =
         mode === 'replay'
           ? replay(request)
           : mode === 'browser'
-            ? await browserAI.generate(request, abort.signal)
-            : await ollamaGenerate(request, local?.token ?? '', abort.signal);
+            ? await browserAI.generate(request, abort.signal, checkpoint)
+            : await ollamaGenerate(request, local?.token ?? '', abort.signal, checkpoint);
+      if (mode === 'replay') await checkpoint(raw);
       if (abort.signal.aborted) throw new Error('Cancelled. Your pairing slot is still here.');
       await commit((g) => completeRequest(g, request.id, raw, Date.now()));
       setFailedRequest(null);
@@ -330,7 +400,7 @@ export default function App() {
       setFailedRequest(activeRequest);
       if (requestId)
         try {
-          await commit((g) => failRequest(g, requestId));
+          await commit((g) => failRequest(g, requestId, errorText(e), abort.signal.aborted));
         } catch (saveError) {
           setError(errorText(saveError));
         }
@@ -415,6 +485,7 @@ export default function App() {
     await action(async () => {
       if (file.size > MAX_BACKUP_BYTES) throw new Error('Backups must be no larger than 2 MiB.');
       setPendingImport(importGarden(await file.text()));
+      setImportRevision(ref.current?.revision ?? 0);
       setDialog('import');
     });
   }
@@ -422,7 +493,12 @@ export default function App() {
     if (!garden) return;
     download(
       'compost-club-sprout.md',
-      exportMarkdown({ ...garden, sprouts: [s], scraps: [] }),
+      exportMarkdown({
+        ...garden,
+        sprouts: [s],
+        scraps: [],
+        generations: garden.generations?.filter((r) => r.id === s.id) ?? [],
+      }),
       'text/markdown;charset=utf-8',
     );
   }
@@ -1231,6 +1307,52 @@ export default function App() {
             their roots.
           </p>
           <div className="backup-actions">
+            {hasRestoreCopy && (
+              <button
+                className="button secondary"
+                onClick={() =>
+                  void action(async () =>
+                    download(
+                      'compost-club-before-restore.json',
+                      await storage.beforeRestoreJSON(kind),
+                      'application/json',
+                    ),
+                  )
+                }
+              >
+                Download before-restore copy
+              </button>
+            )}
+            <button className="button secondary" onClick={() => setDialog('history')}>
+              Inspect inference history
+            </button>
+            {inferenceRecovery && (
+              <>
+                <p>
+                  A response did not fit the normal save. This recovery copy is separate from the
+                  JSON garden backup. Download it before removing it.
+                </p>
+                <button
+                  className="button secondary"
+                  onClick={() =>
+                    download(
+                      'compost-club-inference-recovery.json',
+                      JSON.stringify(inferenceRecovery, null, 2),
+                      'application/json',
+                    )
+                  }
+                >
+                  Download inference recovery copy
+                </button>
+                <button
+                  className="button secondary"
+                  disabled={locked || busy || saving}
+                  onClick={() => setDialog('discard-evidence')}
+                >
+                  Remove inference recovery copy…
+                </button>
+              </>
+            )}
             <button
               className="button primary"
               onClick={() =>
@@ -1295,6 +1417,57 @@ export default function App() {
           )}
         </Modal>
       )}
+      {dialog === 'history' && (
+        <Modal title="Inference history" onClose={() => setDialog(null)}>
+          <button
+            className="button secondary"
+            onClick={() =>
+              download(
+                'compost-club-inference-history.json',
+                JSON.stringify(
+                  {
+                    disclosure:
+                      kind === 'sample'
+                        ? 'Recorded demo — no live AI'
+                        : 'Local inference history; imported claims are not independently certified',
+                    generations: garden.generations ?? [],
+                  },
+                  null,
+                  2,
+                ),
+                'application/json',
+              )
+            }
+          >
+            Download inference history
+          </button>
+          <InferenceHistory runs={garden.generations ?? []} />
+        </Modal>
+      )}
+      {dialog === 'discard-evidence' && inferenceRecovery && (
+        <Modal title="Remove this inference recovery copy?" onClose={() => setDialog('backup')}>
+          <p>
+            This removes one run with {inferenceRecovery.responses.length} original responses and
+            its two source snapshots from this device. The garden and saved sprouts stay. Download
+            the copy first if you need it.
+          </p>
+          <InferenceHistory runs={[inferenceRecovery]} />
+          <button
+            className="button danger"
+            disabled={locked || busy || saving}
+            onClick={() =>
+              void action(async () => {
+                const saved = await storage.inferenceRecovery(kind);
+                if (saved) await storage.discardInference(kind, inferenceRecovery);
+                setInferenceRecovery(null);
+                setDialog('backup');
+              })
+            }
+          >
+            Remove this recovery copy
+          </button>
+        </Modal>
+      )}
       {dialog === 'edit' && (
         <Modal
           title={sproutEdit ? 'Make this thought your own.' : 'A thought can change.'}
@@ -1345,9 +1518,10 @@ export default function App() {
         <Modal title="Let this scrap go?" onClose={() => setDialog(null)}>
           <p>
             This removes {affected.scraps.size} scrap{affected.scraps.size === 1 ? '' : 's'} and{' '}
-            {affected.sprouts.size} dependent sprout{affected.sprouts.size === 1 ? '' : 's'},
-            including their saved source snapshots. The deleted text will not stay hidden in the
-            lineage.
+            {affected.sprouts.size} dependent sprout{affected.sprouts.size === 1 ? '' : 's'}, and{' '}
+            {affected.generations.size} inference history record
+            {affected.generations.size === 1 ? '' : 's'}, including their saved source snapshots.
+            The deleted text will not stay hidden in the lineage.
           </p>
           <ul className="delete-list">
             {garden.scraps
@@ -1370,7 +1544,7 @@ export default function App() {
           </button>
           <button
             className="button danger"
-            disabled={locked || saving || busy}
+            disabled={locked || saving || busy || !!inferenceRecovery}
             onClick={() =>
               void action(async () => {
                 await commit((g) => removeScrap(g, editId));
@@ -1404,7 +1578,9 @@ export default function App() {
           <p>
             It replaces your{' '}
             <strong>{pendingImport.kind === 'sample' ? 'sample' : 'personal'} garden</strong>. Your
-            other garden is separate. Save a backup first if you want to keep both versions.
+            other garden is separate. Save a backup first if you want to keep both versions. The
+            replaced garden is also retained as the most recent before-restore copy; a later restore
+            replaces that copy. Startup recovery originals are separate.
           </p>
           <button
             className="button secondary"
@@ -1428,7 +1604,7 @@ export default function App() {
                 const target = pendingImport;
                 if (target.kind !== kind)
                   throw new Error('Switch to the matching garden before restoring this backup.');
-                await commit(() => target, true);
+                await commit(() => target, importRevision);
                 setPendingImport(null);
                 setDialog(null);
                 setNotice('Garden restored. Interrupted model calls were not resumed.');

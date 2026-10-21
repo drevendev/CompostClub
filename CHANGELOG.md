@@ -4,6 +4,12 @@ Changes describe the source tree. A version heading does not imply an npm packag
 
 ## Unreleased
 
+- Retain immutable inference transcripts across retries/reload, including invalid primary/repair responses, no_blend, cancellation and no-response transport errors; add inspection and export.
+- Reserve evidence capacity before generation and retain unexpectedly oversized responses in a separate, explicitly managed recovery copy.
+- Reject stale normal restores even without Web Locks; keep a distinct before-restore copy without replacing damaged startup-recovery originals.
+- Require a complete selected acceptance suite and actual runtime/source/build/model attachments for verification receipts; remove hardcoded live/browser/unit claims and prevent historical receipt overwrites.
+- Add focused unit and Chromium P1 regressions with labelled diagnostic stubs; keep real-model acceptance separate.
+
 - Reject oversized original text, history and pretty-printed backups before writing; accepted gardens share save/load/export validation.
 - Add recovery for unreadable records with raw download, matching-backup preview, explicit replacement and an atomic retained original copy.
 - Add 11 unit regressions and eight Chromium recovery scenarios for production and offline HTML; run the latter in CI.

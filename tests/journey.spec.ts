@@ -1,8 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './acceptance';
 import { readFile, copyFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
-test('real local model: add → blend → keep → reload → export and restore', async ({ page }) => {
+test('real local model: add → blend → keep → reload → export and restore', async ({
+  page,
+}, testInfo) => {
   const errors: string[] = [],
     external: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -31,6 +33,22 @@ test('real local model: add → blend → keep → reload → export and restore
   await page.getByRole('button', { name: 'Close dialog' }).click();
   await page.getByRole('button', { name: 'Let it ferment', exact: true }).click();
   await expect(page.locator('.sprout-card')).toBeVisible({ timeout: 125000 });
+  const generation = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const r = indexedDB.open('compost-club-v1', 1);
+      r.onsuccess = () => resolve(r.result);
+    });
+    const garden = await new Promise<{ generations: unknown[] }>((resolve) => {
+      const r = db.transaction('gardens').objectStore('gardens').get('personal');
+      r.onsuccess = () => resolve(r.result as { generations: unknown[] });
+    });
+    db.close();
+    return garden.generations.at(-1);
+  });
+  await testInfo.attach('live-inference', {
+    contentType: 'application/json',
+    body: Buffer.from(JSON.stringify({ source: 'real-loopback-ollama', generation })),
+  });
   await page.getByRole('button', { name: 'Keep this idea', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Kept', exact: true })).toBeVisible();
   const title = await page.locator('.sprout-card h3').innerText();
