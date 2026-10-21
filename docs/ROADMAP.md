@@ -12,6 +12,8 @@ The source-history/pairing batch merged in [PR #41](https://github.com/drevendev
 
 ## Baseline delivered
 
+Local UX revision prepared after video review: compact workspace, paged source previews with full-text readers, a collapsible composer, paged discoveries, and source dialogs replace the nested pile scrollbar and expanding root cards. A fresh floral demo verifies zero scrolling throughout its real sample journey. This revision is prepared for a draft PR; article/video publication remains separately gated; it does not change inference or storage rules.
+
 - Public MIT React/TypeScript/Vite source, exact direct pins, project lockfile, Node 24 / npm 11.
 - Separate personal/sample gardens, exact-fixture replay, earned slots, immutable sprout parents, keep/edit/recompost and Markdown/JSON export.
 - Save/load limits and startup recovery shipped in [PR #30](https://github.com/drevendev/CompostClub/pull/30), closing #6/#7. The audit reran 42 unit tests, eight recovery and four sample/offline Chromium scenarios successfully.
@@ -20,12 +22,12 @@ The source-history/pairing batch merged in [PR #41](https://github.com/drevendev
 
 ## 1. Stabilize the user's work
 
-| Outcome | Issues | Exit criterion |
-| --- | --- | --- |
-| Inspectable failures and deliberate retries | [#31](https://github.com/drevendev/CompostClub/issues/31), [#11](https://github.com/drevendev/CompostClub/issues/11) | Invalid primary/repair responses and no_blend survive reload/export; retry preserves slots and checks source revisions. |
-| Safe backup replacement | [#32](https://github.com/drevendev/CompostClub/issues/32), [#21](https://github.com/drevendev/CompostClub/issues/21) | Stale restores fail safely without Web Locks; JSON key order does not invalidate unchanged values. |
-| Recoverable text and discoveries | [#12](https://github.com/drevendev/CompostClub/issues/12), [#13](https://github.com/drevendev/CompostClub/issues/13), [#34](https://github.com/drevendev/CompostClub/issues/34) | Edits preserve unrelated drafts and source history; earlier unkept results remain accessible. |
-| Clear and responsive pairing | [#14](https://github.com/drevendev/CompostClub/issues/14), [#17](https://github.com/drevendev/CompostClub/issues/17), [#35](https://github.com/drevendev/CompostClub/issues/35) | Skip navigation preserves the garden; exhausted pairs differ from earned slots; selection at supported capacity does not freeze interaction. |
+| Outcome                                     | Issues                                                                                                                                                                          | Exit criterion                                                                                                                               |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inspectable failures and deliberate retries | [#31](https://github.com/drevendev/CompostClub/issues/31), [#11](https://github.com/drevendev/CompostClub/issues/11)                                                            | Invalid primary/repair responses and no_blend survive reload/export; retry preserves slots and checks source revisions.                      |
+| Safe backup replacement                     | [#32](https://github.com/drevendev/CompostClub/issues/32), [#21](https://github.com/drevendev/CompostClub/issues/21)                                                            | Stale restores fail safely without Web Locks; JSON key order does not invalidate unchanged values.                                           |
+| Recoverable text and discoveries            | [#12](https://github.com/drevendev/CompostClub/issues/12), [#13](https://github.com/drevendev/CompostClub/issues/13), [#34](https://github.com/drevendev/CompostClub/issues/34) | Edits preserve unrelated drafts and source history; earlier unkept results remain accessible.                                                |
+| Clear and responsive pairing                | [#14](https://github.com/drevendev/CompostClub/issues/14), [#17](https://github.com/drevendev/CompostClub/issues/17), [#35](https://github.com/drevendev/CompostClub/issues/35) | Skip navigation preserves the garden; exhausted pairs differ from earned slots; selection at supported capacity does not freeze interaction. |
 
 Prioritize data/trust defects before extra features. Retain atomic result/pair/slot writes, bounded backups and existing recovery regressions throughout.
 
@@ -69,6 +71,8 @@ Exit: a traceable human decision and, where chosen, a reviewed experiment artifa
 
 Continue without accounts, cloud inference, analytics, paid integrations or hidden downloads. Push, publication, deployment, domain registration, private excerpts and contest submission retain their separate owner-authorization boundaries.
 
+- Bring the owner-liked floral demo direction into the product [#48](https://github.com/drevendev/CompostClub/issues/48), then add butterflies, gentle cursor-following and click/action feedback [#49](https://github.com/drevendev/CompostClub/issues/49). Keep text and controls clear, pause hidden-tab animation, and provide reduced/off motion. These are requested enhancements, not shipped app features.
+
 ## 6. Named Gardens and Cross-Pollination — post-contest milestone (NOT shipped)
 
 **Owner concept approved for roadmap research on 21 October 2026.** Build only after a stable public demonstration of the existing single-garden experience; do not add this to the Hacktoberfest Week 3 release or market it as implemented. The public `Sample Garden` remains exactly labelled recorded and is never an implicit knowledge donor.
@@ -84,7 +88,7 @@ Continue without accounts, cloud inference, analytics, paid integrations or hidd
 
 - **Off by default**. Receiving garden sets a **0–100% probability**, selected donor allow-list, and optional visual indication; the donor garden separately grants permission to contribute scraps. Both opt-ins are required.
 - Chance is evaluated **once per eligible user-triggered harvest**: `p=0` only same-garden pairs; `p=100` one local + one eligible other-garden parent when available. Otherwise ordinary local blend; a missing donor is not fabricated.
-- Persist a seeded, reproducible decision per harvest/request, including source revisions. Reload and retry cannot reroll the chance by repeated clicks. Closing the app accrues *credits*, not generated ideas; selection remains deterministic/testable code, inference still runs locally on explicit action.
+- Persist a seeded, reproducible decision per harvest/request, including source revisions. Reload and retry cannot reroll the chance by repeated clicks. Closing the app accrues _credits_, not generated ideas; selection remains deterministic/testable code, inference still runs locally on explicit action.
 - Display clear `Books → Games` lineage and honest results, not an invented probability of good ideas. Cross-pollination is **within one local user's device/profile**, not collaboration between people.
 
 ### 6C. Consent, provenance, deletion and backups — [#44](https://github.com/drevendev/CompostClub/issues/44)
@@ -100,14 +104,14 @@ Begin with **explicit user-selected small Markdown/JSON files**, preview and hum
 
 ### v0.2 acceptance gates
 
-| Gate | Required proof |
-| --- | --- |
-| Isolation | Each garden can be used, renamed, backed up and restored without moving or deleting other gardens. Sample isolation proven. |
-| Migration | An existing personal garden, receipts, revisions and recovery copies survive one-way migration, crash and rollback. |
-| Determinism | Synthetic policy tests cover p=0, p=100, p=10, consent changes, no donor, retry/reload and stable parent selection. |
-| Privacy | No borrowing without two opt-ins; a donor deletion or permission OFF cannot cause future unauthorised model inputs. |
-| Provenance | Cross-garden sprout source references and quote checks survive editing, rename, export/import and intentional deletion. |
-| Release | Source and tests are verified on exact candidate; no extra accounts, backend, paid API, telemetry or unlicensed material. |
+| Gate        | Required proof                                                                                                              |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Isolation   | Each garden can be used, renamed, backed up and restored without moving or deleting other gardens. Sample isolation proven. |
+| Migration   | An existing personal garden, receipts, revisions and recovery copies survive one-way migration, crash and rollback.         |
+| Determinism | Synthetic policy tests cover p=0, p=100, p=10, consent changes, no donor, retry/reload and stable parent selection.         |
+| Privacy     | No borrowing without two opt-ins; a donor deletion or permission OFF cannot cause future unauthorised model inputs.         |
+| Provenance  | Cross-garden sprout source references and quote checks survive editing, rename, export/import and intentional deletion.     |
+| Release     | Source and tests are verified on exact candidate; no extra accounts, backend, paid API, telemetry or unlicensed material.   |
 
 ## 7. Demo and video plan — existing release now, future garden ecosystem later
 
@@ -126,7 +130,7 @@ Full implementation issue: **[#46 — verified public showcase and storyboards](
 
 **Video C · 2–3 minutes engineering breakdown:** source quote failure on small Gemma (0/24) → narrower prompt/validation (1B 23/24, 4B 24/24 structural; NOT idea-quality metrics) → browser WebGPU 0/4 initial smoke → raw source evidence. No misleading reconstructed model transcripts.
 
-**Future concept storyboard:** Books ↔ Games gardens with donor and receiver opt-ins and a 0→10→100% slider; visually tag *"Planned feature — concept preview, not the current application"*. Do not splice mock into a real demo without disclosure. Once #42–#44 ship and pass their checks, produce a separate real multi-garden video.
+**Future concept storyboard:** Books ↔ Games gardens with donor and receiver opt-ins and a 0→10→100% slider; visually tag _"Planned feature — concept preview, not the current application"_. Do not splice mock into a real demo without disclosure. Once #42–#44 ship and pass their checks, produce a separate real multi-garden video.
 
 **Publication gate:** actual page or video must be verified; #15 remains the hosted Pages path and #19 the single Week 3 official entry. Original media, proper captions, accessibility, rights, no private archives, no fabricated use claims. No autonomous publication or transfer of private materials.
 
@@ -134,13 +138,13 @@ Full implementation issue: **[#46 — verified public showcase and storyboards](
 
 **Owner-directed implementation target:** current Node 24 / React / TypeScript / IndexedDB / local Ollama application, **no new backend**. Authoritative [full product + code/acceptance spec](IDEA_EVOLUTION_SPEC.md); [master implementation epic #60](https://github.com/drevendev/CompostClub/issues/60). Develop independently of the Week 3 submission freeze; do not represent these features as part of existing Sample Garden until working model tests and accepted artifacts prove them.
 
-| Order | Work | Ticket | Done means |
-| --- | --- | --- | --- |
-| 0 | Repair ambiguous imported pair IDs and adopt versioned schema migration | [#47](https://github.com/drevendev/CompostClub/issues/47), [#54](https://github.com/drevendev/CompostClub/issues/54) | Legacy source/backup/history and model receipts recover losslessly with new graph IDs, no silent truncate/orphan/cycle. |
-| 1 | **Idea DNA**: typed root, source traits and immutable ancestors | [#51](https://github.com/drevendev/CompostClub/issues/51) | User inspects source, accepted/inherited/mutated genes and exact parent versions; no artificial inheritance percentage. |
-| 1 | Minimal **birth metadata**: UTC+zone/daypart, input language, self/heard/import source | [#53](https://github.com/drevendev/CompostClub/issues/53) | Timestamp/date tags accurate (DST tests), manual correction, historical unknowns preserved; GPS/weather never silently collected. |
-| 2 | **Tend this idea**: one explicit, tiny growth action / branch with human review | [#50](https://github.com/drevendev/CompostClub/issues/50) | One kept seed grows three accepted steps and two alternative branches, remains inspectable after reload/export. |
-| 3 | **Actual micro-GA**: small rated population, tournament selection, crossover, one-gene mutation, elitism | [#52](https://github.com/drevendev/CompostClub/issues/52) | One new offspring per user-triggered credit, deterministic genotype/selection proof, human feedback influences later generations. |
+| Order | Work                                                                                                     | Ticket                                                                                                               | Done means                                                                                                                        |
+| ----- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Repair ambiguous imported pair IDs and adopt versioned schema migration                                  | [#47](https://github.com/drevendev/CompostClub/issues/47), [#54](https://github.com/drevendev/CompostClub/issues/54) | Legacy source/backup/history and model receipts recover losslessly with new graph IDs, no silent truncate/orphan/cycle.           |
+| 1     | **Idea DNA**: typed root, source traits and immutable ancestors                                          | [#51](https://github.com/drevendev/CompostClub/issues/51)                                                            | User inspects source, accepted/inherited/mutated genes and exact parent versions; no artificial inheritance percentage.           |
+| 1     | Minimal **birth metadata**: UTC+zone/daypart, input language, self/heard/import source                   | [#53](https://github.com/drevendev/CompostClub/issues/53)                                                            | Timestamp/date tags accurate (DST tests), manual correction, historical unknowns preserved; GPS/weather never silently collected. |
+| 2     | **Tend this idea**: one explicit, tiny growth action / branch with human review                          | [#50](https://github.com/drevendev/CompostClub/issues/50)                                                            | One kept seed grows three accepted steps and two alternative branches, remains inspectable after reload/export.                   |
+| 3     | **Actual micro-GA**: small rated population, tournament selection, crossover, one-gene mutation, elitism | [#52](https://github.com/drevendev/CompostClub/issues/52)                                                            | One new offspring per user-triggered credit, deterministic genotype/selection proof, human feedback influences later generations. |
 
 **Scope of "real genetics":** a bounded steady-state evolutionary search with a pool of 4–8 candidates, explicit owner ratings, seeded tournament parent selection, structured gene crossover, optional one-slot mutation and preserved elite. One short local model call verbalizes the preselected gene composition. No evolution of executable code, massive GPU batches, LLM self-scoring as objective quality or fake results.
 
@@ -154,7 +158,7 @@ Detailed privacy and platform comparison: [Context & Deployment Options](CONTEXT
 
 - [#55](https://github.com/drevendev/CompostClub/issues/55): optional small local Gemma **tag/trait suggestions** after idea entry. OFF by default, strict 1–5 controlled tag output, human approval; manual tags work without a model.
 - [#56](https://github.com/drevendev/CompostClub/issues/56): private on-demand **idea journal statistics** grouped by weekday, month, local daypart, language, tags, accepted offspring and evolution history. No analytics tracking SDK, no causation claims and clear unknown counts.
-- [#57](https://github.com/drevendev/CompostClub/issues/57): **weather, coarse city/location, mood** as separate optional context. Manual data works offline; device location and external weather are *separate explicit opt-ins*. Timezone metadata is not GPS. Weather values record time/source and API licence; don't attach today's weather to an old idea or silently persist precise coordinates.
+- [#57](https://github.com/drevendev/CompostClub/issues/57): **weather, coarse city/location, mood** as separate optional context. Manual data works offline; device location and external weather are _separate explicit opt-ins_. Timezone metadata is not GPS. Weather values record time/source and API licence; don't attach today's weather to an old idea or silently persist precise coordinates.
 
 All these contextual measurements are **birth environment**, not inheritable DNA or fitness input unless a person explicitly chooses a creative weather trait. No compulsory forms, browser GPS prompts or external calls upon saving a new idea.
 
@@ -162,12 +166,12 @@ All these contextual measurements are **birth environment**, not inheritable DNA
 
 Comparison and security gates: [Context & Deployment Options](CONTEXT_AND_DEPLOYMENT_OPTIONS.md), [architecture issue #58](https://github.com/drevendev/CompostClub/issues/58), [mobile UX issue #59](https://github.com/drevendev/CompostClub/issues/59).
 
-| Setup | Working mode | Shared PC ↔ phone garden? | Expenses/constraints |
-| --- | --- | --- | --- |
-| **A. Current static Pages + separate IndexedDB** | Browser UI/sample, local client-only DNA/GA; desktop Ollama when locally served | **No**; every device/browser has an independent store | $0 static site, no backend; browser WebGPU remains experimental |
-| **B. User-controlled JSON export/import** | Carry data between devices manually with conflict preview | **Manual only**, not automatic sync | $0 infra, handling conflicts is work |
-| **C. One-user Home Hub on owner's PC (candidate)** | Local Node+SQLite shared API, loopback Ollama, HTTPS/private Tailscale Serve, authenticated phone | **Yes when host PC is online** | Potential $0 subscriptions on existing hardware, nonzero electricity/security/operations |
-| **D. Hosted private or future multi-user cloud** | Hosted authenticated API + durable DB + explicit Gemma worker/GPU route | **Yes** | Real hosting/backup/auth/security costs; no free/paid service claim without checks |
+| Setup                                              | Working mode                                                                                      | Shared PC ↔ phone garden?                             | Expenses/constraints                                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **A. Current static Pages + separate IndexedDB**   | Browser UI/sample, local client-only DNA/GA; desktop Ollama when locally served                   | **No**; every device/browser has an independent store | $0 static site, no backend; browser WebGPU remains experimental                          |
+| **B. User-controlled JSON export/import**          | Carry data between devices manually with conflict preview                                         | **Manual only**, not automatic sync                   | $0 infra, handling conflicts is work                                                     |
+| **C. One-user Home Hub on owner's PC (candidate)** | Local Node+SQLite shared API, loopback Ollama, HTTPS/private Tailscale Serve, authenticated phone | **Yes when host PC is online**                        | Potential $0 subscriptions on existing hardware, nonzero electricity/security/operations |
+| **D. Hosted private or future multi-user cloud**   | Hosted authenticated API + durable DB + explicit Gemma worker/GPU route                           | **Yes**                                               | Real hosting/backup/auth/security costs; no free/paid service claim without checks       |
 
 **Do not make a server by rebinding existing loopback Ollama bridge to 0.0.0.0**. The current local bridge is intentionally Host/Origin/session-token guarded. Mobile sync requires distinct authentication, durable shared storage, rate limits, HTTPS, conflict management and backups, not just a responsive page. Tailscale Personal is one **optional** tool, not an account already connected. The free Open-Meteo API currently applies **non-commercial-only** service terms (CC BY 4.0 data attribution) and is not automatically permissible for future paid SaaS. No infrastructure provisioning or payment authorized.
 

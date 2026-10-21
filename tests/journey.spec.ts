@@ -104,7 +104,7 @@ test('sample garden replays only verified pairs; edit/recompost/clock/reload wor
     .fill('A totally new custom thought with no matching model recording.');
   await page.getByRole('button', { name: 'Save edit', exact: true }).click();
   await expect(page.locator('.scrap').first()).toContainText('A totally new custom thought');
-  await page.getByText('A QUIETER KIND OF CREATIVITY', { exact: true }).click();
+  await page.locator('.intro h1').click();
   await page.screenshot({ path: 'evidence/desktop-sample.png', fullPage: true });
 });
 
@@ -118,7 +118,7 @@ test('mobile, keyboard, reduced motion and large text fit the viewport', async (
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-  await page.getByText('A QUIETER KIND OF CREATIVITY', { exact: true }).click();
+  await page.locator('.intro h1').click();
   await page.screenshot({ path: 'evidence/mobile-sample.png', fullPage: true });
   await page.addStyleTag({ content: 'html {font-size: 200%} body * {letter-spacing: .05em}' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -147,6 +147,7 @@ test('a second tab is read-only and a corrupt import cannot overwrite a garden',
   await expect(
     second.getByText('Another tab is tending this garden.', { exact: false }),
   ).toBeVisible();
+  await second.locator('.scrap-composer > summary').click();
   await expect(second.getByRole('button', { name: 'Toss it in', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Backup and export' }).click();
   await page.getByLabel('Restore JSON backup', { exact: true }).setInputFiles({

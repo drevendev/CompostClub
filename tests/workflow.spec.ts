@@ -32,6 +32,7 @@ for (const target of ['scrap', 'sprout']) {
   }) => {
     await sample(page);
     const draft = 'An unsaved fictional thought for later. 🌱';
+    await page.locator('.scrap-composer > summary').click();
     const input = page.getByLabel('Your idea scrap', { exact: true });
     await input.fill(draft);
     const open = () =>
@@ -86,9 +87,10 @@ test('earlier unkept discoveries remain inspectable, editable and recoverable af
   const first = page
     .locator('.sprout-card')
     .filter({ has: page.getByRole('heading', { name: firstTitle, exact: true }) });
-  await first.locator('summary').click();
+  await first.getByRole('button', { name: /Grew from/ }).click();
   await expect(first.locator('.parent')).toHaveCount(2);
   await expect(first.locator('.roots')).toContainText('Recorded demo — no live AI');
+  await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await first.getByRole('button', { name: 'Keep this idea', exact: true }).click();
   await expect(first.getByRole('button', { name: 'Kept', exact: true })).toBeVisible();
   await first.getByRole('button', { name: 'Edit', exact: true }).click();

@@ -87,6 +87,14 @@ export default function App() {
     [storageWarning, setStorageWarning] = useState('');
   const [retryKey, setRetryKey] = useState('');
   const [retryPage, setRetryPage] = useState(0);
+  const [pilePage, setPilePage] = useState(0);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const focusComposer = () => {
+    setComposerOpen(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+  const [readingScrap, setReadingScrap] = useState<string | null>(null);
+  const [collectionPage, setCollectionPage] = useState(0);
   const [backend, setBackend] = useState<Backend>('ollama'),
     [modelKey, setModelKey] = useState<ModelKey>('1b'),
     [language, setLanguage] = useState<Language>('en');
@@ -293,6 +301,9 @@ export default function App() {
         location.hash = next === 'sample' ? 'sample' : 'garden';
         setTab('garden');
         setWelcome(false);
+        setPilePage(0);
+        setCollectionPage(0);
+        setComposerOpen(next === 'personal');
         setNotice('');
         setError('');
         setRetryKey('');
@@ -324,6 +335,7 @@ export default function App() {
   async function submit() {
     await action(async () => {
       await commit((g) => addScrap(g, text, Date.now()));
+      setPilePage(Math.floor(((ref.current?.scraps.length ?? 1) - 1) / 2));
       setText('');
       setWelcome(false);
       setNotice('A little thought, safely in the pile.');
@@ -589,6 +601,12 @@ export default function App() {
         ? garden.sprouts.filter((s) => collectionView === 'all' || s.kept)
         : garden.sprouts.slice(-1);
   const retryPageIndex = Math.min(retryPage, Math.max(0, Math.ceil(retries.length / 50) - 1));
+  const pilePageIndex = Math.min(pilePage, Math.max(0, Math.ceil(garden.scraps.length / 2) - 1));
+  const collectionPageIndex = Math.min(
+    collectionPage,
+    Math.max(0, Math.ceil(collection.length / 3) - 1),
+  );
+  const reading = garden.scraps.find((scrap) => scrap.id === readingScrap);
   const retryChoices = retries.slice(retryPageIndex * 50, (retryPageIndex + 1) * 50);
   const retrySelection = retryChoices.find((pair) => pairKey(pair) === retryKey) ?? retryChoices[0];
   const fullPairHistory = garden.attempts.length >= MAX_ATTEMPTS;
@@ -623,6 +641,7 @@ export default function App() {
             className={tab === 'collection' ? 'active' : ''}
             onClick={() => {
               setCollectionView('kept');
+              setCollectionPage(0);
               setTab('collection');
             }}
           >
@@ -684,7 +703,7 @@ export default function App() {
                 className="button primary"
                 onClick={() => {
                   setWelcome(false);
-                  inputRef.current?.focus();
+                  focusComposer();
                 }}
               >
                 Start your pile <Icon name="arrow" size={17} />
@@ -747,12 +766,6 @@ export default function App() {
             </span>
           </div>
         )}
-        {__OFFLINE__ && (
-          <div className="message info">
-            Offline demo · file-origin storage can change when this HTML is moved or renamed. Export
-            JSON to carry your garden with you. Live AI requires the web or local app.
-          </div>
-        )}
         {storageWarning && (
           <div className="message info" role="status">
             {storageWarning}
@@ -785,6 +798,13 @@ export default function App() {
           <div className="notice" role="status">
             <Icon name="check" size={16} />
             {notice}
+            <button
+              className="icon-button"
+              aria-label="Dismiss notification"
+              onClick={() => setNotice('')}
+            >
+              <Icon name="close" size={14} />
+            </button>
           </div>
         )}
         {tab === 'garden' && retrySelection && (
@@ -856,39 +876,48 @@ export default function App() {
                 <span className="count-badge">{garden.scraps.length}</span>
               </div>
               <p className="section-subtitle">Old, odd, unfinished. All welcome here.</p>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void submit();
-                }}
+              <details
+                className="scrap-composer"
+                open={composerOpen}
+                onToggle={(e) => setComposerOpen(e.currentTarget.open)}
               >
-                <label className="sr-only" htmlFor="new-scrap">
-                  Your idea scrap
-                </label>
-                <div className="paper-input">
-                  <textarea
-                    id="new-scrap"
-                    ref={inputRef}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="A half-baked game, a strange tool, something you heard…"
-                    rows={4}
-                    disabled={locked || saving || dialog === 'edit'}
-                  />
-                  <div className="input-meta">
-                    <span>Just a thought is enough.</span>
-                    <span>{[...text].length}/800</span>
-                  </div>
-                </div>
-                <button
-                  className="button primary add-button"
-                  disabled={locked || saving || busy || dialog === 'edit' || !text.trim()}
-                  type="submit"
+                <summary>
+                  <Icon name="plus" size={16} /> Add a scrap
+                </summary>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void submit();
+                  }}
                 >
-                  <Icon name="plus" size={18} />
-                  Toss it in
-                </button>
-              </form>
+                  <label className="sr-only" htmlFor="new-scrap">
+                    Your idea scrap
+                  </label>
+                  <div className="paper-input">
+                    <textarea
+                      id="new-scrap"
+                      ref={inputRef}
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="A half-baked game, a strange tool, something you heard…"
+                      rows={4}
+                      disabled={locked || saving || dialog === 'edit'}
+                    />
+                    <div className="input-meta">
+                      <span>Just a thought is enough.</span>
+                      <span>{[...text].length}/800</span>
+                    </div>
+                  </div>
+                  <button
+                    className="button primary add-button"
+                    disabled={locked || saving || busy || dialog === 'edit' || !text.trim()}
+                    type="submit"
+                  >
+                    <Icon name="plus" size={18} />
+                    Toss it in
+                  </button>
+                </form>
+              </details>
               <div className="scrap-list">
                 {garden.scraps.length === 0 ? (
                   <div className="empty-pile">
@@ -900,48 +929,67 @@ export default function App() {
                     </p>
                   </div>
                 ) : (
-                  garden.scraps.map((scrap, index) => (
-                    <article className={`scrap paper-${index % 3}`} key={scrap.id}>
-                      <div className="scrap-top">
-                        <span className="scrap-number">
-                          SCRAP {String(index + 1).padStart(2, '0')}
-                        </span>
-                        <span>{scrap.origin === 'sprout' ? '↻ returned' : '✧'}</span>
-                      </div>
-                      <p>{scrap.text}</p>
-                      <div className="scrap-actions">
-                        <button
-                          aria-label={`Edit scrap ${index + 1}`}
-                          onClick={() => showEdit(scrap.id)}
-                          disabled={locked || busy}
-                        >
-                          <Icon name="edit" size={14} />
-                          Edit
-                        </button>
-                        <button
-                          aria-label={`View history of scrap ${index + 1}`}
-                          onClick={() => {
-                            setEditId(scrap.id);
-                            setDialog('source-history');
-                          }}
-                        >
-                          <Icon name="clock" size={14} /> History
-                        </button>
-                        <button
-                          aria-label={`Remove scrap ${index + 1}`}
-                          onClick={() => {
-                            setEditId(scrap.id);
-                            setDialog('delete');
-                          }}
-                          disabled={locked || busy}
-                        >
-                          <Icon name="trash" size={14} />
-                        </button>
-                      </div>
-                    </article>
-                  ))
+                  garden.scraps
+                    .slice(pilePageIndex * 2, pilePageIndex * 2 + 2)
+                    .map((scrap, offset) => {
+                      const index = pilePageIndex * 2 + offset;
+                      return (
+                        <article className={`scrap paper-${index % 3}`} key={scrap.id}>
+                          <div className="scrap-top">
+                            <span className="scrap-number">
+                              SCRAP {String(index + 1).padStart(2, '0')}
+                              {scrap.origin === 'sprout' && ' · returned'}
+                            </span>
+                            <button
+                              className="read-scrap"
+                              aria-label={`Read scrap ${index + 1}`}
+                              onClick={() => setReadingScrap(scrap.id)}
+                            >
+                              Read ↗
+                            </button>
+                          </div>
+                          <p>{scrap.text}</p>
+                          <div className="scrap-actions">
+                            <button
+                              aria-label={`Edit scrap ${index + 1}`}
+                              onClick={() => showEdit(scrap.id)}
+                              disabled={locked || busy}
+                            >
+                              <Icon name="edit" size={14} />
+                              Edit
+                            </button>
+                            <button
+                              aria-label={`View history of scrap ${index + 1}`}
+                              onClick={() => {
+                                setEditId(scrap.id);
+                                setDialog('source-history');
+                              }}
+                            >
+                              <Icon name="clock" size={14} /> History
+                            </button>
+                            <button
+                              aria-label={`Remove scrap ${index + 1}`}
+                              onClick={() => {
+                                setEditId(scrap.id);
+                                setDialog('delete');
+                              }}
+                              disabled={locked || busy}
+                            >
+                              <Icon name="trash" size={14} />
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })
                 )}
               </div>
+              <PageNavigation
+                label="Idea pile"
+                page={pilePageIndex}
+                count={garden.scraps.length}
+                size={2}
+                onChange={setPilePage}
+              />
               <p className="pile-footnote">
                 <Icon name="lock" size={13} />
                 Your originals always stay yours.
@@ -1059,8 +1107,7 @@ export default function App() {
                         void switchGarden('personal');
                       else if (garden.scraps.length >= MAX_SCRAPS) showEdit(garden.scraps[0]!.id);
                       else {
-                        inputRef.current?.focus();
-                        inputRef.current?.scrollIntoView({ block: 'center' });
+                        focusComposer();
                       }
                     }}
                   >
@@ -1180,6 +1227,7 @@ export default function App() {
                   className="text-button all-sprouts"
                   onClick={() => {
                     setCollectionView('all');
+                    setCollectionPage(0);
                     setTab('collection');
                   }}
                 >
@@ -1202,21 +1250,27 @@ export default function App() {
               <button
                 className="button secondary"
                 aria-pressed={collectionView === 'kept'}
-                onClick={() => setCollectionView('kept')}
+                onClick={() => {
+                  setCollectionView('kept');
+                  setCollectionPage(0);
+                }}
               >
                 Kept ideas ({kept})
               </button>
               <button
                 className="button secondary"
                 aria-pressed={collectionView === 'all'}
-                onClick={() => setCollectionView('all')}
+                onClick={() => {
+                  setCollectionView('all');
+                  setCollectionPage(0);
+                }}
               >
                 All discoveries ({garden.sprouts.length})
               </button>
             </div>
             <div className="collection-grid">
               {collection.length ? (
-                collection.map((s) => (
+                collection.slice(collectionPageIndex * 3, collectionPageIndex * 3 + 3).map((s) => (
                   <SproutCard
                     key={s.id}
                     sprout={s}
@@ -1255,34 +1309,25 @@ export default function App() {
                 </div>
               )}
             </div>
+            <PageNavigation
+              label="Discoveries"
+              page={collectionPageIndex}
+              count={collection.length}
+              size={3}
+              onChange={setCollectionPage}
+            />
           </section>
         )}
-        <section className="how-strip">
-          <div>
-            <span className="step-number">01</span>
-            <p>
-              <strong>Drop a thought.</strong>
-              <span>It doesn't have to be a good one.</span>
-            </p>
-          </div>
-          <span className="step-dash">↝</span>
-          <div>
-            <span className="step-number">02</span>
-            <p>
-              <strong>Give it a little space.</strong>
-              <span>Time makes room for new pairings.</span>
-            </p>
-          </div>
-          <span className="step-dash">↝</span>
-          <div>
-            <span className="step-number">03</span>
-            <p>
-              <strong>See what grows.</strong>
-              <span>Keep it. Export it. Compost it again.</span>
-            </p>
-          </div>
-        </section>
       </main>
+      {reading && (
+        <Modal title="Full scrap" onClose={() => setReadingScrap(null)}>
+          <p className="full-scrap">{reading.raw}</p>
+          <p className="small-print">
+            Full text of the current revision. Your original and earlier revisions stay available in
+            History.
+          </p>
+        </Modal>
+      )}
       <footer>
         <span>
           <Icon name="sprout" size={15} />
@@ -1290,7 +1335,11 @@ export default function App() {
         </span>
         <span>
           <Icon name="lock" size={13} />
-          Local first. No account. No paid API.
+          {__OFFLINE__ ? (
+            <button onClick={() => setDialog('backup')}>Offline demo · save a backup ↗</button>
+          ) : (
+            'Local first. No account. No paid API.'
+          )}
         </span>
         <button onClick={() => setDialog('about')}>
           A little more about this garden <span>↗</span>
@@ -1506,6 +1555,12 @@ export default function App() {
       )}
       {dialog === 'backup' && (
         <Modal title="Take a little growth with you." onClose={() => setDialog(null)}>
+          {__OFFLINE__ && (
+            <p className="modal-intro">
+              Offline demo: file-origin storage can change when this HTML is moved or renamed.
+              Export JSON to carry your garden with you. Live AI requires the web or local app.
+            </p>
+          )}
           <p className="modal-intro">
             Your garden lives on this device. A JSON backup carries originals, sprouts, edits and
             their roots.
@@ -1871,6 +1926,7 @@ function SproutCard({
   onEdit: () => void;
 }) {
   const content = s.edited ?? s.output;
+  const [rootsOpen, setRootsOpen] = useState(false);
   return (
     <article className="sprout-card">
       <div className="sprout-card-top">
@@ -1883,42 +1939,56 @@ function SproutCard({
       <h3>{content.title}</h3>
       <p className="sprout-concept">{content.concept}</p>
       {s.edited && <span className="edited-tag">Edited by you</span>}
-      <details className="roots">
-        <summary>
-          Grew from <span>2 scraps ↗</span>
-        </summary>
-        <div className="parent">
-          <span>A</span>
-          <p>{s.parents[0].text}</p>
-        </div>
-        <blockquote>“{s.output.fromA}”</blockquote>
-        <div className="parent">
-          <span>B</span>
-          <p>{s.parents[1].text}</p>
-        </div>
-        <blockquote>“{s.output.fromB}”</blockquote>
-        <small>
-          {s.backend === 'replay'
-            ? 'Recorded demo — no live AI'
-            : s.backend === 'browser'
-              ? 'Live browser-local inference'
-              : 'Live local Ollama inference'}
-          <br />
-          {s.model}
-          <br />
-          Revision: {s.modelRevision}
-          <br />
-          Prompt: {s.promptVersion}
-        </small>
-        {s.edited && (
-          <div className="original-output">
-            <strong>Original model result</strong>
-            <p>
-              {s.output.title}: {s.output.concept}
-            </p>
+      <button className="roots-button" onClick={() => setRootsOpen(true)}>
+        Grew from <span>2 scraps ↗</span>
+      </button>
+      {rootsOpen && (
+        <Modal
+          title="Every sprout keeps its roots."
+          className="roots-modal"
+          onClose={() => setRootsOpen(false)}
+        >
+          <div className="roots">
+            <div className="root-sources">
+              <section>
+                <div className="parent">
+                  <span>A</span>
+                  <p>{s.parents[0].text}</p>
+                </div>
+                <blockquote>“{s.output.fromA}”</blockquote>
+              </section>
+              <section>
+                <div className="parent">
+                  <span>B</span>
+                  <p>{s.parents[1].text}</p>
+                </div>
+                <blockquote>“{s.output.fromB}”</blockquote>
+              </section>
+            </div>
+            <small>
+              {s.backend === 'replay'
+                ? 'Recorded demo — no live AI'
+                : s.backend === 'browser'
+                  ? 'Live browser-local inference'
+                  : 'Live local Ollama inference'}
+              <br />
+              {s.model}
+              <br />
+              Revision: {s.modelRevision}
+              <br />
+              Prompt: {s.promptVersion}
+            </small>
+            {s.edited && (
+              <div className="original-output">
+                <strong>Original model result</strong>
+                <p>
+                  {s.output.title}: {s.output.concept}
+                </p>
+              </div>
+            )}
           </div>
-        )}
-      </details>
+        </Modal>
+      )}
       <div className="sprout-buttons">
         <button
           className={`button ${s.kept ? 'kept-button' : 'primary'}`}
@@ -1943,5 +2013,42 @@ function SproutCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function PageNavigation({
+  label,
+  page,
+  count,
+  size,
+  onChange,
+}: {
+  label: string;
+  page: number;
+  count: number;
+  size: number;
+  onChange: (page: number) => void;
+}) {
+  if (count <= size) return null;
+  return (
+    <nav className="page-navigation" aria-label={label}>
+      <button
+        aria-label={`Previous ${label.toLowerCase()} page`}
+        disabled={page === 0}
+        onClick={() => onChange(page - 1)}
+      >
+        ←
+      </button>
+      <span aria-live="polite">
+        {page * size + 1}–{Math.min(count, (page + 1) * size)} of {count}
+      </span>
+      <button
+        aria-label={`Next ${label.toLowerCase()} page`}
+        disabled={(page + 1) * size >= count}
+        onClick={() => onChange(page + 1)}
+      >
+        →
+      </button>
+    </nav>
   );
 }

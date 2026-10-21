@@ -2,16 +2,16 @@
 
 Every accepted write is checked against the same validation and JSON budget used by backup export and restore. A rejected write leaves the previous save intact. Originals are preserved without silent trimming.
 
-| Limit                                | Value                                     |
-| ------------------------------------ | ----------------------------------------- |
-| Normalized scrap                     | 8–800 Unicode characters                  |
-| Original scrap, including whitespace | 8 KiB of UTF-8                            |
-| Scraps                               | 200                                       |
-| Saved text revisions per scrap       | 100, including the current raw input      |
-| Sprouts                              | 1,000                                     |
-| Pairing records                      | 19,900                                    |
+| Limit                                | Value                                            |
+| ------------------------------------ | ------------------------------------------------ |
+| Normalized scrap                     | 8–800 Unicode characters                         |
+| Original scrap, including whitespace | 8 KiB of UTF-8                                   |
+| Scraps                               | 200                                              |
+| Saved text revisions per scrap       | 100, including the current raw input             |
+| Sprouts                              | 1,000                                            |
+| Pairing records                      | 19,900                                           |
 | Inference transcripts                | 100 runs, at most two returned responses per run |
-| Portable JSON backup                 | 2 MiB, including indentation and metadata |
+| Portable JSON backup                 | 2 MiB, including indentation and metadata        |
 
 The total byte budget can be reached before a record-count limit. Writes reserve enough space for the longest valid revision counter, so crossing a revision digit boundary does not break an otherwise unchanged backup. Export uses the same pretty-printed serialization as the write check. The UI reports an error before replacing the saved state when a change exceeds a limit.
 
@@ -68,7 +68,7 @@ The dedicated Chromium suite uses isolated contexts and fictional IndexedDB faul
 
 Unit regressions additionally cover original UTF-8 byte limits, a boundary-sized pretty backup across revision 9 → 10, accumulated history/count limits, memory fallback, preserved pending requests and an aborted recovery transaction.
 
-`test:p1` runs nineteen Chromium cases. Seven transport/storage cases check invalid primary/repair, no_blend, transport failure, cancellation, explicit retries after reload, oversized response recovery, and stale normal restore/saves without Web Locks. Four workflow cases check independent drafts across Escape/close/backdrop/save/validation, two-result discovery navigation and immutable model text when JSON properties are reordered. Eight stability cases cover production/offline source originals and cascade previews, legacy disclosure/count limits, skip/back/forward behavior, 2/3/200-source exhaustion and paged retry interaction with 19,900 attempts. They use fictional inputs, exact labelled public recordings, synthetic pairing indexes or an explicitly labelled loopback transport stub. Synthetic indexes and stub responses are not live model evidence. Repository CI runs this suite independently of real Ollama acceptance.
+`test:p1` runs twenty-three Chromium cases. Seven transport/storage cases check invalid primary/repair, no_blend, transport failure, cancellation, explicit retries after reload, oversized response recovery, and stale normal restore/saves without Web Locks. Four workflow cases check independent drafts across Escape/close/backdrop/save/validation, two-result discovery navigation and immutable model text when JSON properties are reordered. Eight stability cases cover production/offline source originals and cascade previews, legacy disclosure/count limits, skip/back/forward behavior, 2/3/200-source exhaustion and paged retry interaction with 19,900 attempts. They use fictional inputs, exact labelled public recordings, synthetic pairing indexes or an explicitly labelled loopback transport stub. Synthetic indexes and stub responses are not live model evidence. Four layout cases additionally cover scroll-free sample journeys at 1366 × 768 and 1730 × 776, exact long source text, last-page deletion, modal focus return and mobile enlarged-text access. Repository CI runs this suite independently of real Ollama acceptance.
 
 ![Inference history showing an unchanged public recorded sample, exact parent revisions and raw response](../evidence/inference-history.png)
 
