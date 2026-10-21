@@ -6,7 +6,7 @@ The first P1 implementation batch merged in [PR #37](https://github.com/drevende
 
 The workflow batch merged in [PR #38](https://github.com/drevendev/CompostClub/pull/38), closing #11, #12, #13 and #21: explicit retries after reload, independent add/edit drafts, access to all discoveries and order-independent JSON field comparison. Its validation covered 76 unit tests, eleven P1/workflow Chromium scenarios and eight recovery cases. The [sample/offline receipt](../evidence/workflow-verification.json) records four ordinary Chromium journeys and identifies that tested source/build. This batch did not rerun live inference.
 
-The next local batch addresses the remaining phase-1 issues #34, #14, #17 and #35: retained source originals, independent skip focus, clear slot/pair exhaustion and indexed selection at supported capacity. It is prepared for review; these four issues stay open until merge. Validation covers 91 unit tests, nineteen P1/workflow/stability Chromium cases, eight recovery cases and four ordinary sample/offline journeys. See the [new sample receipt](../evidence/stability-verification.json) and [synthetic capacity diagnostic](../evidence/pairing-capacity.json). Live inference was not rerun. After this batch, the next implementation priority is the bridge reliability group #8/#9/#10/#23, followed by the browser lifecycle/provenance work.
+The source-history/pairing batch merged in [PR #41](https://github.com/drevendev/CompostClub/pull/41), closing #34, #14, #17 and #35: raw text revision history, independent skip navigation, separate slot/pair-exhaustion copy and indexed selection at the supported capacity. The repository reports 91 unit tests, nineteen P1/workflow/stability Chromium cases, eight recovery cases and four ordinary sample/offline journeys from its recorded checks. The [stability receipt](../evidence/stability-verification.json) explicitly binds an intermediate dirty source/build rather than certifying a fresh exact-main post-merge run; [synthetic capacity data](../evidence/pairing-capacity.json) is not model speed. Live inference was not rerun in this batch. The next reliability work remains bridge #8/#9/#10/#23, then browser lifecycle/provenance and #39/#40 privacy/export behaviour.
 
 ## Baseline delivered
 
@@ -66,3 +66,65 @@ Exit: a traceable human decision and, where chosen, a reviewed experiment artifa
 - Prepare optional technical follow-up/social drafts [#28](https://github.com/drevendev/CompostClub/issues/28) from approved evidence and actual links.
 
 Continue without accounts, cloud inference, analytics, paid integrations or hidden downloads. Push, publication, deployment, domain registration, private excerpts and contest submission retain their separate owner-authorization boundaries.
+
+## 6. Named Gardens and Cross-Pollination — post-contest milestone (NOT shipped)
+
+**Owner concept approved for roadmap research on 21 October 2026.** Build only after a stable public demonstration of the existing single-garden experience; do not add this to the Hacktoberfest Week 3 release or market it as implemented. The public `Sample Garden` remains exactly labelled recorded and is never an implicit knowledge donor.
+
+### 6A. Independent gardens — [#42](https://github.com/drevendev/CompostClub/issues/42)
+
+- A user can keep separate **Books**, **Games**, **Tools** gardens and any number of **custom named gardens** within explicit local storage/performance limits. A preset is an optional look/label, never automatic content ingestion.
+- Give each garden a stable ID, own ideas/sprouts/inference history, 15-minute accrual clock and independent retry/save state. Renames and reordering do not change lineage or IDs.
+- Preserve the existing `personal` record as **My Garden** through validated, recoverable one-time IndexedDB/JSON migration. Protect `recovery`, `before-restore` and separate inference evidence. Legacy backups still import; malformed/mixed-version imports fail without destroying data.
+- A global garden selector is a navigation tool, not an account system. No cloud sync or external repository permission is implied.
+
+### 6B. Exchange knowledge / Cross-Pollination — [#43](https://github.com/drevendev/CompostClub/issues/43)
+
+- **Off by default**. Receiving garden sets a **0–100% probability**, selected donor allow-list, and optional visual indication; the donor garden separately grants permission to contribute scraps. Both opt-ins are required.
+- Chance is evaluated **once per eligible user-triggered harvest**: `p=0` only same-garden pairs; `p=100` one local + one eligible other-garden parent when available. Otherwise ordinary local blend; a missing donor is not fabricated.
+- Persist a seeded, reproducible decision per harvest/request, including source revisions. Reload and retry cannot reroll the chance by repeated clicks. Closing the app accrues *credits*, not generated ideas; selection remains deterministic/testable code, inference still runs locally on explicit action.
+- Display clear `Books → Games` lineage and honest results, not an invented probability of good ideas. Cross-pollination is **within one local user's device/profile**, not collaboration between people.
+
+### 6C. Consent, provenance, deletion and backups — [#44](https://github.com/drevendev/CompostClub/issues/44)
+
+- Parent identity becomes `(gardenId, scrapId, revision)`; immutable cross-garden text snapshots must validate against the exact generation request. Garden names can change without losing source history.
+- Full-workspace and per-garden exports/imports need versioned, bounded, atomic migration/restore with a clear dependency policy and preview. No orphaned snapshots or silent private garden copies.
+- Consent OFF stops **future** borrowing; existing results that contain borrowed text remain until the user deliberately removes them. Show retention and provide a reviewed cross-garden cascade/purge, aligned with [#39](https://github.com/drevendev/CompostClub/issues/39) and [#40](https://github.com/drevendev/CompostClub/issues/40). Preserve generated/replayed/imported status from [#22](https://github.com/drevendev/CompostClub/issues/22).
+- No private source content in public demos, GitHub Issues, CI logs or preloaded Sample Garden.
+
+### 6D. Real reuse adapters — [#45](https://github.com/drevendev/CompostClub/issues/45)
+
+Begin with **explicit user-selected small Markdown/JSON files**, preview and human approval. Do not add automatic GitHub/Obsidian/Drive readers/writers or publishing. Potential separately owned uses: Games/indie design ideas; Books/lore as noncanonical candidates; [Scriptorium](https://github.com/drevendev/Scriptorium) language insights; [TradeCraftSimulation](https://github.com/drevendev/trade_simulation) deterministic market mechanisms; [PatchPitch](https://github.com/drevendev/PatchPitch) human-reviewed copy about a selected public idea. The model must not claim a validated game or audience. OSS extraction comes only after actual multiple consumer proof.
+
+### v0.2 acceptance gates
+
+| Gate | Required proof |
+| --- | --- |
+| Isolation | Each garden can be used, renamed, backed up and restored without moving or deleting other gardens. Sample isolation proven. |
+| Migration | An existing personal garden, receipts, revisions and recovery copies survive one-way migration, crash and rollback. |
+| Determinism | Synthetic policy tests cover p=0, p=100, p=10, consent changes, no donor, retry/reload and stable parent selection. |
+| Privacy | No borrowing without two opt-ins; a donor deletion or permission OFF cannot cause future unauthorised model inputs. |
+| Provenance | Cross-garden sprout source references and quote checks survive editing, rename, export/import and intentional deletion. |
+| Release | Source and tests are verified on exact candidate; no extra accounts, backend, paid API, telemetry or unlicensed material. |
+
+## 7. Demo and video plan — existing release now, future garden ecosystem later
+
+Full implementation issue: **[#46 — verified public showcase and storyboards](https://github.com/drevendev/CompostClub/issues/46)**. This may advance immediately with the current app and is independent of future Named Gardens.
+
+**Currently runnable, recorded-fact demonstrations** (inputs are fictional public fixtures, outputs are unchanged local Gemma 3 4B recordings in [recordings.json](../fixtures/public/recordings.json)):
+
+- **Postcard Echoes:** auto-running tiny town + forgotten postcards, `demo-01 + demo-02`.
+- **Clockwork Curios:** auto-running town + vending machine for abandoned hobbies, `demo-01 + demo-03`. Strongest self-referential Compost Club example.
+- **Небесный Повар:** pocket weather library + word-collecting kitchen robot, `demo-04 + demo-05`. Good bilingual example; model outputs and locale must be displayed honestly.
+- **Cartographic Echoes:** postcards + weather library, `demo-02 + demo-04`.
+
+**Video A · 20–30 seconds for X:** "Too many ideas" → paper scraps in pile → Wiggle → one **labelled recorded** sprout with its two source cards → brand and verified repository link.
+
+**Video B · 75–90 seconds for DEV:** first two scraps → real recorded mode or explicitly identified **genuine local Ollama** → sprout + both parents → Keep / All Discoveries / Markdown export → labelled `Demo clock +15 min` and no-background-inference explanation → Gemma/OSS/privacy/limitations + real verified code/video/site link.
+
+**Video C · 2–3 minutes engineering breakdown:** source quote failure on small Gemma (0/24) → narrower prompt/validation (1B 23/24, 4B 24/24 structural; NOT idea-quality metrics) → browser WebGPU 0/4 initial smoke → raw source evidence. No misleading reconstructed model transcripts.
+
+**Future concept storyboard:** Books ↔ Games gardens with donor and receiver opt-ins and a 0→10→100% slider; visually tag *"Planned feature — concept preview, not the current application"*. Do not splice mock into a real demo without disclosure. Once #42–#44 ship and pass their checks, produce a separate real multi-garden video.
+
+**Publication gate:** actual page or video must be verified; #15 remains the hosted Pages path and #19 the single Week 3 official entry. Original media, proper captions, accessibility, rights, no private archives, no fabricated use claims. No autonomous publication or transfer of private materials.
+
