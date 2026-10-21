@@ -56,6 +56,8 @@ files.push(
   'evidence/inference-history.png',
   'evidence/p1-verification.json',
   'evidence/workflow-verification.json',
+  'evidence/stability-verification.json',
+  'evidence/pairing-capacity.json',
 );
 const manifest = {};
 for (const file of files.sort())

@@ -34,9 +34,11 @@ Personal and sample gardens use separate records in the `compost-club-v1` Indexe
 
 A successful result stores its output, immutable source snapshots, consumed pair and spent slot together. Failed/cancelled generations retain their slot. Pending inference is never resumed from a backup. Source text and model output render as text, not HTML.
 
+Source edits append the previous raw/text/origin/revision to a bounded history before installing the new revision in the same validated garden write. Legacy sources disclose their first known revision; absent originals are not reconstructed. Deletion previews count and remove retained source revisions along with dependent results. The pair picker builds an attempted-key index once and decorates each candidate with its key/rank before sorting. The UI memoizes selection for a garden snapshot and distinguishes available combinations from time credits; failure retries remain deliberate.
+
 Writes and portable backups share validation and the 2 MiB pretty-printed JSON budget. Original scrap text is capped at 8 KiB without silent truncation. Unreadable records open a [recovery screen](RECOVERY.md): the original can be downloaded, and a confirmed restore atomically retains it under `recovery:personal` or `recovery:sample` before replacing the active garden. These keys hold the most recent recovery copy separately from normal garden backups. A stale recovery preview cannot overwrite a changed record.
 
-The first review also found gaps in retry durability and UI state; see [review issues](https://github.com/drevendev/CompostClub/issues?q=is%3Aissue+label%3Areview). The bridge is intended for local use and has not received a production security audit.
+The remaining reliability work is tracked in [review issues](https://github.com/drevendev/CompostClub/issues?q=is%3Aissue+is%3Aopen+label%3Areview). The bridge is intended for local use and has not received a production security audit.
 
 ## Build boundary
 

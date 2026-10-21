@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addScrap,
   availablePairs,
@@ -11,6 +11,8 @@ import {
   importGarden,
   INTERVAL,
   MAX_BACKUP_BYTES,
+  MAX_SCRAPS,
+  MAX_ATTEMPTS,
   reconcile,
   recordResponse,
   retryablePairs,
@@ -18,6 +20,7 @@ import {
   recompost,
   removeScrap,
   serializeGarden,
+  sourceRevisions,
   type Backend,
   type Garden,
   type GardenKind,
@@ -40,6 +43,7 @@ import { Icon } from './ui/Icons';
 import { Modal } from './ui/Modal';
 import { Recovery } from './ui/Recovery';
 import { InferenceHistory } from './ui/InferenceHistory';
+import { SourceHistory } from './ui/SourceHistory';
 import type { Generation } from './domain/generation';
 import './styles.css';
 import licenceTexts from '../public/THIRD_PARTY_LICENSES.txt?raw';
@@ -52,6 +56,7 @@ type Dialog =
   | 'delete'
   | 'import'
   | 'history'
+  | 'source-history'
   | 'discard-evidence'
   | null;
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -81,6 +86,7 @@ export default function App() {
     [notice, setNotice] = useState(''),
     [storageWarning, setStorageWarning] = useState('');
   const [retryKey, setRetryKey] = useState('');
+  const [retryPage, setRetryPage] = useState(0);
   const [backend, setBackend] = useState<Backend>('ollama'),
     [modelKey, setModelKey] = useState<ModelKey>('1b'),
     [language, setLanguage] = useState<Language>('en');
@@ -108,6 +114,18 @@ export default function App() {
     ref.current = g;
     setGarden(g);
   }, []);
+  const pairs = useMemo(() => (garden ? availablePairs(garden) : []), [garden]);
+  const availableCount = useMemo(
+    () =>
+      garden?.kind === 'sample'
+        ? pairs.filter(
+            ([a, b]) =>
+              findReplay(a.text, b.text, language) || findReplay(b.text, a.text, language),
+          ).length
+        : pairs.length,
+    [pairs, garden?.kind, language],
+  );
+  const retries = useMemo(() => (garden ? retryablePairs(garden) : []), [garden]);
 
   useEffect(() => {
     let cancelled = false;
@@ -240,46 +258,69 @@ export default function App() {
       document.removeEventListener('visibilitychange', visibility);
     };
   }, [commit, locked]);
-  async function action(fn: () => Promise<void> | void) {
+  const action = useCallback(async (fn: () => Promise<void> | void) => {
     setError('');
     try {
       await fn();
     } catch (e) {
       setError(errorText(e));
     }
-  }
-  async function switchGarden(next: GardenKind) {
-    if (busyRef.current || saving) return;
-    await action(async () => {
-      let saved: Garden;
-      try {
-        saved = await storage.load(next);
-      } catch (e) {
-        ref.current = null;
-        setGarden(null);
+  }, []);
+  const switchGarden = useCallback(
+    async (next: GardenKind) => {
+      if (busyRef.current || saving) return;
+      await action(async () => {
+        let saved: Garden;
+        try {
+          saved = await storage.load(next);
+        } catch (e) {
+          ref.current = null;
+          setGarden(null);
+          setKind(next);
+          setStartupError(errorText(e));
+          location.hash = next === 'sample' ? 'sample' : 'garden';
+          return;
+        }
+        let g = saved;
+        if (next === 'sample' && g.scraps.length === 0) {
+          for (const s of fixtures.scraps)
+            g = addScrap(g, s.text, Date.now(), { id: s.id, origin: 'fixture' });
+          g = await storage.save(g, saved.revision);
+        }
+        setCurrent(g);
+        setStartupError('');
         setKind(next);
-        setStartupError(errorText(e));
         location.hash = next === 'sample' ? 'sample' : 'garden';
+        setTab('garden');
+        setWelcome(false);
+        setNotice('');
+        setError('');
+        setRetryKey('');
+        setRetryPage(0);
+        setDialog(null);
+      });
+    },
+    [action, saving, setCurrent],
+  );
+  useEffect(() => {
+    const navigate = () => {
+      const next =
+        location.hash === '#sample'
+          ? 'sample'
+          : ['#garden', ''].includes(location.hash)
+            ? 'personal'
+            : null;
+      if (!next || next === kind) return;
+      if (busyRef.current || saving) {
+        history.replaceState(null, '', kind === 'sample' ? '#sample' : '#garden');
+        setError('Finish or cancel the current operation before switching gardens.');
         return;
       }
-      let g = saved;
-      if (next === 'sample' && g.scraps.length === 0) {
-        for (const s of fixtures.scraps)
-          g = addScrap(g, s.text, Date.now(), { id: s.id, origin: 'fixture' });
-        g = await storage.save(g, saved.revision);
-      }
-      setCurrent(g);
-      setStartupError('');
-      setKind(next);
-      location.hash = next === 'sample' ? 'sample' : 'garden';
-      setTab('garden');
-      setWelcome(false);
-      setNotice('');
-      setError('');
-      setRetryKey('');
-      setDialog(null);
-    });
-  }
+      void switchGarden(next);
+    };
+    window.addEventListener('hashchange', navigate);
+    return () => window.removeEventListener('hashchange', navigate);
+  }, [kind, saving, switchGarden]);
   async function submit() {
     await action(async () => {
       await commit((g) => addScrap(g, text, Date.now()));
@@ -547,12 +588,23 @@ export default function App() {
       tab === 'collection'
         ? garden.sprouts.filter((s) => collectionView === 'all' || s.kept)
         : garden.sprouts.slice(-1);
-  const retries = retryablePairs(garden);
-  const retrySelection = retries.find((pair) => pairKey(pair) === retryKey) ?? retries[0];
+  const retryPageIndex = Math.min(retryPage, Math.max(0, Math.ceil(retries.length / 50) - 1));
+  const retryChoices = retries.slice(retryPageIndex * 50, (retryPageIndex + 1) * 50);
+  const retrySelection = retryChoices.find((pair) => pairKey(pair) === retryKey) ?? retryChoices[0];
+  const fullPairHistory = garden.attempts.length >= MAX_ATTEMPTS;
   const affected = deletionSet(garden, editId);
   return (
     <div className="app-shell">
-      <a className="skip" href="#main-content">
+      <a
+        className="skip"
+        href="#main-content"
+        onClick={(e) => {
+          e.preventDefault();
+          const main = document.getElementById('main-content');
+          main?.focus({ preventScroll: true });
+          main?.scrollIntoView({ block: 'start' });
+        }}
+      >
         Skip to garden
       </a>
       <header className="header">
@@ -582,7 +634,7 @@ export default function App() {
           How it works <Icon name="info" size={17} />
         </button>
       </header>
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1}>
         <section className="intro">
           <div>
             <p className="eyebrow">
@@ -743,16 +795,40 @@ export default function App() {
               <label className="field-label">
                 Pairing to retry
                 <select
+                  aria-label="Pairing to retry"
                   value={pairKey(retrySelection)}
                   onChange={(e) => setRetryKey(e.target.value)}
                 >
-                  {retries.map((pair, index) => (
+                  {retryChoices.map((pair, index) => (
                     <option key={pairKey(pair)} value={pairKey(pair)}>
-                      {index + 1}. {pair[0].text.slice(0, 60)} + {pair[1].text.slice(0, 60)}
+                      {retryPageIndex * 50 + index + 1}. {pair[0].text.slice(0, 60)} +{' '}
+                      {pair[1].text.slice(0, 60)}
                     </option>
                   ))}
                 </select>
               </label>
+            )}
+            {retries.length > 50 && (
+              <div className="retry-pagination">
+                <span>
+                  Pairings {retryPageIndex * 50 + 1}–
+                  {Math.min((retryPageIndex + 1) * 50, retries.length)} of {retries.length}
+                </span>
+                <button
+                  className="text-button"
+                  disabled={retryPageIndex === 0 || busy || saving}
+                  onClick={() => setRetryPage(retryPageIndex - 1)}
+                >
+                  Previous retry choices
+                </button>
+                <button
+                  className="text-button"
+                  disabled={(retryPageIndex + 1) * 50 >= retries.length || busy || saving}
+                  onClick={() => setRetryPage(retryPageIndex + 1)}
+                >
+                  Next retry choices
+                </button>
+              </div>
             )}
             <details className="retry-sources">
               <summary>View retry sources</summary>
@@ -843,6 +919,15 @@ export default function App() {
                           Edit
                         </button>
                         <button
+                          aria-label={`View history of scrap ${index + 1}`}
+                          onClick={() => {
+                            setEditId(scrap.id);
+                            setDialog('source-history');
+                          }}
+                        >
+                          <Icon name="clock" size={14} /> History
+                        </button>
+                        <button
                           aria-label={`Remove scrap ${index + 1}`}
                           onClick={() => {
                             setEditId(scrap.id);
@@ -869,16 +954,22 @@ export default function App() {
                   <Icon name="sun" size={14} />a good day to do less
                 </span>
               </div>
-              <GardenScene growing={busy} count={garden.sprouts.length} ready={shown.readySlots} />
+              <GardenScene
+                growing={busy}
+                count={garden.sprouts.length}
+                ready={availableCount && !fullPairHistory ? shown.readySlots : 0}
+              />
               <div className="worm-note">
                 <span>“</span>
                 {busy
                   ? 'A little mixing, a little magic…'
                   : garden.scraps.length < 2
                     ? 'Got an idea? I like the weird ones.'
-                    : shown.readySlots
-                      ? 'Something good is ready to happen.'
-                      : 'Nothing needs your attention. Let it ferment.'}
+                    : !availableCount
+                      ? 'A fresh ingredient can start something new.'
+                      : shown.readySlots
+                        ? 'Something good is ready to happen.'
+                        : 'Nothing needs your attention. Let it ferment.'}
                 <small>— Wiggle, resident optimist</small>
               </div>
               <div className="ferment-card">
@@ -890,9 +981,17 @@ export default function App() {
                     <h3>
                       {busy
                         ? 'Growing a new idea…'
-                        : shown.readySlots
-                          ? `${shown.readySlots} pairing${shown.readySlots === 1 ? ' is' : 's are'} ready`
-                          : 'Let time do its thing'}
+                        : fullPairHistory
+                          ? 'Pairing history is full'
+                          : garden.scraps.length >= 2 && !availableCount
+                            ? retries.length
+                              ? 'An unfinished pairing awaits'
+                              : kind === 'sample'
+                                ? 'No unused recording matches'
+                                : 'Your pile needs a new ingredient'
+                            : shown.readySlots
+                              ? `${shown.readySlots} slot${shown.readySlots === 1 ? ' is' : 's are'} ready`
+                              : 'Let time do its thing'}
                     </h3>
                     <p>
                       {garden.scraps.length < 2
@@ -901,9 +1000,13 @@ export default function App() {
                           ? kind === 'sample'
                             ? 'Opening a recorded result.'
                             : 'Your model is mixing two thoughts locally.'
-                          : shown.readySlots === 3
-                            ? 'Your pile is rested. Three slots is a full harvest.'
-                            : `Next pairing in ${Math.floor(remaining / 60000)}:${String(Math.floor(remaining / 1000) % 60).padStart(2, '0')}`}
+                          : fullPairHistory
+                            ? `${shown.readySlots} ready slot${shown.readySlots === 1 ? ' remains' : 's remain'}. Export your garden, then review a source and its dependent history for removal. Existing unfinished pairs can still be retried.`
+                            : !availableCount
+                              ? `${shown.readySlots} ready slot${shown.readySlots === 1 ? '' : 's'} ${shown.readySlots === 1 ? 'stays' : 'stay'} yours. ${retries.length ? `Use Retry this pairing above, or ${garden.scraps.length >= MAX_SCRAPS ? 'edit a source' : 'add another scrap'}.` : kind === 'sample' ? 'Try another language or use local AI for your own scraps.' : 'Add or edit a scrap, or return a sprout to the pile.'}`
+                              : shown.readySlots === 3
+                                ? 'Your pile is rested. Three slots is a full harvest.'
+                                : `Next slot in ${Math.floor(remaining / 60000)}:${String(Math.floor(remaining / 1000) % 60).padStart(2, '0')}`}
                     </p>
                   </div>
                   <div className="slots" aria-label={`${shown.readySlots} of 3 slots ready`}>
@@ -912,6 +1015,11 @@ export default function App() {
                     ))}
                   </div>
                 </div>
+                <p className="pairing-count">
+                  {availableCount} unused {kind === 'sample' ? 'recorded ' : ''}combination
+                  {availableCount === 1 ? '' : 's'} · {retries.length} unfinished pairing
+                  {retries.length === 1 ? '' : 's'}
+                </p>
                 <div className="progress-track">
                   <span
                     style={{
@@ -922,7 +1030,12 @@ export default function App() {
                 <button
                   className="button primary grow-button"
                   disabled={
-                    locked || saving || busy || shown.readySlots === 0 || garden.scraps.length < 2
+                    locked ||
+                    saving ||
+                    busy ||
+                    shown.readySlots === 0 ||
+                    !availableCount ||
+                    fullPairHistory
                   }
                   onClick={() => void grow()}
                 >
@@ -934,6 +1047,32 @@ export default function App() {
                       : 'Let it ferment'}
                   <Icon name="arrow" size={18} />
                 </button>
+                {garden.scraps.length >= 2 && (!availableCount || fullPairHistory) && !busy && (
+                  <button
+                    className="button secondary ingredient-button"
+                    disabled={locked || saving}
+                    onClick={() => {
+                      if (fullPairHistory) {
+                        setEditId(garden.scraps[0]!.id);
+                        setDialog('delete');
+                      } else if (kind === 'sample' && !retries.length)
+                        void switchGarden('personal');
+                      else if (garden.scraps.length >= MAX_SCRAPS) showEdit(garden.scraps[0]!.id);
+                      else {
+                        inputRef.current?.focus();
+                        inputRef.current?.scrollIntoView({ block: 'center' });
+                      }
+                    }}
+                  >
+                    {fullPairHistory
+                      ? 'Review a source for removal'
+                      : kind === 'sample' && !retries.length
+                        ? 'Start your own pile'
+                        : garden.scraps.length >= MAX_SCRAPS
+                          ? 'Edit a source'
+                          : 'Add another scrap'}
+                  </button>
+                )}
                 {busy && (
                   <button
                     className="text-button cancel"
@@ -1509,6 +1648,32 @@ export default function App() {
           <InferenceHistory runs={garden.generations ?? []} />
         </Modal>
       )}
+      {dialog === 'source-history' && garden.scraps.find((s) => s.id === editId) && (
+        <Modal title="Source history" onClose={() => setDialog(null)}>
+          <button
+            className="button secondary"
+            onClick={() => {
+              const scrap = garden.scraps.find((s) => s.id === editId)!;
+              download(
+                'compost-club-source-history.json',
+                JSON.stringify(
+                  {
+                    id: scrap.id,
+                    knownFromRevision: scrap.history?.[0]?.revision ?? scrap.revision,
+                    revisions: sourceRevisions(scrap),
+                  },
+                  null,
+                  2,
+                ),
+                'application/json',
+              );
+            }}
+          >
+            Download source history
+          </button>
+          <SourceHistory scrap={garden.scraps.find((s) => s.id === editId)!} />
+        </Modal>
+      )}
       {dialog === 'discard-evidence' && inferenceRecovery && (
         <Modal title="Remove this inference recovery copy?" onClose={() => setDialog('backup')}>
           <p>
@@ -1582,11 +1747,13 @@ export default function App() {
       {dialog === 'delete' && (
         <Modal title="Let this scrap go?" onClose={() => setDialog(null)}>
           <p>
-            This removes {affected.scraps.size} scrap{affected.scraps.size === 1 ? '' : 's'} and{' '}
-            {affected.sprouts.size} dependent sprout{affected.sprouts.size === 1 ? '' : 's'}, and{' '}
-            {affected.generations.size} inference history record
-            {affected.generations.size === 1 ? '' : 's'}, including their saved source snapshots.
-            The deleted text will not stay hidden in the lineage.
+            This removes {affected.scraps.size} scrap{affected.scraps.size === 1 ? '' : 's'}{' '}
+            containing {affected.revisions} saved text revision{affected.revisions === 1 ? '' : 's'}
+            , and {affected.sprouts.size} dependent sprout{affected.sprouts.size === 1 ? '' : 's'},
+            and {affected.generations.size} inference history record
+            {affected.generations.size === 1 ? '' : 's'}, including their saved source snapshots.{' '}
+            {affected.pairings} pairing record{affected.pairings === 1 ? '' : 's'} will also be
+            removed. The deleted text will not stay hidden in the lineage.
           </p>
           <ul className="delete-list">
             {garden.scraps

@@ -2047,11 +2047,28 @@ input,
 }
 
 /* Original model text remains readable without rendering it as HTML. */
-.inference-history pre {
+.inference-history pre,
+.source-history pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-height: 18rem;
   overflow: auto;
+}
+.retry-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.pairing-count {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 14px;
+}
+.ingredient-button {
+  width: 100%;
+  margin-top: 10px;
 }
 .inference-history details {
   margin-block: 1rem;
