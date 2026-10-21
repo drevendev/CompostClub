@@ -7,6 +7,12 @@ import {
   type ModelOutput,
   PROMPT_VERSION,
 } from '../inference/contract';
+import {
+  GENERATION_HEADROOM,
+  MAX_GENERATIONS,
+  inspectResponse,
+  type Generation,
+} from './generation';
 
 export const INTERVAL = 900_000;
 export const MAX_SCRAPS = 200;
@@ -61,6 +67,7 @@ export interface Garden {
   scraps: Scrap[];
   sprouts: Sprout[];
   attempts: Attempt[];
+  generations?: Generation[];
   pending: Request | null;
   welcomeGranted: boolean;
   readySlots: number;
@@ -192,18 +199,50 @@ export function beginRequest(
     throw new Error('The selected sources have changed.');
   if (g.attempts.some((a) => a.key === pairKey(parents) && a.status === 'success'))
     throw new Error('That pairing has already grown.');
+  const request: Request = {
+    id: uid(),
+    key: pairKey(parents),
+    parents,
+    backend,
+    model,
+    modelRevision,
+    language,
+    promptVersion: PROMPT_VERSION,
+  };
+  if ((g.generations?.length ?? 0) >= MAX_GENERATIONS)
+    throw new Error(
+      'The inference history holds 100 runs. Export it, then remove a source with its history before growing again.',
+    );
+  const next: Garden = {
+    ...g,
+    pending: request,
+    generations: [
+      ...(g.generations ?? []),
+      { ...request, createdAt: now, status: 'pending', responses: [], error: null },
+    ],
+  };
+  if (
+    new TextEncoder().encode(serializeGarden(next)).byteLength + GENERATION_HEADROOM >
+    MAX_BACKUP_BYTES
+  )
+    throw new Error(
+      'The garden needs 192 KiB of free backup space for inference evidence. Export it and remove a source with its history before growing again.',
+    );
+  return next;
+}
+export function recordResponse(g: Garden, id: string, raw: string): Garden {
+  const run = g.generations?.find((r) => r.id === id);
+  if (!g.pending || g.pending.id !== id || !run || run.status !== 'pending')
+    throw new Error('This response belongs to an interrupted request.');
+  if (run.responses.length >= 2)
+    throw new Error('Only one primary response and one repair are allowed.');
+  const response = inspectResponse(run, raw, run.responses.length ? 'repair' : 'primary');
   return {
     ...g,
-    pending: {
-      id: uid(),
-      key: pairKey(parents),
-      parents,
-      backend,
-      model,
-      modelRevision,
-      language,
-      promptVersion: PROMPT_VERSION,
-    },
+    generations:
+      g.generations?.map((r) =>
+        r.id === id ? { ...r, responses: [...r.responses, response] } : r,
+      ) ?? [],
   };
 }
 export function completeRequest(g: Garden, requestId: string, raw: string, now: number): Garden {
@@ -219,10 +258,15 @@ export function completeRequest(g: Garden, requestId: string, raw: string, now: 
   const output = parseOutput(raw, r.parents[0].text, r.parents[1].text);
   if (output.outcome === 'no_blend') throw new Error(`No blend this time: ${output.concept}`);
   if (g.readySlots < 1) throw new Error('No harvest slot available.');
+  const run = g.generations?.find((r) => r.id === requestId);
+  if (run && run.responses.at(-1)?.raw !== raw) g = recordResponse(g, requestId, raw);
   return {
     ...g,
     pending: null,
     readySlots: g.readySlots - 1,
+    generations:
+      g.generations?.map((run) => (run.id === requestId ? { ...run, status: 'success' } : run)) ??
+      [],
     sprouts: [
       ...g.sprouts,
       { ...r, output, rawOutput: raw, createdAt: now, kept: false, recomposted: false },
@@ -233,12 +277,33 @@ export function completeRequest(g: Garden, requestId: string, raw: string, now: 
     ],
   };
 }
-export function failRequest(g: Garden, id: string): Garden {
+export function failRequest(
+  g: Garden,
+  id: string,
+  error = 'The request was interrupted.',
+  cancelled = false,
+): Garden {
   const r = g.pending;
   if (!r || r.id !== id) return g;
   return {
     ...g,
     pending: null,
+    generations:
+      g.generations?.map((run) => {
+        if (run.id !== id) return run;
+        const last = run.responses.at(-1);
+        const noBlend =
+          last?.validationError === null &&
+          parseOutput(last.raw, run.parents[0].text, run.parents[1].text).outcome === 'no_blend';
+        const status: Generation['status'] = cancelled
+          ? 'cancelled'
+          : noBlend
+            ? 'no_blend'
+            : last
+              ? 'failed'
+              : 'transport_error';
+        return { ...run, status, error };
+      }) ?? [],
     attempts: [
       ...g.attempts.filter((a) => a.key !== r.key),
       { key: r.key, status: 'failed', requestId: id },
@@ -259,7 +324,10 @@ export function recompost(g: Garden, id: string, now: number): Garden {
     sprouts: next.sprouts.map((s) => (s.id === id ? { ...s, recomposted: true } : s)),
   };
 }
-export function deletionSet(g: Garden, id: string): { scraps: Set<string>; sprouts: Set<string> } {
+export function deletionSet(
+  g: Garden,
+  id: string,
+): { scraps: Set<string>; sprouts: Set<string>; generations: Set<string> } {
   const scraps = new Set([id]),
     sprouts = new Set<string>();
   let changed = true;
@@ -276,7 +344,10 @@ export function deletionSet(g: Garden, id: string): { scraps: Set<string>; sprou
         changed = true;
       }
   }
-  return { scraps, sprouts };
+  const generations = new Set(
+    (g.generations ?? []).filter((r) => r.parents.some((p) => scraps.has(p.id))).map((r) => r.id),
+  );
+  return { scraps, sprouts, generations };
 }
 export function removeScrap(g: Garden, id: string): Garden {
   if (g.pending) throw new Error('Cancel the current blend before removing a source.');
@@ -285,6 +356,7 @@ export function removeScrap(g: Garden, id: string): Garden {
     ...g,
     scraps: g.scraps.filter((s) => !affected.scraps.has(s.id)),
     sprouts: g.sprouts.filter((s) => !affected.sprouts.has(s.id)),
+    generations: g.generations?.filter((r) => !affected.generations.has(r.id)) ?? [],
     attempts: g.attempts.filter(
       (a) => !a.key.split('|').some((p) => affected.scraps.has(p.split('@')[0] ?? '')),
     ),
@@ -300,7 +372,8 @@ export function exportMarkdown(g: Garden): string {
       })
       .join('\n') +
     `\n## Original scraps\n\n` +
-    g.scraps.map((s) => `- ${s.raw}`).join('\n')
+    g.scraps.map((s) => `- ${s.raw}`).join('\n') +
+    `\n\n## Inference history\n\n${(g.generations ?? []).map((r) => `${r.id} · ${r.status} · ${r.backend === 'replay' ? 'Recorded demo — no live AI' : r.backend}\nModel: ${r.model} @ ${r.modelRevision}; prompt: ${r.promptVersion}; language: ${r.language}\nA (revision ${r.parents[0].revision}): ${r.parents[0].text}\nB (revision ${r.parents[1].revision}): ${r.parents[1].text}\n${r.error ?? ''}\n${r.responses.map((s) => `${s.phase}: ${s.validationError ?? 'Structure valid; usefulness not certified'}\n${JSON.stringify(s.raw)}\n`).join('\n')}`).join('\n')}`
   );
 }
 
@@ -309,9 +382,12 @@ export function importGarden(raw: string): Garden {
   const data: unknown = JSON.parse(raw);
   const g = validateGarden(data);
   // A backup never resumes an old inference operation.
-  const restored = { ...g, pending: null };
-  serializeGarden(restored);
-  return restored;
+  const restored = g.pending
+    ? failRequest(g, g.pending.id, 'Interrupted before reload or restore.', true)
+    : g;
+  const resumed = { ...restored, pending: null };
+  serializeGarden(resumed);
+  return resumed;
 }
 function checkBackupSize(raw: string) {
   if (new TextEncoder().encode(raw).byteLength > MAX_BACKUP_BYTES)
@@ -436,6 +512,61 @@ function validateGarden(data: unknown): Garden {
       !['success', 'failed'].includes(a.status)
     )
       throw new Error('Malformed pairing history.');
+  if (g.generations !== undefined) {
+    if (!Array.isArray(g.generations) || g.generations.length > MAX_GENERATIONS)
+      throw new Error('Inference history must contain at most 100 runs.');
+    const runIds = new Set<string>();
+    for (const run of g.generations) {
+      if (
+        !run ||
+        typeof run.id !== 'string' ||
+        runIds.has(run.id) ||
+        !Number.isFinite(run.createdAt) ||
+        !['pending', 'success', 'failed', 'no_blend', 'cancelled', 'transport_error'].includes(
+          run.status,
+        ) ||
+        !['browser', 'ollama', 'replay'].includes(run.backend) ||
+        !['en', 'ru'].includes(run.language) ||
+        typeof run.model !== 'string' ||
+        typeof run.modelRevision !== 'string' ||
+        typeof run.promptVersion !== 'string' ||
+        (run.error !== null && typeof run.error !== 'string') ||
+        !Array.isArray(run.parents) ||
+        run.parents.length !== 2 ||
+        !Array.isArray(run.responses) ||
+        run.responses.length > 2
+      )
+        throw new Error('Malformed inference history.');
+      for (const p of run.parents)
+        if (
+          !p ||
+          !ids.has(p.id) ||
+          !Number.isSafeInteger(p.revision) ||
+          p.revision < 1 ||
+          typeof p.text !== 'string' ||
+          validateScrap(p.text) !== p.text
+        )
+          throw new Error('Invalid inference source snapshot.');
+      if (run.parents[0].id === run.parents[1].id || run.key !== pairKey(run.parents))
+        throw new Error('Invalid inference pair.');
+      for (const [i, response] of run.responses.entries()) {
+        if (
+          !response ||
+          typeof response.raw !== 'string' ||
+          response.phase !== (i ? 'repair' : 'primary') ||
+          (response.validationError !== null && typeof response.validationError !== 'string')
+        )
+          throw new Error('Malformed original inference response.');
+        // Validation messages can differ between JS engines; preserve the recorded message.
+        if (
+          (inspectResponse(run, response.raw, response.phase).validationError === null) !==
+          (response.validationError === null)
+        )
+          throw new Error('The inference validation status does not match its original response.');
+      }
+      runIds.add(run.id);
+    }
+  }
   return g;
 }
 function lengthLimit(s: string, max: number) {

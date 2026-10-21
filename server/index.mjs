@@ -3,7 +3,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { prompt, schemaFor, parseOutput, validateScrap } from '../src/inference/contract.ts';
+import { prompt, schemaFor, validateScrap } from '../src/inference/contract.ts';
 
 const port = Number(process.env.PORT ?? 4173);
 const upstream = process.env.OLLAMA_URL ?? 'http://127.0.0.1:11434';
@@ -90,7 +90,9 @@ export const server = http.createServer(async (req, res) => {
         typeof data.b !== 'string' ||
         !['en', 'ru'].includes(data.language) ||
         typeof data.requestId !== 'string' ||
-        data.requestId.length > 100
+        data.requestId.length > 100 ||
+        (data.repair !== undefined &&
+          (typeof data.repair !== 'string' || data.repair.length > 2000))
       ) {
         json(res, 400, { error: 'Invalid inputs' });
         return;
@@ -113,31 +115,29 @@ export const server = http.createServer(async (req, res) => {
         if (!res.writableEnded) controller.abort();
       });
       try {
-        let repair = '';
-        for (let i = 0; i < 2; i++) {
-          const generated = await fetch(upstream + '/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model,
-              prompt: prompt(a, b, data.language, repair),
-              format: schemaFor(a, b),
-              stream: false,
-              keep_alive: '60s',
-              options: { num_ctx: 4096, num_predict: 384, temperature: 0.6 },
-            }),
-            signal: controller.signal,
-          }).then((r) => r.json());
-          if (generated.error) throw new Error(generated.error);
-          try {
-            parseOutput(generated.response, a, b);
-            json(res, 200, { raw: generated.response, digest });
-            return;
-          } catch (error) {
-            if (i === 1) throw error;
-            repair = error.message;
-          }
-        }
+        const generated = await fetch(upstream + '/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model,
+            prompt: prompt(a, b, data.language, data.repair),
+            format: schemaFor(a, b),
+            stream: false,
+            keep_alive: '60s',
+            options: { num_ctx: 4096, num_predict: 384, temperature: 0.6 },
+          }),
+          signal: controller.signal,
+        }).then((r) => r.json());
+        if (typeof generated.response !== 'string')
+          throw new Error(generated.error ?? 'Ollama returned no model response.');
+        // One response per HTTP call. The client journals it before validation
+        // and before explicitly requesting at most one repair.
+        json(res, 200, {
+          raw: generated.response,
+          digest,
+          upstreamError: generated.error ? String(generated.error) : null,
+        });
+        return;
       } finally {
         clearTimeout(timer);
         busy = false;

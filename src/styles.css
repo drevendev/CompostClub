@@ -2013,3 +2013,13 @@ input,
     scroll-behavior: auto !important;
   }
 }
+/* Original model text remains readable without rendering it as HTML. */
+.inference-history pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 18rem;
+  overflow: auto;
+}
+.inference-history details {
+  margin-block: 1rem;
+}

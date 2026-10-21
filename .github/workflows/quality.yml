@@ -26,4 +26,5 @@ jobs:
       - run: npm run package:single
       - run: npx playwright install --with-deps chromium
       - run: npm run test:recovery
+      - run: npm run test:p1
       - run: node scripts/pages-smoke.mjs

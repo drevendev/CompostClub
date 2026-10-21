@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
+  outputDir: '.local/recovery-artifacts',
   testMatch: 'recovery.spec.ts',
   timeout: 30000,
   workers: 1,

@@ -61,7 +61,7 @@ it('saves atomically across reload and rejects concurrent stale writers', async 
   await a.open();
   await b.open();
   const g = createGarden('personal', 100, 'storage-test');
-  const saved = await a.save(g, 0, true);
+  const saved = await a.save(g, 0);
   const loaded = await b.load('personal');
   expect(loaded).toEqual(saved);
   await a.save(addScrap(saved, 'A tiny cloud becomes a library.', 100), saved.revision);
@@ -88,11 +88,12 @@ it('roundtrips the largest allowed pretty backup across a revision digit boundar
     JSON.stringify({ ...g, seed: '', revision: Number.MAX_SAFE_INTEGER }, null, 2),
   );
   g.seed = 'x'.repeat(MAX_BACKUP_BYTES - overhead);
+  await rawWrite({ ...g, revision: 8 });
   const saved = await store.save(g, 8);
   const backup = serializeGarden(saved);
   expect(Buffer.byteLength(backup)).toBeLessThanOrEqual(MAX_BACKUP_BYTES);
   expect(importGarden(backup)).toEqual(saved);
-  const restored = await store.save(importGarden(backup), 9, true);
+  const restored = await store.restore(importGarden(backup), 9);
   expect(restored.revision).toBe(10);
   expect(importGarden(serializeGarden(restored))).toEqual(await store.load('personal'));
   const tooLarge = { ...restored, seed: restored.seed + 'x' };
@@ -101,6 +102,28 @@ it('roundtrips the largest allowed pretty backup across a revision digit boundar
   expect(await store.load('personal')).toEqual(restored);
   expect(() => importGarden(JSON.stringify(tooLarge))).toThrow('2 MiB');
 });
+it.each([true, false])(
+  'rejects stale restore and subsequent stale saves, persistent=%s',
+  async (persistent) => {
+    const store = new GardenStorage();
+    if (persistent) await store.open();
+    const old = await store.save(
+      addScrap(createGarden('personal', 100), 'An old fictional garden note.', 100),
+      0,
+    );
+    const newer = await store.save(
+      addScrap(old, 'A newer fictional thought worth keeping.', 100),
+      old.revision,
+    );
+    await expect(store.restore(old, old.revision)).rejects.toThrow('another tab');
+    await expect(store.save(old, old.revision)).rejects.toThrow('another tab');
+    expect(await store.load('personal')).toEqual(newer);
+    const restored = await store.restore(old, newer.revision);
+    expect(restored.revision).toBe(newer.revision + 1);
+    expect(JSON.parse(await store.beforeRestoreJSON('personal'))).toEqual(newer);
+    await expect(store.save(newer, newer.revision)).rejects.toThrow('another tab');
+  },
+);
 it('reloads a full sprout history and rejects growth past its record limit', async () => {
   const store = new GardenStorage();
   await store.open();

@@ -74,7 +74,7 @@ npm run build
 npm run package:single
 ```
 
-`verify` runs strict TypeScript, ESLint, 42 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath and [eight recovery scenarios](docs/RECOVERY.md#regression-verification) in Chromium. Run `npm run test:recovery` after building both variants to check recovery locally. These checks do not download models or certify live model quality.
+`verify` runs strict TypeScript, ESLint, 63 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath, [eight recovery scenarios](docs/RECOVERY.md#regression-verification) and six P1 transport/storage scenarios in Chromium. Run `npm run test:recovery` and `npm run test:p1` after building both variants. Diagnostic stubs are explicitly labelled and never counted as live-model evidence. These checks do not download models or certify live model quality.
 
 The earlier [local acceptance receipt](evidence/verification.json) records seven Chromium journeys, including real Ollama inference. Live e2e tests require an explicitly installed model and running bridge; see [running and verification](docs/RUNNING.md#verify-and-package). Unit/CI checks, local browser tests and model evaluation are separate evidence.
 

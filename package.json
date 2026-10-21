@@ -30,6 +30,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:recovery": "playwright test --config playwright.recovery.config.ts",
+    "test:p1": "playwright test --config playwright.p1.config.ts",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run format:check",
     "eval:local": "tsx scripts/eval-local.ts",
     "package:single": "vite build --mode offline && node scripts/package-single.mjs",

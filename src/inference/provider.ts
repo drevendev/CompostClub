@@ -2,6 +2,7 @@ import { parseOutput, type Language } from './contract';
 import type { Request } from '../domain/garden';
 import { MODELS, type ModelKey } from './models';
 import recordings from '../../fixtures/public/recordings.json';
+import { generateWithEvidence } from './generate';
 
 export interface Recording {
   a: string;
@@ -88,35 +89,36 @@ export class BrowserAI {
     await this.call({ type: 'load', model: key }, onProgress, 600000);
     this.loaded = key;
   }
-  async generate(request: Request, signal: AbortSignal): Promise<string> {
+  async generate(
+    request: Request,
+    signal: AbortSignal,
+    checkpoint: (raw: string) => Promise<void>,
+  ): Promise<string> {
     const abort = () => this.cancel();
     signal.addEventListener('abort', abort, { once: true });
     try {
-      let repair = '';
-      for (let attempt = 0; attempt < 2; attempt++) {
-        if (signal.aborted) throw new Error('Cancelled. Your slot has not been used.');
-        const result = await this.call(
-          {
-            type: 'generate',
-            model: this.loaded,
-            a: request.parents[0].text,
-            b: request.parents[1].text,
-            language: request.language,
-            repair,
-          },
-          () => {},
-          120000,
-        );
-        const raw = String(result.raw);
-        try {
-          parseOutput(raw, request.parents[0].text, request.parents[1].text);
-          return raw;
-        } catch (error) {
-          if (attempt === 1) throw error;
-          repair = error instanceof Error ? error.message : String(error);
-        }
-      }
-      throw new Error('The model could not return a valid sprout.');
+      return await generateWithEvidence(
+        request,
+        signal,
+        async (repair) => {
+          const result = await this.call(
+            {
+              type: 'generate',
+              model: this.loaded,
+              a: request.parents[0].text,
+              b: request.parents[1].text,
+              language: request.language,
+              repair,
+            },
+            () => {},
+            120000,
+          );
+          if (typeof result.raw !== 'string')
+            throw new Error('The worker returned no model response.');
+          return result.raw;
+        },
+        checkpoint,
+      );
     } finally {
       signal.removeEventListener('abort', abort);
     }
@@ -141,22 +143,44 @@ export async function ollamaGenerate(
   r: Request,
   token: string,
   signal: AbortSignal,
+  checkpoint: (raw: string) => Promise<void>,
 ): Promise<string> {
-  const response = await fetch('./api/ferment', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Compost-Token': token },
-    body: JSON.stringify({
-      a: r.parents[0].text,
-      b: r.parents[1].text,
-      language: r.language,
-      requestId: r.id,
-    }),
+  return generateWithEvidence(
+    r,
     signal,
-  });
-  const data = (await response.json()) as { raw?: string; error?: string; digest?: string };
-  if (!response.ok || !data.raw) throw new Error(data.error ?? 'Local model unavailable.');
-  if (data.digest !== r.modelRevision)
-    throw new Error('The installed model changed. Reconnect local AI and retry.');
-  return data.raw;
+    async (repair) => {
+      const response = await fetch('./api/ferment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Compost-Token': token },
+        body: JSON.stringify({
+          a: r.parents[0].text,
+          b: r.parents[1].text,
+          language: r.language,
+          requestId: r.id,
+          repair,
+        }),
+        signal,
+      });
+      const data = (await response.json()) as {
+        raw?: string;
+        error?: string;
+        digest?: string;
+        upstreamError?: string | null;
+      };
+      if (!response.ok || typeof data.raw !== 'string')
+        throw new Error(data.error ?? 'Local model unavailable.');
+      // A model replacement is a transport/provenance error, but its original output
+      // must still reach the journal before being rejected.
+      if (data.digest !== r.modelRevision || data.upstreamError) {
+        await checkpoint(data.raw);
+        throw new Error(
+          data.upstreamError ??
+            `The installed model changed from ${r.modelRevision} to ${data.digest ?? 'unknown'}. Reconnect local AI and retry.`,
+        );
+      }
+      return data.raw;
+    },
+    checkpoint,
+  );
 }
 export { MODELS };
