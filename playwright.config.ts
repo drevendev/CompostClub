@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
+  testIgnore: 'recovery.spec.ts',
   timeout: 150000,
   workers: 1,
   fullyParallel: false,

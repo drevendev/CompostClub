@@ -1,0 +1,191 @@
+{
+  "date": "2026-10-21T06:18:20.155Z",
+  "scope": "Issues #6 and #7; final working-tree file hashes below. Isolated fictional storage fault injection; no live model calls or model substitutes. Historical live-model evidence is unchanged.",
+  "browser": "Playwright Chromium on Windows",
+  "unitTests": 42,
+  "browserTests": 12,
+  "skipped": 0,
+  "failed": 0,
+  "tests": [
+    {
+      "group": "recovery",
+      "title": "production: recover corrupt without losing the original record",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2362
+        }
+      ]
+    },
+    {
+      "group": "recovery",
+      "title": "production: recover future-version without losing the original record",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2287
+        }
+      ]
+    },
+    {
+      "group": "recovery",
+      "title": "production: recover oversized without losing the original record",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2653
+        }
+      ]
+    },
+    {
+      "group": "recovery",
+      "title": "offline: recover corrupt without losing the original record",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2132
+        }
+      ]
+    },
+    {
+      "group": "recovery",
+      "title": "offline: recover future-version without losing the original record",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2274
+        }
+      ]
+    },
+    {
+      "group": "recovery",
+      "title": "offline: recover oversized without losing the original record",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2168
+        }
+      ]
+    },
+    {
+      "group": "recovery",
+      "title": "recovery can open the independent sample and refuses a changed record",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1062
+        }
+      ]
+    },
+    {
+      "group": "recovery",
+      "title": "an oversized new scrap leaves the previous saved garden usable",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 691
+        }
+      ]
+    },
+    {
+      "group": "existing sample/mobile/tab/offline regression",
+      "title": "sample garden replays only verified pairs; edit/recompost/clock/reload work",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 3235
+        }
+      ]
+    },
+    {
+      "group": "existing sample/mobile/tab/offline regression",
+      "title": "mobile, keyboard, reduced motion and large text fit the viewport",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 986
+        }
+      ]
+    },
+    {
+      "group": "existing sample/mobile/tab/offline regression",
+      "title": "a second tab is read-only and a corrupt import cannot overwrite a garden",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1056
+        }
+      ]
+    },
+    {
+      "group": "existing sample/mobile/tab/offline regression",
+      "title": "offline HTML runs from file with network blocked, denied storage and a renamed copy",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 8761
+        }
+      ]
+    }
+  ],
+  "pagesSmoke": {
+    "date": "2026-10-21T06:16:07.583Z",
+    "path": "/CompostClub/",
+    "published": false,
+    "result": "PASS",
+    "journey": "real recorded sample → keep → reload",
+    "errors": [],
+    "badResponses": [],
+    "external": [],
+    "assets": [
+      "browser.worker-CzBbr6Ae.js",
+      "index-Baj9tkEn.js",
+      "index-CPTaE6NZ.css",
+      "ort-wasm-simd-threaded.asyncify-CxOG5pUO.wasm"
+    ]
+  },
+  "standalone": {
+    "bytes": 334086,
+    "sha256": "1f5680cdbebce7d8a8fe79682964e43cc0994ea12db976e3caf7d3c10d83f252",
+    "offlineRecoveryCases": 3
+  },
+  "sourceFiles": {
+    "package-lock.json": "7712f98b33d7698481e63577d07e5f9833c9ffa9a91ca9600ed115f07ff407ab",
+    "package.json": "405a5a2a39075ddb4ae383dcb65b6a10d62bd37c3259471d2eea0e6f317760ec",
+    "playwright.config.ts": "545b656e07c64ec9110f55681d852670ad5a9a84a167c20675ab41d3ea1ed94b",
+    "playwright.recovery.config.ts": "d3930e6d66447a2bea71f33be7ec8566676380104b193dd9e0ccf46fca06f4aa",
+    "src/App.tsx": "779166c3b9d93c6aec1ce1e4471d3464023d449fa1a7a7d8705dd2c3a5cb14d0",
+    "src/Experiment.tsx": "e1b4ecca3ffd8fdb028c3e2529b35dad50860652c68366fbbc94d0a01588cb56",
+    "src/application/storage.test.ts": "cc19d560cec28ed29d38963236aef46aa7f3872074b861e956e5e50dc408422b",
+    "src/application/storage.ts": "444732eca3407bacc9bb81716925cd0744999c7e3e06e308291d1fc8a1a9b8b1",
+    "src/domain/garden.test.ts": "168264fe6222af1912b0193029aaf1a2f069e9493d45e2aa198653f2632996fa",
+    "src/domain/garden.ts": "e4c16ccfab1f189c68ab199974ebf10faab7a224b44bb59f6a7820235005a6ce",
+    "src/env.d.ts": "cf5d5e55fe004ccd4cc6ce5e7be95f8d764e4b53c26b4f988fc23dc93ce6d0d3",
+    "src/inference/browser.worker.ts": "539fde08c0acd1bd773c3545527258299dfbd1aca4e6a6f6a3abd208b98b5db1",
+    "src/inference/contract.ts": "095cae76515ae3763dfe1a880391100029912d85d9782b0e873a908c4a2ece33",
+    "src/inference/models.ts": "db6dce5246b88751bc8b2aca12fa6a22364e6e71493f5a913e302d9b9afe6251",
+    "src/inference/provider.ts": "f254ebaac4863e8690dec7926afc1c3717cd122bc9a5b2f365ac739491d454b7",
+    "src/main.tsx": "b3e31492fb4bec933674150b739812b255cc1258800c1861fa0c33630d01027c",
+    "src/styles.css": "70716ba4e42190ec6c1ace4fc7ed848f4240af1a775514e549c8f6c352e76c29",
+    "src/ui/GardenScene.tsx": "10916eaf3d1c8ab0237c340fc51831361f40f55396c0298d1d5a0817f384857d",
+    "src/ui/Icons.tsx": "21665711c702dec31e83c31dc01786be476743cca6fe309af1a0bc5336d02135",
+    "src/ui/Modal.tsx": "469b97d1c4191a9bea8bc9d30b96302ce309eeff43df78469c7bfe0912bab5f1",
+    "src/ui/Recovery.tsx": "ad69b57760bc9f714c630b3a9432f97ced083154bd3b1715947b20752c1e07b6",
+    "tests/bridge.spec.ts": "738c02109b3a24dd08fc127ced8f70a2f6626d86608989d221f580948b86a9b8",
+    "tests/journey.spec.ts": "adb1e5c718fc9ed8823e81edf43c6149835dba2c254c86924464cb04b20fae76",
+    "tests/recovery.spec.ts": "1aa42e55f0e712a5184e232a8a1e33a163cb8194cda6b1f2ebc9d8ba955e49fb",
+    "vite.config.ts": "0e9dac54fd7e446598fa135d604e89129ac569e069d1c9b5f50ed2ef03e4178e"
+  }
+}

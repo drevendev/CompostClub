@@ -15,6 +15,7 @@ import {
   removeScrap,
 } from './garden';
 import { normalize, parseOutput, schemaFor, validateScrap } from '../inference/contract';
+import { MAX_RAW_SCRAP_BYTES } from '../inference/contract';
 
 const now = 1_000_000;
 function planted() {
@@ -188,6 +189,18 @@ describe('untrusted model and backup boundaries', () => {
     expect(() => validateScrap('tiny')).toThrow();
     expect(() => validateScrap('x'.repeat(801))).toThrow();
     expect([...validateScrap('🌱'.repeat(800))]).toHaveLength(800);
+  });
+  it('bounds original UTF-8 bytes, including whitespace, without trimming the stored original', () => {
+    const original = '🌱'.repeat(800) + ' '.repeat(MAX_RAW_SCRAP_BYTES - 3200);
+    const g = addScrap(createGarden('personal', now), original, now);
+    expect(g.scraps[0]?.raw).toBe(original);
+    expect(validateScrap(original)).toBe('🌱'.repeat(800));
+    expect(() => addScrap(g, original + ' ', now)).toThrow('8 KiB');
+    expect(() => editScrap(g, g.scraps[0]!.id, original + ' ')).toThrow('8 KiB');
+    expect(g.scraps[0]?.revision).toBe(1);
+    expect(() => addScrap(g, 'A small fictional library.' + ' '.repeat(2097152), now)).toThrow(
+      '8 KiB',
+    );
   });
   it('uses only exact quotes in the Ollama structured schema', () => {
     const s = schemaFor('A small garden grows old ideas.', 'A quiet robot brings new words.');

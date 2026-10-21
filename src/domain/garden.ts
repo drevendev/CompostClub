@@ -10,6 +10,9 @@ import {
 
 export const INTERVAL = 900_000;
 export const MAX_SCRAPS = 200;
+export const MAX_SPROUTS = 1000;
+export const MAX_ATTEMPTS = 19900;
+export const MAX_BACKUP_BYTES = 2 * 1024 * 1024;
 export type GardenKind = 'personal' | 'sample';
 export type Backend = 'browser' | 'ollama' | 'replay';
 export interface Scrap {
@@ -302,24 +305,48 @@ export function exportMarkdown(g: Garden): string {
 }
 
 export function importGarden(raw: string): Garden {
-  if (new TextEncoder().encode(raw).byteLength > 2 * 1024 * 1024)
-    throw new Error('Backups must be smaller than 2 MiB.');
+  checkBackupSize(raw);
   const data: unknown = JSON.parse(raw);
+  const g = validateGarden(data);
+  // A backup never resumes an old inference operation.
+  const restored = { ...g, pending: null };
+  serializeGarden(restored);
+  return restored;
+}
+function checkBackupSize(raw: string) {
+  if (new TextEncoder().encode(raw).byteLength > MAX_BACKUP_BYTES)
+    throw new Error('The garden exceeds the 2 MiB backup limit. Nothing was saved or replaced.');
+}
+export function serializeGarden(garden: Garden): string {
+  validateGarden(garden);
+  const raw = JSON.stringify(garden, null, 2);
+  // Reserve the longest revision counter so a 9 → 10 save/restore cannot
+  // make an otherwise unchanged boundary-sized backup exceed the budget.
+  checkBackupSize(JSON.stringify({ ...garden, revision: Number.MAX_SAFE_INTEGER }, null, 2));
+  return raw;
+}
+function validateGarden(data: unknown): Garden {
   if (!data || typeof data !== 'object') throw new Error('Invalid garden backup.');
   const g = data as Garden;
   if (g.version !== 1 || !['sample', 'personal'].includes(g.kind))
     throw new Error('Unsupported backup version or garden type.');
+  if (Array.isArray(g.scraps) && g.scraps.length > MAX_SCRAPS)
+    throw new Error('The garden exceeds 200 scraps. Nothing was saved or replaced.');
+  if (Array.isArray(g.sprouts) && g.sprouts.length > MAX_SPROUTS)
+    throw new Error('The garden exceeds 1,000 sprouts. Nothing was saved or replaced.');
+  if (Array.isArray(g.attempts) && g.attempts.length > MAX_ATTEMPTS)
+    throw new Error('The garden exceeds 19,900 pairing records. Nothing was saved or replaced.');
   if (
     typeof g.id !== 'string' ||
     typeof g.seed !== 'string' ||
     !Number.isSafeInteger(g.revision) ||
     g.revision < 0 ||
     !Array.isArray(g.scraps) ||
-    g.scraps.length > 200 ||
+    g.scraps.length > MAX_SCRAPS ||
     !Array.isArray(g.sprouts) ||
-    g.sprouts.length > 1000 ||
+    g.sprouts.length > MAX_SPROUTS ||
     !Array.isArray(g.attempts) ||
-    g.attempts.length > 19900
+    g.attempts.length > MAX_ATTEMPTS
   )
     throw new Error('Malformed garden records.');
   if (
@@ -409,8 +436,7 @@ export function importGarden(raw: string): Garden {
       !['success', 'failed'].includes(a.status)
     )
       throw new Error('Malformed pairing history.');
-  // A backup never resumes an old inference operation.
-  return { ...g, pending: null };
+  return g;
 }
 function lengthLimit(s: string, max: number) {
   return [...s].length > max;

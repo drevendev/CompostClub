@@ -10,9 +10,11 @@ import {
   failRequest,
   importGarden,
   INTERVAL,
+  MAX_BACKUP_BYTES,
   reconcile,
   recompost,
   removeScrap,
+  serializeGarden,
   type Backend,
   type Garden,
   type GardenKind,
@@ -34,6 +36,7 @@ import fixtures from '../fixtures/public/scraps.json';
 import { GardenScene } from './ui/GardenScene';
 import { Icon } from './ui/Icons';
 import { Modal } from './ui/Modal';
+import { Recovery } from './ui/Recovery';
 import './styles.css';
 import licenceTexts from '../public/THIRD_PARTY_LICENSES.txt?raw';
 
@@ -59,6 +62,7 @@ export default function App() {
     [sproutEdit, setSproutEdit] = useState(false),
     [editTitle, setEditTitle] = useState('');
   const [error, setError] = useState(''),
+    [startupError, setStartupError] = useState(''),
     [notice, setNotice] = useState(''),
     [storageWarning, setStorageWarning] = useState('');
   const [failedRequest, setFailedRequest] = useState<Request | null>(null);
@@ -78,6 +82,7 @@ export default function App() {
     [lockEpoch, setLockEpoch] = useState(0);
   const [pendingImport, setPendingImport] = useState<Garden | null>(null),
     [welcome, setWelcome] = useState(true);
+  const [hasRecoveryCopy, setHasRecoveryCopy] = useState(false);
   const controller = useRef<AbortController | null>(null),
     serial = useRef(false),
     inputRef = useRef<HTMLTextAreaElement>(null);
@@ -98,10 +103,7 @@ export default function App() {
         setCurrent(g);
         setWelcome(g.scraps.length === 0);
       } catch (e) {
-        setError(
-          'Your saved garden could not be read. Export or restore a backup; it has not been overwritten. ' +
-            errorText(e),
-        );
+        if (!cancelled) setStartupError(errorText(e));
       }
     })();
     return () => {
@@ -138,6 +140,22 @@ export default function App() {
       release();
     };
   }, [kind, lockEpoch]);
+  useEffect(() => {
+    if (dialog !== 'backup') return;
+    let cancelled = false;
+    setHasRecoveryCopy(false);
+    void storage.recoveryJSON(kind, true).then(
+      () => {
+        if (!cancelled) setHasRecoveryCopy(true);
+      },
+      () => {
+        if (!cancelled) setHasRecoveryCopy(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [dialog, kind]);
   const commit = useCallback(
     async (fn: (g: Garden) => Garden, replace = false): Promise<Garden> => {
       if (serial.current)
@@ -189,7 +207,17 @@ export default function App() {
   async function switchGarden(next: GardenKind) {
     if (busyRef.current || saving) return;
     await action(async () => {
-      const saved = await storage.load(next);
+      let saved: Garden;
+      try {
+        saved = await storage.load(next);
+      } catch (e) {
+        ref.current = null;
+        setGarden(null);
+        setKind(next);
+        setStartupError(errorText(e));
+        location.hash = next === 'sample' ? 'sample' : 'garden';
+        return;
+      }
       let g = saved;
       if (next === 'sample' && g.scraps.length === 0) {
         for (const s of fixtures.scraps)
@@ -197,6 +225,7 @@ export default function App() {
         g = await storage.save(g, saved.revision);
       }
       setCurrent(g);
+      setStartupError('');
       setKind(next);
       location.hash = next === 'sample' ? 'sample' : 'garden';
       setTab('garden');
@@ -384,7 +413,7 @@ export default function App() {
   async function readBackup(file: File | undefined) {
     if (!file) return;
     await action(async () => {
-      if (file.size > 2097152) throw new Error('Backups must be smaller than 2 MiB.');
+      if (file.size > MAX_BACKUP_BYTES) throw new Error('Backups must be no larger than 2 MiB.');
       setPendingImport(importGarden(await file.text()));
       setDialog('import');
     });
@@ -404,13 +433,34 @@ export default function App() {
     });
   }
   if (!garden)
-    return (
-      <main className="loading">
-        <Icon name="sprout" size={40} />
-        <h1>Opening your little garden…</h1>
-        {error && <p role="alert">{error}</p>}
-      </main>
-    );
+    if (startupError)
+      return (
+        <Recovery
+          key={kind}
+          kind={kind}
+          reason={startupError}
+          locked={locked}
+          onOpen={switchGarden}
+          download={download}
+          onRestored={(restored) => {
+            setCurrent(restored);
+            setStartupError('');
+            setError('');
+            setWelcome(false);
+            setNotice(
+              'Garden restored. The previous record is available as a recovery copy in Backup and export.',
+            );
+          }}
+        />
+      );
+    else
+      return (
+        <main className="loading">
+          <Icon name="sprout" size={40} />
+          <h1>Opening your little garden…</h1>
+          {error && <p role="alert">{error}</p>}
+        </main>
+      );
   const shown = reconcile(garden, now),
     elapsed = Math.max(0, now + garden.demoOffset - shown.lastAccrualAt),
     remaining = Math.max(0, INTERVAL - elapsed);
@@ -1197,16 +1247,31 @@ export default function App() {
             <button
               className="button secondary"
               onClick={() =>
-                download(
-                  'compost-club-backup.json',
-                  JSON.stringify(garden, null, 2),
-                  'application/json',
+                void action(() =>
+                  download('compost-club-backup.json', serializeGarden(garden), 'application/json'),
                 )
               }
             >
               <Icon name="download" />
               Save JSON backup
             </button>
+            {hasRecoveryCopy && (
+              <button
+                className="button secondary"
+                onClick={() =>
+                  void action(async () =>
+                    download(
+                      `compost-club-${kind}-previous-recovery.json`,
+                      await storage.recoveryJSON(kind, true),
+                      'application/json',
+                    ),
+                  )
+                }
+              >
+                <Icon name="download" />
+                Download previous recovery copy
+              </button>
+            )}
             <label className="button secondary file-label">
               <Icon name="upload" />
               Restore JSON backup
@@ -1344,10 +1409,12 @@ export default function App() {
           <button
             className="button secondary"
             onClick={() =>
-              download(
-                'compost-club-before-restore.json',
-                JSON.stringify(garden, null, 2),
-                'application/json',
+              void action(() =>
+                download(
+                  'compost-club-before-restore.json',
+                  serializeGarden(garden),
+                  'application/json',
+                ),
               )
             }
           >
