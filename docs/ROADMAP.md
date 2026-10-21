@@ -2,6 +2,8 @@
 
 The next milestone is a dependable small creative workflow and an evidence-backed project story. [Current audit](AUDIT-2026-10-21.md). [Release tracking issue #29](https://github.com/drevendev/CompostClub/issues/29).
 
+**Owner decision, 21 October 2026:** the **next LOCAL implementation package** is **Idea DNA + small real genetic algorithm + deliberate growth tree** with truthful birth metadata, all in the current React/TypeScript/IndexedDB/local Ollama setup. [Current evolution specification](IDEA_EVOLUTION_SPEC.md) and [implementation epic #60](https://github.com/drevendev/CompostClub/issues/60). This is **NOT shipped in the public v0.1**, needs separate tests, and does **not** require mobile/cloud servers. Optional hosted/mobile options are documented separately in [Context & Deployment Options](CONTEXT_AND_DEPLOYMENT_OPTIONS.md).
+
 The first P1 implementation batch merged in [PR #37](https://github.com/drevendev/CompostClub/pull/37), closing #31, #32 and #36: persisted inference transcripts, stale-restore protection and evidence-derived acceptance receipts. Its [live acceptance](../evidence/p1-verification.json) contains 63 unit results and seven Chromium journeys with two real local-model outputs. Six additional P1 diagnostics and eight recovery scenarios passed separately. The earlier [real model error](../evidence/model/p1-live-failure.json) is retained alongside the later successful run; neither run is a new creative-quality benchmark.
 
 The workflow batch merged in [PR #38](https://github.com/drevendev/CompostClub/pull/38), closing #11, #12, #13 and #21: explicit retries after reload, independent add/edit drafts, access to all discoveries and order-independent JSON field comparison. Its validation covered 76 unit tests, eleven P1/workflow Chromium scenarios and eight recovery cases. The [sample/offline receipt](../evidence/workflow-verification.json) records four ordinary Chromium journeys and identifies that tested source/build. This batch did not rerun live inference.
@@ -128,3 +130,45 @@ Full implementation issue: **[#46 — verified public showcase and storyboards](
 
 **Publication gate:** actual page or video must be verified; #15 remains the hosted Pages path and #19 the single Week 3 official entry. Original media, proper captions, accessibility, rights, no private archives, no fabricated use claims. No autonomous publication or transfer of private materials.
 
+## 8. Current local next patch — Idea DNA, Evolution Lab and gradual Idea Tree (now prioritized; NOT SHIPPED)
+
+**Owner-directed implementation target:** current Node 24 / React / TypeScript / IndexedDB / local Ollama application, **no new backend**. Authoritative [full product + code/acceptance spec](IDEA_EVOLUTION_SPEC.md); [master implementation epic #60](https://github.com/drevendev/CompostClub/issues/60). Develop independently of the Week 3 submission freeze; do not represent these features as part of existing Sample Garden until working model tests and accepted artifacts prove them.
+
+| Order | Work | Ticket | Done means |
+| --- | --- | --- | --- |
+| 0 | Repair ambiguous imported pair IDs and adopt versioned schema migration | [#47](https://github.com/drevendev/CompostClub/issues/47), [#54](https://github.com/drevendev/CompostClub/issues/54) | Legacy source/backup/history and model receipts recover losslessly with new graph IDs, no silent truncate/orphan/cycle. |
+| 1 | **Idea DNA**: typed root, source traits and immutable ancestors | [#51](https://github.com/drevendev/CompostClub/issues/51) | User inspects source, accepted/inherited/mutated genes and exact parent versions; no artificial inheritance percentage. |
+| 1 | Minimal **birth metadata**: UTC+zone/daypart, input language, self/heard/import source | [#53](https://github.com/drevendev/CompostClub/issues/53) | Timestamp/date tags accurate (DST tests), manual correction, historical unknowns preserved; GPS/weather never silently collected. |
+| 2 | **Tend this idea**: one explicit, tiny growth action / branch with human review | [#50](https://github.com/drevendev/CompostClub/issues/50) | One kept seed grows three accepted steps and two alternative branches, remains inspectable after reload/export. |
+| 3 | **Actual micro-GA**: small rated population, tournament selection, crossover, one-gene mutation, elitism | [#52](https://github.com/drevendev/CompostClub/issues/52) | One new offspring per user-triggered credit, deterministic genotype/selection proof, human feedback influences later generations. |
+
+**Scope of "real genetics":** a bounded steady-state evolutionary search with a pool of 4–8 candidates, explicit owner ratings, seeded tournament parent selection, structured gene crossover, optional one-slot mutation and preserved elite. One short local model call verbalizes the preselected gene composition. No evolution of executable code, massive GPU batches, LLM self-scoring as objective quality or fake results.
+
+**Scope of "growth":** a chosen idea can branch one small step at a time (`clarify`, `constraint`, `alternative`, `question`, `tiny experiment`). Underlying ancestry is a DAG; "tree" is the readable UI projection. Accepted nodes have actual sources and model/user attribution. Keep existing 15-minute credits for successful model-generated children; manual edits/free scores remain free; failures never spend credits.
+
+**Testing:** exact new prompt/validator runs for GA offspring and growth (old `splice-2` statistics are not evidence), pure deterministic selection/mutation/elitism, two-generation ancestry, cycle detection, migration/restore and deletion, 390px + keyboard + reduced-motion, no model in background, privacy and source stamps; run `verify`, `build`, `package:single`, Chromium on an exact candidate SHA. No auto-publication.
+
+## 9. Optional creative context and local insights — no backend required
+
+Detailed privacy and platform comparison: [Context & Deployment Options](CONTEXT_AND_DEPLOYMENT_OPTIONS.md).
+
+- [#55](https://github.com/drevendev/CompostClub/issues/55): optional small local Gemma **tag/trait suggestions** after idea entry. OFF by default, strict 1–5 controlled tag output, human approval; manual tags work without a model.
+- [#56](https://github.com/drevendev/CompostClub/issues/56): private on-demand **idea journal statistics** grouped by weekday, month, local daypart, language, tags, accepted offspring and evolution history. No analytics tracking SDK, no causation claims and clear unknown counts.
+- [#57](https://github.com/drevendev/CompostClub/issues/57): **weather, coarse city/location, mood** as separate optional context. Manual data works offline; device location and external weather are *separate explicit opt-ins*. Timezone metadata is not GPS. Weather values record time/source and API licence; don't attach today's weather to an old idea or silently persist precise coordinates.
+
+All these contextual measurements are **birth environment**, not inheritable DNA or fitness input unless a person explicitly chooses a creative weather trait. No compulsory forms, browser GPS prompts or external calls upon saving a new idea.
+
+## 10. Mobile/shared persistence and deployment options (research only)
+
+Comparison and security gates: [Context & Deployment Options](CONTEXT_AND_DEPLOYMENT_OPTIONS.md), [architecture issue #58](https://github.com/drevendev/CompostClub/issues/58), [mobile UX issue #59](https://github.com/drevendev/CompostClub/issues/59).
+
+| Setup | Working mode | Shared PC ↔ phone garden? | Expenses/constraints |
+| --- | --- | --- | --- |
+| **A. Current static Pages + separate IndexedDB** | Browser UI/sample, local client-only DNA/GA; desktop Ollama when locally served | **No**; every device/browser has an independent store | $0 static site, no backend; browser WebGPU remains experimental |
+| **B. User-controlled JSON export/import** | Carry data between devices manually with conflict preview | **Manual only**, not automatic sync | $0 infra, handling conflicts is work |
+| **C. One-user Home Hub on owner's PC (candidate)** | Local Node+SQLite shared API, loopback Ollama, HTTPS/private Tailscale Serve, authenticated phone | **Yes when host PC is online** | Potential $0 subscriptions on existing hardware, nonzero electricity/security/operations |
+| **D. Hosted private or future multi-user cloud** | Hosted authenticated API + durable DB + explicit Gemma worker/GPU route | **Yes** | Real hosting/backup/auth/security costs; no free/paid service claim without checks |
+
+**Do not make a server by rebinding existing loopback Ollama bridge to 0.0.0.0**. The current local bridge is intentionally Host/Origin/session-token guarded. Mobile sync requires distinct authentication, durable shared storage, rate limits, HTTPS, conflict management and backups, not just a responsive page. Tailscale Personal is one **optional** tool, not an account already connected. The free Open-Meteo API currently applies **non-commercial-only** service terms (CC BY 4.0 data attribution) and is not automatically permissible for future paid SaaS. No infrastructure provisioning or payment authorized.
+
+**Decision gate:** build shared server only if manually importing JSON becomes a real repeated pain point; prefer a small private home hub for owner-only use, not an early commercial SaaS. Keep the current core fully functional when all optional context and network services are disabled.
