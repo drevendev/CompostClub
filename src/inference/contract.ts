@@ -37,7 +37,12 @@ export function schemaFor(a: string, b: string) {
   };
 }
 export const length = (s: string) => [...s].length;
+export const MAX_RAW_SCRAP_BYTES = 8192;
 export function validateScrap(text: string): string {
+  if (new TextEncoder().encode(text).byteLength > MAX_RAW_SCRAP_BYTES)
+    throw new Error(
+      'The original scrap exceeds 8 KiB. Shorten it before saving; nothing was trimmed.',
+    );
   const value = normalize(text);
   if (length(value) < 8 || length(value) > 800)
     throw new Error('Each scrap needs 8–800 characters. Your text has not been trimmed.');

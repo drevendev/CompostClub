@@ -74,7 +74,7 @@ npm run build
 npm run package:single
 ```
 
-`verify` runs strict TypeScript, ESLint, 31 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links and the production sample under a Pages-style subpath in Chromium. It does not download models or certify live model quality.
+`verify` runs strict TypeScript, ESLint, 42 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath and [eight recovery scenarios](docs/RECOVERY.md#regression-verification) in Chromium. Run `npm run test:recovery` after building both variants to check recovery locally. These checks do not download models or certify live model quality.
 
 The earlier [local acceptance receipt](evidence/verification.json) records seven Chromium journeys, including real Ollama inference. Live e2e tests require an explicitly installed model and running bridge; see [running and verification](docs/RUNNING.md#verify-and-package). Unit/CI checks, local browser tests and model evaluation are separate evidence.
 
@@ -84,6 +84,7 @@ The earlier [local acceptance receipt](evidence/verification.json) records seven
 | What talks to what?                            | [Architecture and data boundaries](docs/ARCHITECTURE.md)                                 |
 | Which model tests passed or failed?            | [Model evaluation](docs/MODEL_EVAL.md)                                                   |
 | What was tested locally?                       | [Acceptance record](docs/ACCEPTANCE.md)                                                  |
+| How do limits and recovery work?               | [Save limits and recovery](docs/RECOVERY.md)                                             |
 | What still needs work?                         | [Issues](https://github.com/drevendev/CompostClub/issues) and [roadmap](docs/ROADMAP.md) |
 | How can I contribute or get help?              | [Contribution guide](CONTRIBUTING.md)                                                    |
 | What changed?                                  | [Changelog](CHANGELOG.md)                                                                |

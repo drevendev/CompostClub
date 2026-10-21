@@ -15,7 +15,7 @@ npm run build
 npm run package:single
 ```
 
-For UI or static-asset changes, install the test browser with `npx playwright install chromium`, then run `node scripts/pages-smoke.mjs`. For live-inference changes, follow [Ollama setup](docs/RUNNING.md#run-live-local-gemma) and run `npm run test:e2e` with the real model and bridge. Say explicitly when a hardware-dependent check was not run. Test doubles can test transport errors; label them and keep them out of model evidence.
+For UI or static-asset changes, install the test browser with `npx playwright install chromium`, then run `node scripts/pages-smoke.mjs` and `npm run test:recovery` after building both variants. The recovery suite covers production and offline records without Ollama; see [save limits and recovery](docs/RECOVERY.md). For live-inference changes, follow [Ollama setup](docs/RUNNING.md#run-live-local-gemma) and run `npm run test:e2e` with the real model and bridge. Say explicitly when a hardware-dependent check was not run. Test doubles can test transport errors; label them and keep them out of model evidence.
 
 ## A useful pull request
 

@@ -2,6 +2,12 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
+## Unreleased
+
+- Reject oversized original text, history and pretty-printed backups before writing; accepted gardens share save/load/export validation.
+- Add recovery for unreadable records with raw download, matching-backup preview, explicit replacement and an atomic retained original copy.
+- Add 11 unit regressions and eight Chromium recovery scenarios for production and offline HTML; run the latter in CI.
+
 ## 0.1.0 — 2026-10-20
 
 First public source import of the experimental Compost Club garden.

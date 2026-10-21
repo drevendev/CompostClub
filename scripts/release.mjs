@@ -19,6 +19,7 @@ const files = [
   'tsconfig.json',
   'vite.config.ts',
   'playwright.config.ts',
+  'playwright.recovery.config.ts',
   'index.html',
   'eslint.config.js',
   '.prettierrc.json',
@@ -49,6 +50,8 @@ files.push(
   'evidence/desktop-sample.png',
   'evidence/mobile-sample.png',
   'evidence/pages-preview.png',
+  'evidence/recovery.png',
+  'evidence/recovery-verification.json',
 );
 const manifest = {};
 for (const file of files.sort())

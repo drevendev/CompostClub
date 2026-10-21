@@ -72,6 +72,47 @@ a {
   margin: 0 auto;
   padding: 0 48px;
 }
+.recovery {
+  max-width: 720px;
+  margin: 60px auto;
+  padding: 28px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.recovery h1,
+.recovery h2 {
+  font-family: Georgia, serif;
+}
+.recovery .backup-actions {
+  margin: 24px 0;
+}
+.recovery details {
+  padding: 12px 0;
+}
+.recovery summary {
+  cursor: pointer;
+}
+.recovery-preview {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.recovery-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+@media (max-width: 600px) {
+  .recovery {
+    margin: 20px 12px;
+    padding: 20px;
+  }
+}
 .header {
   height: 94px;
   border-bottom: 1px solid var(--line);
