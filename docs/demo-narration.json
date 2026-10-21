@@ -1,0 +1,57 @@
+{
+  "voice": "af_heart",
+  "speed": 1,
+  "language": "en-us",
+  "cues": [
+    {
+      "start": 0.6,
+      "end": 7.7,
+      "text": "Some ideas are too odd to schedule, and too interesting to delete. Give them a little garden."
+    },
+    {
+      "start": 8.3,
+      "end": 15.7,
+      "text": "Welcome to Compost Club. The sample uses fictional scraps and unchanged Gemma recordings."
+    },
+    {
+      "start": 16.1,
+      "end": 24.6,
+      "text": "Two scraps grow into one possibility. This is recorded mode, with no live generation."
+    },
+    {
+      "start": 25.7,
+      "end": 34.4,
+      "text": "Here is a real Gemma result for these exact inputs. You decide whether the combination is worth keeping."
+    },
+    {
+      "start": 35.3,
+      "end": 45.1,
+      "text": "Open its roots to read both parents and their exact fragments. The original model text stays attached."
+    },
+    {
+      "start": 46.3,
+      "end": 53.1,
+      "text": "Keep what makes you curious. Your collection is saved locally, in this browser."
+    },
+    {
+      "start": 54.4,
+      "end": 61.3,
+      "text": "Reload: your keeper is still here. Export Markdown with its sources and recorded label."
+    },
+    {
+      "start": 62.2,
+      "end": 70.4,
+      "text": "Earn a slot every fifteen minutes, up to three. The demo clock skips time, without generating."
+    },
+    {
+      "start": 71.2,
+      "end": 79.7,
+      "text": "Four B passed all twenty-four format checks. Browser models failed. You still judge usefulness."
+    },
+    {
+      "start": 80.4,
+      "end": 88.8,
+      "text": "Explore the public code and evidence. Live generation needs local Ollama. Let your wild ideas ferment."
+    }
+  ]
+}

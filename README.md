@@ -18,7 +18,7 @@
   <a href="CONTRIBUTING.md">Contribute</a>
 </p>
 
-![Sample garden with six fictional idea scraps, an illustrated compost pile and a kept recorded Gemma sprout](evidence/pages-preview.png)
+![Compact sample workspace with paged fictional scraps and an unchanged recorded Gemma sprout](docs/images/compact-workspace.png)
 
 _Actual Chromium capture, 20 October 2026, from the v0.1 implementation included in the initial commit. The sample pairs six fictional scraps with unchanged local Gemma recordings. Text alternative: add a scrap on the left, let a pairing grow in the center, then inspect its two sources and keep or recompost the result on the right._
 
@@ -76,7 +76,7 @@ npm run build
 npm run package:single
 ```
 
-`verify` runs strict TypeScript, ESLint, 91 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath, [eight recovery scenarios](docs/RECOVERY.md#regression-verification) and nineteen P1/workflow/stability scenarios in Chromium. Run `npm run test:recovery` and `npm run test:p1` after building both variants. Diagnostic stubs and synthetic pairing indexes are explicitly labelled and never counted as live-model evidence. These checks do not download models or certify live model quality. The [stability acceptance receipt](evidence/stability-verification.json) records a fresh sample/offline run; its live-inference status is `not-run`. The [capacity diagnostic](evidence/pairing-capacity.json) measures the pure picker on 200 fictional sources and 19,900 attempts, not model speed.
+`verify` runs strict TypeScript, ESLint, 91 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath, [eight recovery scenarios](docs/RECOVERY.md#regression-verification) and twenty-three P1/workflow/stability/layout scenarios in Chromium. Run `npm run test:recovery` and `npm run test:p1` after building both variants. Diagnostic stubs and synthetic pairing indexes are explicitly labelled and never counted as live-model evidence. These checks do not download models or certify live model quality. The [stability acceptance receipt](evidence/stability-verification.json) records a fresh sample/offline run; its live-inference status is `not-run`. The [capacity diagnostic](evidence/pairing-capacity.json) measures the pure picker on 200 fictional sources and 19,900 attempts, not model speed.
 
 Ready slots are time credits; they do not create extra combinations of the same two sources. The garden shows unused combinations separately. When they run out, your slots remain available while you add a scrap, edit a source or recompost a result. At the 200-source cap, the next action opens an existing source for editing when pairing-history space remains. A full pairing history requires explicit cascade review before a new key can be started; existing failed pairs can still be retried.
 
