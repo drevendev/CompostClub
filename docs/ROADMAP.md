@@ -1,8 +1,8 @@
-# Roadmap — 21 October 2026
+# Roadmap — 22 October 2026
 
 The next milestone is a dependable small creative workflow and an evidence-backed project story. [Current audit](AUDIT-2026-10-21.md). [Release tracking issue #29](https://github.com/drevendev/CompostClub/issues/29).
 
-**Publication sequence approved for planning, not yet published (22 October 2026):** [Publication Roadmap — DEV/X articles and feature-triggered video scripts](PUBLICATION_ROADMAP.md). **Launch the current v0.1 first:** one official Week 3 DEV entry supported by a real reviewed/uploaded ~89s narrated sample video or independently verified Pages, plus lightweight X cuts. Then stagger the small-model engineering and idle-design ordinary DEV essays. **Only after tested releases** tell DNA → Tree Growth → real GA → Named Gardens / Cross-Pollination → Insights → Mobile stories. No future functionality may be edited into the current contest demonstration as if shipped. Media credits / synthetic narrator disclosures belong with each uploaded asset.
+**Publication completed (22 October 2026):** the [DEV Week 3 article](https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o) is public with the verified [49.93-second English Echo Cartography video](https://drevendev.github.io/CompostClub/?v=07c202852017). Newer tending and optional Sentry appear as separate article screenshots. X is left to the owner, with the original three tags. [Publication materials](DEV_PUBLICATION.md) and [future release-linked stories](PUBLICATION_ROADMAP.md). Render and Entire were declined. Future functionality must not be presented as shipped.
 
 **Owner decision, 21 October 2026:** the **next LOCAL implementation package** is **Idea DNA + small real genetic algorithm + deliberate growth tree** with truthful birth metadata, all in the current React/TypeScript/IndexedDB/local Ollama setup. [Current evolution specification](IDEA_EVOLUTION_SPEC.md) and [implementation epic #60](https://github.com/drevendev/CompostClub/issues/60). This is **NOT shipped in the public v0.1**, needs separate tests, and does **not** require mobile/cloud servers. Optional hosted/mobile options are documented separately in [Context & Deployment Options](CONTEXT_AND_DEPLOYMENT_OPTIONS.md).
 
@@ -10,16 +10,18 @@ The first P1 implementation batch merged in [PR #37](https://github.com/drevende
 
 The workflow batch merged in [PR #38](https://github.com/drevendev/CompostClub/pull/38), closing #11, #12, #13 and #21: explicit retries after reload, independent add/edit drafts, access to all discoveries and order-independent JSON field comparison. Its validation covered 76 unit tests, eleven P1/workflow Chromium scenarios and eight recovery cases. The [sample/offline receipt](../evidence/workflow-verification.json) records four ordinary Chromium journeys and identifies that tested source/build. This batch did not rerun live inference.
 
-The source-history/pairing batch merged in [PR #41](https://github.com/drevendev/CompostClub/pull/41), closing #34, #14, #17 and #35: raw text revision history, independent skip navigation, separate slot/pair-exhaustion copy and indexed selection at the supported capacity. The repository reports 91 unit tests, nineteen P1/workflow/stability Chromium cases, eight recovery cases and four ordinary sample/offline journeys from its recorded checks. The [stability receipt](../evidence/stability-verification.json) explicitly binds an intermediate dirty source/build rather than certifying a fresh exact-main post-merge run; [synthetic capacity data](../evidence/pairing-capacity.json) is not model speed. Live inference was not rerun in this batch. The next reliability work remains bridge #8/#9/#10/#23, then browser lifecycle/provenance and #39/#40 privacy/export behaviour.
+The source-history/pairing batch merged in [PR #41](https://github.com/drevendev/CompostClub/pull/41), closing #34, #14, #17 and #35: raw text revision history, independent skip navigation, separate slot/pair-exhaustion copy and indexed selection at the supported capacity. That batch recorded 91 unit tests, nineteen P1/workflow/stability Chromium cases, eight recovery cases and four ordinary sample/offline journeys. The [stability receipt](../evidence/stability-verification.json) binds an intermediate source/build; [synthetic capacity data](../evidence/pairing-capacity.json) is not model speed. Live inference was not rerun in that batch.
+
+[PR #65](https://github.com/drevendev/CompostClub/pull/65) subsequently closed bridge #8/#9/#10/#23 and privacy/export #39/#40, added optional Sentry and the initial growth slice of #50. Its [post-merge CI](https://github.com/drevendev/CompostClub/actions/runs/39778088037) passed 97 unit tests, three HTTP/Sentry regressions and 32 Chromium scenarios. A real Echo Cartography continuation was accepted, saved and reopened. The suggested experiment was not performed; full DNA/GA #60 and a visual comparison tree remain future work.
 
 ## Baseline delivered
 
-Local UX revision prepared after video review: compact workspace, paged source previews with full-text readers, a collapsible composer, paged discoveries, and source dialogs replace the nested pile scrollbar and expanding root cards. A fresh floral demo verifies zero scrolling throughout its real sample journey. This revision is prepared for a draft PR; article/video publication remains separately gated; it does not change inference or storage rules.
+The compact UX revision merged in PR #61: paged source previews with full-text readers, a collapsible composer, paged discoveries, and source dialogs replace nested pile scrolling. The published floral video verifies zero scrolling in its eight captured checkpoints. It uses saved genuine local-model results; custom input still requires installed local Gemma.
 
 - Public MIT React/TypeScript/Vite source, exact direct pins, project lockfile, Node 24 / npm 11.
 - Separate personal/sample gardens, exact-fixture replay, earned slots, immutable sprout parents, keep/edit/recompost and Markdown/JSON export.
 - Save/load limits and startup recovery shipped in [PR #30](https://github.com/drevendev/CompostClub/pull/30), closing #6/#7. The audit reran 42 unit tests, eight recovery and four sample/offline Chromium scenarios successfully.
-- Standalone recorded HTML and production build tested under a Pages-style subpath. Hosting has not been deployed.
+- Standalone recorded HTML and production build tested under a Pages-style subpath. The video player is hosted; the interactive application is not deployed.
 - Historical real Ollama/browser experiments with unchanged public transcripts. Creative usefulness still needs human review; the audit did not rerun live-model evaluation.
 
 ## 1. Stabilize the user's work
@@ -35,26 +37,26 @@ Prioritize data/trust defects before extra features. Retain atomic result/pair/s
 
 ## 2. Make the AI boundary trustworthy
 
-- Fix bridge concurrency, UTF-8 decoding and request-target error containment [#8](https://github.com/drevendev/CompostClub/issues/8), [#9](https://github.com/drevendev/CompostClub/issues/9), [#10](https://github.com/drevendev/CompostClub/issues/10), plus static 404s [#23](https://github.com/drevendev/CompostClub/issues/23). Exit: isolated real-HTTP regressions and actual Ollama journeys pass on the release candidate.
+- Completed in PR #65: bridge concurrency, UTF-8 decoding, request-target containment and static 404s (#8/#9/#10/#23), with isolated real-HTTP regressions and real local-model evidence.
 - Gate known-failing browser generation clearly [#16](https://github.com/drevendev/CompostClub/issues/16); fix cancellation before adapter acquisition [#33](https://github.com/drevendev/CompostClub/issues/33). Use a bounded repair experiment before recommending another large download.
 - Distinguish imported claims from verified bundled recordings [#22](https://github.com/drevendev/CompostClub/issues/22); derive verification receipts from the actual complete run [#36](https://github.com/drevendev/CompostClub/issues/36).
 - Human-review both-parent synthesis, concrete mechanism and requested language [#20](https://github.com/drevendev/CompostClub/issues/20). Preserve failures/denominators and use a new unseen set for generalisation claims. Keep 4B as the explicit larger quality option while 1B remains weaker.
 
 Exit: UI, exports, article and receipts agree on generated/replayed/imported/failed/verified status. A JSON pass never certifies usefulness.
 
-## 3. Prepare the Week 3 article and demonstration
+## 3. Published Week 3 article and demonstration
 
-Start this alongside stabilization; a private-archive case or new feature set is not required.
+Completed on 22 October 2026. The following checklist records the publication requirements; no second Week 3 entry is planned.
 
 1. Adapt [DEV_DRAFT.md](DEV_DRAFT.md) to the official English template: What I Built, Demo, Code, How I Built It, Why Does Open Innovation Matter, optional actual payoff, and applicable prize category.
-2. Show three exact fictional-fixture Gemma examples and meaningful failures. Explain the credit mechanic and provenance/usefulness distinction. Claim no measured savings or adoption without evidence.
+2. The article and video show genuine local outputs on summaries of public projects, with model failures and structural-quality limits explained separately. The downloadable offline sample remains labelled exact public-fixture replay. No measured productivity savings or adoption are claimed.
 3. Provide either an owner-authorized verified Pages deployment [#15](https://github.com/drevendev/CompostClub/issues/15), or a real video of the recorded sample and clearly identified local live generation. Hosting is not mandatory when a video is provided.
 4. Check exact source/build identities, public-data boundaries, external links and limitations. Prepare repository presentation [#25](https://github.com/drevendev/CompostClub/issues/25) and review Actions changes [#26](https://github.com/drevendev/CompostClub/issues/26) within the chosen release path.
 5. Owner reviews and separately authorizes publication/submission [#19](https://github.com/drevendev/CompostClub/issues/19). Retain the real article URL/time; disclose later code commits as required by the contest FAQ.
 
 [Official Week 3 rules](https://dev.to/page/hacktoberfest-week3-2026-10-19-contest-rules), checked 21 October: new project built within 19–25 October, open-source AI core, Slow and Steady theme, explanation of open innovation, source, demo **or video**, DEV template/tag. Deadline: **25 October 2026, 23:59 PDT = 26 October, 08:59 Asia/Nicosia**. Writing quality carries the highest weight. This deadline does not promise that every backlog item will be closed by then.
 
-Best Use of Gemma fits the demonstrated implementation. Additional partners, domains and paid services are unnecessary for this path. The article must identify remaining experimental behavior.
+The published categories are Best Use of Gemma, Best Use of GitHub Copilot through the explicitly permitted Actions route, and Best Use of Sentry Agent Tracing. Render, Entire, ElevenLabs and a .tech domain are not claimed. The article identifies remaining experimental behavior.
 
 ## 4. Prove usefulness in one real workflow
 

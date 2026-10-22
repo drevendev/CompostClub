@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "article": {
+    "url": "https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o",
+    "publishedAt": "2026-10-22T15:12:20Z",
+    "approvedBodySha256": "cb16e3a39f2b3f604964c1d02b21b08a8e4089f1443253ec0ff5a371743d03f8",
+    "publicPageVerifiedHttpStatus": 200,
+    "aiAssisted": true,
+    "devTags": [
+      "devchallenge",
+      "hf26challenge",
+      "opensource",
+      "gemma"
+    ],
+    "categories": [
+      "Best Use of Gemma",
+      "Best Use of GitHub Copilot (GitHub Actions route)",
+      "Best Use of Sentry Agent Tracing"
+    ],
+    "imagesLoadedInSavedPreview": true
+  },
+  "video": {
+    "url": "https://drevendev.github.io/CompostClub/?v=07c202852017",
+    "mp4": "https://drevendev.github.io/CompostClub/video.mp4?v=07c202852017",
+    "sha256": "07c202852017114f2c96a27b17e2ddefaa11e5ebf7e02a84b4748d51443c06b5",
+    "bytes": 4758916,
+    "durationSeconds": 49.9277,
+    "dimensions": [
+      1920,
+      1080
+    ],
+    "language": "en",
+    "subtitleCues": 8,
+    "voice": {
+      "model": "Kokoro-82M",
+      "profile": "af_heart",
+      "speed": 1,
+      "synthetic": true
+    },
+    "music": {
+      "title": "Somewhere Sunny (ver 2)",
+      "artist": "Kevin MacLeod",
+      "license": "CC-BY-3.0",
+      "downloadedRecordingSha256": "cdbe2705c8464b92868c4411540005dde2bc83863aa585b8850110f65faeeeda"
+    },
+    "sourceBranch": "codex/video-pages",
+    "deploymentCommit": "bdb0c942dcae77aa097bc959237b1e020c5cb7ce",
+    "deploymentCi": "https://github.com/drevendev/CompostClub/actions/runs/39747617849",
+    "genuineLocalModelResults": true,
+    "inferenceStagedDuringCapture": false,
+    "selectedResultAndRecompostUseSeparateGardens": true,
+    "noScrollCapturedCheckpoints": 8
+  },
+  "growth": {
+    "accepted": "Draft Timeline Exploration",
+    "parent": "Echo Cartography",
+    "acceptSaveReloadVerified": true,
+    "proposedExperimentPerformed": false,
+    "shownInVideo": false,
+    "shownInArticleScreenshot": true
+  },
+  "sentry": {
+    "sourceCommit": "1519ccaf68ad908db6955ab3350f59af84c65843",
+    "separateTendingCall": true,
+    "model": "gemma3:4b",
+    "durationSeconds": 16.43,
+    "inputTokens": 220,
+    "outputTokens": 107,
+    "structuralValidationMs": 0.48,
+    "shownInVideo": false,
+    "screenshot": "images/sentry-trace.png",
+    "modelTextExcludedFromTelemetry": true
+  },
+  "social": {
+    "file": "social-x.txt",
+    "postedByAgent": false,
+    "ownerWillPost": true,
+    "tags": [
+      "#Hacktoberfest",
+      "#Gemma",
+      "#OpenSource"
+    ],
+    "weightedCharacters": 244,
+    "limit": 280
+  },
+  "services": {
+    "sentry": "optional, off by default",
+    "render": "declined, not deployed",
+    "entire": "declined, not installed",
+    "elevenLabs": "not used"
+  },
+  "assets": {
+    "images/dev-cover.png": {
+      "sha256": "87dca7b6732aec044248c83ee68337730289cb654c8b06a823794253d81c10ff",
+      "bytes": 180117
+    },
+    "images/idea-growth.png": {
+      "sha256": "0bcc12861dcdbdb7d0c9ca14ea2e3546bd5488dd92b0ba963419932950aad2db",
+      "bytes": 166706
+    },
+    "images/sentry-trace.png": {
+      "sha256": "028f54a813ceffed226f641b42418f399342d1b8789b495288d53114302de59b",
+      "bytes": 35527
+    },
+    "demo-echo.json": {
+      "sha256": "e7b2853224eb1194fda8a370f5cfad539d582d6a883582c0a4dc54dac591a1ef",
+      "bytes": 2030
+    },
+    "demo.en.srt": {
+      "sha256": "35b2c99b5f44997053e88c2083e1458419693e98742cbd87726a66ef43fae18e",
+      "bytes": 1018
+    },
+    "demo.en.vtt": {
+      "sha256": "ce66a61463d919fdae8f5cb8c8baa6d41135710a90a3a6c2350cd59cc3e1e480",
+      "bytes": 1026
+    },
+    "DEMO_TRANSCRIPT.md": {
+      "sha256": "c18b1b0d93f6fb61a2341b707443ecf0fb7d02ddcac1632b390777c24a7deb78",
+      "bytes": 1617
+    },
+    "social-x.txt": {
+      "sha256": "43bc6221f0d5b06c6f5d560ba0834d323aa9b54cf816ecd2e8a1c2871a063f59",
+      "bytes": 319
+    }
+  },
+  "exclusions": [
+    "Private briefing and owner research checkpoints",
+    "Credentials, DSNs and private preview tokens",
+    "Model weights, runtimes and browser profiles",
+    "Duplicate MP4 and audio masters"
+  ]
+}

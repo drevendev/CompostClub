@@ -1,6 +1,6 @@
 # GitHub Pages deployment preparation
 
-Website status: **PREPARED, NOT DEPLOYED**. The source repository is public at [drevendev/CompostClub](https://github.com/drevendev/CompostClub). Repository publication and website deployment are separate actions. No domain has been registered and no contest entry submitted.
+Application website status: **PREPARED, NOT DEPLOYED**. The separate [video player](https://drevendev.github.io/CompostClub/?v=07c202852017) is hosted on GitHub Pages from the `codex/video-pages` branch. That branch contains the approved MP4, cover/poster, captions, credits, and player; it does not serve the interactive application. The source repository is public at [drevendev/CompostClub](https://github.com/drevendev/CompostClub), and the [DEV Week 3 article](https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o) was published on 22 October 2026. No domain has been registered. Deploying the application workflow below would replace the current video site and requires its own authorization.
 
 ## Local artifact
 
@@ -23,6 +23,10 @@ The source repository is not evidence of a live site. Do not advertise an antici
 
 Pages serves the sample garden and optional browser experiment. It cannot run the Ollama bridge. Live Ollama requires `npm start` on the visitor's own device. No public localhost tunnels, wildcard CORS, secrets or inference backend are introduced.
 
-The `.tech` domain is deferred. Do not register a domain, accept paid renewals, provide a payment card or claim a sponsor category based only on Pages. Render and Entire are optional future work, not launch dependencies.
+The `.tech` domain is deferred. Do not register a domain, accept paid renewals, provide a payment card or claim a sponsor category based only on Pages. The owner declined Render and Entire on 22 October; neither is used or planned for this launch. The existing inert Render blueprint is not a deployment or category claim.
 
 References: [official Pages workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits).
+
+## Authorized Echo update completed — 22 October 2026
+
+Commit bdb0c942dcae77aa097bc959237b1e020c5cb7ce updated only the eight allowlisted static video/player files on codex/video-pages. Pages CI: https://github.com/drevendev/CompostClub/actions/runs/39747617849 (success). The article's video link is https://drevendev.github.io/CompostClub/?v=07c202852017. Actual HTTPS playback, eight English cues, desktop/mobile layout and all seven payload SHA-256 values were verified. The later DEV publication is recorded in [publication materials](DEV_PUBLICATION.md); X is left to the owner.

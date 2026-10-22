@@ -1,0 +1,49 @@
+{
+  "voice": "af_heart",
+  "speed": 1,
+  "language": "en-us",
+  "crossfadeSeconds": 0.24,
+  "cues": [
+    {
+      "text": "Some ideas are too interesting to leave in a notes file. Give them a little garden.",
+      "caption": "A little garden for unfinished thoughts.",
+      "scene": "Floral opening card",
+      "projectSeeds": true
+    },
+    {
+      "text": "These are real projects. Scriptorium studies how a text is written. Quillgrain carries its voice.",
+      "caption": "Scriptorium + Quillgrain",
+      "scene": "Open the exact English source cards"
+    },
+    {
+      "text": "From them, local Gemma grew Echo Cartography: a map of how that voice changes from draft to draft.",
+      "caption": "Echo Cartography: a new idea takes root.",
+      "scene": "Show the unchanged genuine Gemma result"
+    },
+    {
+      "text": "An editor could use it to spot unwanted changes. Keep the possibility, with both its roots.",
+      "caption": "A possibility worth keeping.",
+      "scene": "Keep Echo Cartography and open Collection"
+    },
+    {
+      "text": "Other sprouts can become ingredients, too. Here are two earlier discoveries, ready for another turn.",
+      "caption": "Two earlier discoveries. A fresh direction.",
+      "scene": "Separate workflow checkpoint: Lexigraph and ClawPulse"
+    },
+    {
+      "text": "Send them back to the pile. Their words become new scraps, still connected to the ideas that grew them.",
+      "caption": "Compost again. Keep the roots.",
+      "scene": "Click Compost again on both genuine earlier sprouts"
+    },
+    {
+      "text": "Nothing is lost. The originals stay, and a new combination can take the idea further.",
+      "caption": "New ingredients. The same roots.",
+      "scene": "Show twelve scraps and read a returned idea"
+    },
+    {
+      "text": "Your ideas, on your device. A little messy. A little magical. Let your wild ideas ferment.",
+      "caption": "Let your wild ideas ferment.",
+      "scene": "Floral closing card with music attribution"
+    }
+  ]
+}

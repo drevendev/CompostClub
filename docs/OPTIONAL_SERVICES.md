@@ -1,6 +1,6 @@
 # Optional operator services
 
-All three integrations are removable. Local ideas, IndexedDB saves, Gemma, backups and the recorded standalone HTML do not require a service account. No cloud inference, end-user accounts, paid upgrade, payment method or automatic model downloads are introduced. Operator authorization: 22 October 2026.
+Sentry is the only connected optional service. Local ideas, IndexedDB saves, Gemma, backups and the recorded standalone HTML do not require a service account. No cloud inference, end-user accounts, paid upgrade, payment method or automatic model downloads are introduced. Operator authorization: 22 October 2026. The owner subsequently declined Render and Entire; their earlier preparation notes below are historical, not an active integration plan.
 
 ## Sentry — local metadata tracing only
 
@@ -23,17 +23,17 @@ Before sending personal data, inspect actual envelopes with synthetic sentinels 
 
 Set `COMPOST_SENTRY_ENABLED=0` (or remove the DSN), stop the local server and restart it. Environment changes apply at process startup. No network/SDK initialization occurs in the new OFF process. To remove the integration entirely, replace `createObserver()` with the documented no-op object in `server/observability.mjs`, remove the SDK dependency with `npm uninstall @sentry/node`, and remove the observer initialization/import if desired. Keep the small `run(meta, fn)`/`tokens`/`validate` interface or inline the original local function; no garden migration is needed. Run `npm run verify` and Chromium acceptance again. Uninstalling does not delete data already held by Sentry: separately review event retention/project deletion in its dashboard. Never delete shared organization/PatchPitch settings.
 
-## Render — prepared, no deployment performed
+## Render — declined, no deployment performed
 
-`render.yaml` is an optional static frontend blueprint: Node 24, `npm ci && npm run build`, output `dist`, automatic deployment OFF. Use a free Hobby workspace without a card. Connect only this repository, verify dashboard cost is $0, and deploy only after owner approval of the concrete build. It cannot reach the owner's loopback Gemma. The existing Pages video remains unchanged.
+The owner decided not to use Render. `render.yaml` remains an inert static frontend blueprint from PR #65: Node 24, `npm ci && npm run build`, output `dist`, automatic deployment OFF. No service or account was connected, and the blueprint does not establish eligibility for a Render category. Do not deploy or connect an account without a new explicit request. It cannot reach the owner's loopback Gemma. The existing Pages video remains unchanged.
 
 Render has bandwidth/build limits; without a payment method free resources can be suspended. Promo credits are optional, expiring billing credits, not a hard budget cap. The official [HF26 hub](https://dev.to/challenges/hf26) points to [participant promos](https://hacktoberfest.com/my/promos). No code/value/expiry was verified in the owner's unavailable promo dashboard. Do not select paid resources while waiting for a bonus.
 
 Each Render/Pages/local origin has its own IndexedDB garden. Export then import explicitly before changing origin; hosting is not synchronization. To remove Render, disable/delete only that service, revoke its repository permission if unused and remove `render.yaml`. Pages and local operation are unaffected. No database, domain or hosted Ollama is provisioned.
 
-## Entire — preparation only
+## Entire — declined, not installed
 
-The owner is creating an account at [Entire](https://entire.io/login). No verified public promo code was found. The local [MIT CLI](https://github.com/entireio/cli) is separate from hosted product billing; check actual no-card account terms rather than assuming all cloud features are free.
+The owner decided not to use Entire. No account connection, CLI installation or session capture was performed for this project. The earlier investigation concerned [Entire](https://entire.io/login) and its separate [MIT CLI](https://github.com/entireio/cli); no verified public promo code was found. The following safety/removal notes are retained only for a future separately requested evaluation.
 
 Use a clean separate checkout and a new public-safe task. Check the exact installed version and Windows/Codex support. Do not capture this private conversation, ignored briefing files or owner idea data. Disable optional usage telemetry and inspect hooks/remotes/checkpoint push behavior. GitHub stays canonical; no automatic mirroring. Public session sharing follows a separate content review and owner approval. Until then, no Entire category claim.
 

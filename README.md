@@ -12,6 +12,8 @@
 
 <p align="center">
   <a href="#try-the-sample-garden">Try it locally</a> ·
+  <a href="https://drevendev.github.io/CompostClub/">Watch the demo</a> ·
+  <a href="https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o">Read the DEV article</a> ·
   <a href="docs/RUNNING.md">Live local AI</a> ·
   <a href="docs/MODEL_EVAL.md">Model evidence</a> ·
   <a href="https://github.com/drevendev/CompostClub/issues?q=is%3Aissue+is%3Aopen+label%3Areview">Known issues</a> ·
@@ -20,7 +22,9 @@
 
 ![Compact sample workspace with paged fictional scraps and an unchanged recorded Gemma sprout](docs/images/compact-workspace.png)
 
-_Actual Chromium capture, 20 October 2026, from the v0.1 implementation included in the initial commit. The sample pairs six fictional scraps with unchanged local Gemma recordings. Text alternative: add a scrap on the left, let a pairing grow in the center, then inspect its two sources and keep or recompost the result on the right._
+_Actual Chromium capture of the compact sample workspace. The sample pairs six fictional scraps with unchanged local Gemma recordings. Text alternative: add a scrap on the left, let a pairing grow in the center, then inspect its two sources and keep or recompost the result on the right._
+
+The [published DEV article](https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o) follows real local Gemma results from public project summaries. The [49.93-second English video](https://drevendev.github.io/CompostClub/?v=07c202852017) shows Echo Cartography and recomposting. Newer idea branches and optional Sentry tracing are illustrated separately in the article. [Publication materials, captions and credits](docs/DEV_PUBLICATION.md).
 
 ## Try the sample garden
 
@@ -37,7 +41,7 @@ Open the printed `http://127.0.0.1:5173` URL. Select **Try the sample garden**, 
 
 This first run needs no account, API key or model download. Dependency installation contacts npm. The sample is explicitly labelled **recorded Gemma outputs · no live generation**. A changed or unrelated input never receives an unrelated canned answer.
 
-**v0.1 is an experimental local application.** Source is public; a hosted website has not been deployed. See the [known issues](https://github.com/drevendev/CompostClub/issues?q=is%3Aissue+is%3Aopen+label%3Areview) before relying on saves; export backups regularly. The [Pages workflow](.github/workflows/pages.yml) requires a separate manual launch.
+**v0.1 is an experimental local application.** Source and a [video walkthrough](https://drevendev.github.io/CompostClub/) are public; the interactive application has not been deployed. See the [known issues](https://github.com/drevendev/CompostClub/issues?q=is%3Aissue+is%3Aopen+label%3Areview) before relying on saves; export backups regularly. The application [Pages workflow](.github/workflows/pages.yml) requires a separate manual launch and would replace the current video page.
 
 ## What grows here
 
@@ -46,6 +50,7 @@ This first run needs no account, API key or model download. Dependency installat
 - Deterministic pair selection, source revisions, exact quotes and immutable parent snapshots.
 - **History** on each scrap preserves its submitted raw text across edits, including before the first sprout. Up to 100 saved revisions share the validated backup budget; earlier missing text in legacy backups is disclosed.
 - Keep, edit, recompost, Markdown export, versioned JSON backup and validated restore.
+- **Tend this idea** develops a kept personal idea through one local-model proposal at a time. Review, edit, accept or reject; accepted branches keep their parent links. Acceptance spends one slot; rejection, cancellation and failure keep it.
 - Revisit every discovery through **Collection → All discoveries**, including results you have not kept. Retry an unfinished pairing explicitly after reload while its sources remain unchanged.
 - IndexedDB persistence, competing-tab checks and a visible memory-only fallback.
 - A self-contained offline HTML sample, without model weights or startup network dependencies.
@@ -62,7 +67,7 @@ For live generation, start with the [Ollama setup](docs/RUNNING.md#run-live-loca
 
 ## Data stays with the garden
 
-Scraps and results live in your browser's IndexedDB or explicit exports. There are no end-user accounts, telemetry by default, cloud generation, external fonts or paid APIs. Optional operator-only Sentry metadata tracing is off by default; [setup and removal](docs/OPTIONAL_SERVICES.md) also covers the prepared Render configuration and Entire workflow. Model output and user input render as text.
+Scraps and results live in your browser's IndexedDB or explicit exports. There are no end-user accounts, telemetry by default, cloud generation, external fonts or paid APIs. Optional operator-only Sentry metadata tracing is off by default; see [setup and removal](docs/OPTIONAL_SERVICES.md). Render and Entire were declined and are not used. Model output and user input render as text.
 
 Ollama mode uses a server bound to `127.0.0.1`, forwarding to a fixed loopback Ollama address. Browser AI contacts the disclosed Hugging Face/CDN endpoints only after download consent; ideas are processed on the device. Model weights carry separate terms and are excluded from Git. The [architecture](docs/ARCHITECTURE.md) describes the boundaries and current limitations.
 
@@ -76,7 +81,7 @@ npm run build
 npm run package:single
 ```
 
-`verify` runs strict TypeScript, ESLint, 91 unit tests and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath, [eight recovery scenarios](docs/RECOVERY.md#regression-verification) and twenty-three P1/workflow/stability/layout scenarios in Chromium. Run `npm run test:recovery` and `npm run test:p1` after building both variants. Diagnostic stubs and synthetic pairing indexes are explicitly labelled and never counted as live-model evidence. These checks do not download models or certify live model quality. The [stability acceptance receipt](evidence/stability-verification.json) records a fresh sample/offline run; its live-inference status is `not-run`. The [capacity diagnostic](evidence/pairing-capacity.json) measures the pure picker on 200 fictional sources and 19,900 attempts, not model speed.
+`verify` runs strict TypeScript, ESLint, 97 unit tests, three HTTP/Sentry regressions and formatting. `package:single` writes `release/compost-club-preview.html`, a recorded offline demo below 2 MiB. [Repository CI](.github/workflows/quality.yml) also checks documentation links, the production sample under a Pages-style subpath, [eight recovery scenarios](docs/RECOVERY.md#regression-verification) and twenty-four P1/workflow/stability/layout/growth scenarios in Chromium. Run `npm run test:recovery` and `npm run test:p1` after building both variants. Diagnostic stubs and synthetic pairing indexes are explicitly labelled and never counted as live-model evidence. These checks do not download models or certify live model quality. The [stability acceptance receipt](evidence/stability-verification.json) records a historical sample/offline run; its live-inference status is `not-run`. The [capacity diagnostic](evidence/pairing-capacity.json) measures the pure picker on 200 fictional sources and 19,900 attempts, not model speed.
 
 Ready slots are time credits; they do not create extra combinations of the same two sources. The garden shows unused combinations separately. When they run out, your slots remain available while you add a scrap, edit a source or recompost a result. At the 200-source cap, the next action opens an existing source for editing when pairing-history space remains. A full pairing history requires explicit cascade review before a new key can be started; existing failed pairs can still be retried.
 
