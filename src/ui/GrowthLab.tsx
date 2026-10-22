@@ -329,14 +329,19 @@ export function GrowthLab({
         Export branch outline
       </button>
       {!!unfiled.length && (
-        <button
-          className="button danger"
-          onClick={() =>
-            download('compost-club-unsaved-growth.json', JSON.stringify(unfiled, null, 2))
-          }
-        >
-          Download unsaved evidence before closing
-        </button>
+        <>
+          <button
+            className="button danger"
+            onClick={() =>
+              download('compost-club-unsaved-growth.json', JSON.stringify(unfiled, null, 2))
+            }
+          >
+            Download unsaved evidence before closing
+          </button>
+          <button className="button secondary" disabled={busy} onClick={onClose}>
+            I saved the evidence; close
+          </button>
+        </>
       )}
       {error && <p role="alert">{error}</p>}
     </Modal>

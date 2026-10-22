@@ -95,4 +95,20 @@ test('growth: real Chromium review/edit/branch/reload and privacy exports (expli
   await expect(
     page.getByText('No additional recovery copies in this garden.', { exact: true }),
   ).toBeVisible();
+  await page.getByRole('button', { name: 'Review idea branches', exact: true }).click();
+  await page.route('**/api/tend', (route) =>
+    route.fulfill({
+      json: { raw: 'TEST ONLY unsavable original '.repeat(3000), digest: 'test-only-digest' },
+    }),
+  );
+  await page.getByRole('button', { name: 'Grow one branch', exact: true }).click();
+  const unsaved = page.waitForEvent('download');
+  await page
+    .getByRole('button', { name: 'Download unsaved evidence before closing', exact: true })
+    .click();
+  expect(await readFile((await (await unsaved).path())!, 'utf8')).toContain(
+    'TEST ONLY unsavable original',
+  );
+  await page.getByRole('button', { name: 'I saved the evidence; close', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
