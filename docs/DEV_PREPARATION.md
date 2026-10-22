@@ -1,45 +1,32 @@
-# DEV submission preparation — 21 October 2026
+# DEV preparation — Echo Cartography, 22 October 2026
 
-Status: source drafts are prepared for a GitHub draft PR; the DEV article and demo video remain unpublished. Rendered video, audio, floral cover, models, and review archives stay in ignored local storage. The repository includes only two UI review screenshots from the exact public-fixture sample.
+Status: the existing Echo Cartography video is unchanged. PR #65 is merged with optional Sentry and local idea branches. The owner-approved article, including the accepted-branch example and fresh Sentry trace, was published on DEV on 22 October 2026 at 15:12:20 UTC. Public URL: https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o. Twitter is left to the owner.
 
-## Files to review
+## Evidence and claim boundaries
 
-- [English article draft](DEV_DRAFT.md), approximately 1,250 words, with `published: false` and the official Week 3 sections.
-- [Demo shot list, recorded English narration and local voice recipe](DEMO_SCRIPT.md).
-- [Local capture recipe](../scripts/capture-demo.mjs). Rendered media and its verification receipt are under `release/dev-article-no-scroll/`, outside public source.
+| Claim | Evidence | Limit |
+| --- | --- | --- |
+| Echo Cartography is a genuine local Gemma result | Run 04, retained raw reply, exact English source snapshots, model digest and request identity in the local research checkpoints | Proposed idea; no implemented editor or verified paying customer |
+| Ten additional pairings were run | Ten retained call records, ten validated garden backups | Exploratory selected pairs, not a held-out evaluation; all passed format, three excluded after semantic review |
+| Two ideas return to the pile with roots | Actual Compost again actions on Lexigraph and ClawPulse; twelve-card backup and parentSproutId checks | Separate saved garden from the selected result; no second-generation blend is claimed |
+| English-only, no-scroll movie | Eight fresh framed Chromium checkpoints, exact English speech and captions, visual review | Captured desktop viewport only; smaller screens can scroll normally |
+| Same approved audio | af_heart at speed 1.0; unchanged downloaded music SHA-256 and CC BY license record | Synthetic voice; downloaded music is attributed and ducked below speech |
+| Standalone works offline | Fresh Chromium acceptance of the exact labelled public fixture, sources, keep/reload/export | Separate recorded sample, not a package of owner-project results or model weights |
+| Earlier 0/24, 23/24, 24/24 and 0/4 results | Existing model evaluation report and raw evidence | Historical structural checks, not fresh benchmarks or usefulness scores |
+| A kept idea can develop into a branch | Draft Timeline Exploration accepted, saved and reopened from its real parent Echo Cartography | The suggested experiment has not been run; no autonomous growth or full DNA/GA implementation claimed |
+| Sentry is actually connected | New trace from a real local tending request on merged code: 16.43s, 220 input/107 output tokens, about 0.48ms structural validation; original UI screenshot | Separate call from the earlier blend and accepted branch; single observation, metadata only, no quality score or hardware cost estimate |
+| Current partner categories | Official Week 3 page/hub/rules rechecked 22 October; Gemma, GitHub Actions route and Sentry supported | No Render deployment, Entire session or ElevenLabs use; eligibility/prizes not guaranteed |
 
-The current narrated MP4, `compost-club-demo-heart-sunny.mp4`, is a captioned demonstration with local Kokoro-82M `af_heart` speech and a quiet downloaded Kevin MacLeod guitar track. [Audio credits and licensing](DEMO_MUSIC.md) accompany the file. It shows the actual standalone sample inside an original floral presentation frame; it is not a new model run. The persistent recorded/no-live badge, unchanged source text, and exported provenance are part of the review. The original silent master is retained, and the narrated copy discloses its synthetic voice in the presentation footer.
+New captures and audio receipts are under release/dev-demo-echo/. The review pack contains portable verification records and selected original results. Full research logs and unrelated owner project cards remain in ignored local storage. Source archives exclude model weights, portable runtimes and private files.
 
-## Claim-to-evidence map
+## Files
 
-The latest local product revision has a compact header, an expandable scrap composer, two-item source pages, three-item discovery pages, full-text reading dialogs, and side-by-side sprout roots. It removes the nested pile scrollbar and in-card source expansion. The current video is a fresh capture of that real interface: no app styling is injected for filming. Nine checkpoints across the complete journey verify no document scrolling, nested scrolling, or scroll events at the captured 1730 × 776 app viewport. Separate UI acceptance also covers 1366 × 768, exact long source text, last-page deletion, keyboard focus, and mobile flow. Smaller screens and unusually long content retain ordinary document/dialog scrolling; content is not clipped to force a fit.
+- [English article](DEV_DRAFT.md)
+- [English script and scene plan](DEMO_SCRIPT.md)
+- [Exact narration config](demo-echo.json)
+- [Music and voice credits](DEMO_MUSIC.md)
+- [Publication gates](DEV_PUBLICATION.md)
+- [Separate X copy](SOCIAL_POSTS.md)
+- [Current partner-category audit and comparison review](DEV_PARTNER_REVIEW.md)
 
-| Article claim                                                                                 | Repository evidence                                                                                                                              | Scope                                                                                                                                                                                 |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| One initial slot, then one every 15 minutes, capped at three                                  | [Garden rules](../src/domain/garden.ts), [unit tests](../src/domain/garden.test.ts)                                                              | Time credits; no background inference                                                                                                                                                 |
-| Seven unchanged public-fixture recordings                                                     | [Recordings](../fixtures/public/recordings.json), [selection recipe](../scripts/select-recordings.ts)                                            | Selected exact inputs and language only                                                                                                                                               |
-| Postcard Echoes, Cartographic Echoes, Небесный Повар                                          | [Recordings](../fixtures/public/recordings.json), including receipt and raw hashes                                                               | Fictional model-generated concepts, not real services                                                                                                                                 |
-| Ollama structural results: 0/24, 23/24, 24/24                                                 | [Model report](MODEL_EVAL.md), [summary](../evidence/model/summary.json)                                                                         | Twelve pairs × two repetitions; reused holdout; shipped validator                                                                                                                     |
-| 4B median call latency about 9 seconds                                                        | [Model report](MODEL_EVAL.md), [summary](../evidence/model/summary.json)                                                                         | One Windows machine; CPU selected; not a general benchmark                                                                                                                            |
-| Browser outputs failed 0/4 combined smoke checks                                              | [Model report](MODEL_EVAL.md)                                                                                                                    | Separate tiny 270M/1B experiment; no broad browser-model conclusion                                                                                                                   |
-| 91 unit tests and Chromium coverage of offline use, recovery, competing tabs, and persistence | [Acceptance record](ACCEPTANCE.md), [unit and browser setup](../package.json), [sample/offline receipt](../evidence/stability-verification.json) | Unit count rechecked in this delivery. Historical browser reports have different dates and scopes; the new media receipt verifies the capture journey, not a full browser-suite rerun |
-| Source history, atomic writes, and recovery boundaries                                        | [Domain](../src/domain/garden.ts), [storage](../src/application/storage.ts), [recovery documentation](RECOVERY.md)                               | Experimental implementation with open issues                                                                                                                                          |
-| No accounts, analytics, paid inference API, or cloud substitute                               | [Architecture](ARCHITECTURE.md), [running guide](RUNNING.md)                                                                                     | Initial dependency/model downloads remain explicit network steps                                                                                                                      |
-
-Model evidence was read and checked, not rerun for this editorial delivery. Owner usefulness review, a genuinely unseen evaluation set, physical phone checks, and deployed-origin browser quality remain open. Do not turn structural pass counts into a creativity, adoption, or time-savings claim.
-
-## Current DEV requirements checked
-
-The [Week 3 challenge](https://dev.to/challenges/hacktoberfest-week3-2026-10-19) is themed **Slow and Steady**, with a published deadline of **25 October 2026, 23:59 PDT**. Its submission template asks for What I Built, Demo, Code, How I Built It, and Why Does Open Innovation Matter; it accepts a deployed demonstration link or video. The article uses those sections and the `devchallenge` / `hf26challenge` tags. Best Use of Gemma is the only proposed partner category.
-
-The challenge allows AI tools. [DEV's AI article guidelines](https://dev.to/guidelines-for-ai-assisted-articles-on-dev) require disclosure and factual checking; the draft includes a disclosure of article and demo assistance. Optional agent-session sharing and the optional time-savings section are omitted. No private session, owner text, or invented testimonial is needed to fill them.
-
-The challenge requires a new project/repository within its window and English for prize consideration. This preparation is not a legal eligibility determination or a submission. Check the linked current rules again when the owner authorizes publication.
-
-## Remaining editorial steps
-
-1. Read the English text as the named human author. Confirm the first-person interpretation and judgments reflect the author's view; add personal usage observations only if actually made.
-2. Watch and listen to the whole narrated MP4, check readability on a small screen, and review the downloaded Markdown from the capture. English speech is synchronized to the existing scenes; downloaded CC BY 3.0 music fades down under speech. Preserve the audio attribution and license link when uploading. The silent master remains available.
-3. Choose the final title and floral cover. The proposed title is “Let your wild ideas ferment: a quiet garden powered by local Gemma”.
-4. After separate owner authorization, upload the approved video and cover. Replace the hidden local video placeholder with a verified supported embed or link and attach the cover in DEV's editor. Local paths cannot serve as public media URLs.
-5. Change the opening “submission draft” attribution to the final submission wording, preview the post, verify links and model-result labels, and submit only with authorization. Keep this local copy unpublished until then.
+Current categories, required tags, template and Week 3 rules were rechecked on 22 October 2026. The deadline is 25 October, 23:59 PDT. The existing title, floral cover, demo link, four tags and AI-assisted disclosure are retained. DEV publication was separately authorized by the owner and verified on the public canonical page; no Twitter post was made.
