@@ -39,6 +39,23 @@ async function rawWrite(raw: unknown, key = 'personal') {
     db.close();
   }
 }
+it('reviews/removes only an unchanged retained copy without touching either active garden', async () => {
+  const a = new GardenStorage();
+  await a.open();
+  const saved = await a.save(createGarden('personal', 100), 0);
+  await rawWrite({ secret: 'old private source' }, 'recovery:personal');
+  await rawWrite({ secret: 'other garden' }, 'recovery:sample');
+  const [copy] = await a.retainedCopies('personal');
+  expect(copy!.json).toContain('old private source');
+  await rawWrite({ secret: 'new private source' }, copy!.key);
+  await expect(a.removeRetainedCopy('personal', copy!.key, copy!.json)).rejects.toThrow('changed');
+  const [current] = await a.retainedCopies('personal');
+  await a.removeRetainedCopy('personal', current!.key, current!.json);
+  expect(await a.retainedCopies('personal')).toEqual([]);
+  expect(await a.load('personal')).toEqual(saved);
+  expect(await a.retainedCopies('sample')).toHaveLength(1);
+  await expect(a.removeRetainedCopy('personal', 'personal', 'anything')).rejects.toThrow();
+});
 function history(count: number): Garden {
   const r = recordings[0]!;
   let g = createGarden('personal', 100);

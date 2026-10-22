@@ -2,7 +2,13 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   outputDir: '.local/p1-artifacts',
-  testMatch: ['p1.spec.ts', 'workflow.spec.ts', 'stability.spec.ts', 'layout.spec.ts'],
+  testMatch: [
+    'p1.spec.ts',
+    'workflow.spec.ts',
+    'stability.spec.ts',
+    'layout.spec.ts',
+    'growth.spec.ts',
+  ],
   timeout: 45000,
   workers: 1,
   use: {

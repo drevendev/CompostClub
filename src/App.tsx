@@ -7,6 +7,7 @@ import {
   deletionSet,
   editScrap,
   exportMarkdown,
+  exportSproutCard,
   failRequest,
   importGarden,
   INTERVAL,
@@ -43,6 +44,8 @@ import { Icon } from './ui/Icons';
 import { Modal } from './ui/Modal';
 import { Recovery } from './ui/Recovery';
 import { InferenceHistory } from './ui/InferenceHistory';
+import { GrowthLab } from './ui/GrowthLab';
+import { RetainedCopies } from './ui/RetainedCopies';
 import { SourceHistory } from './ui/SourceHistory';
 import type { Generation } from './domain/generation';
 import './styles.css';
@@ -58,6 +61,8 @@ type Dialog =
   | 'history'
   | 'source-history'
   | 'discard-evidence'
+  | 'growth'
+  | 'share'
   | null;
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 function download(name: string, content: string, type: string) {
@@ -102,7 +107,12 @@ export default function App() {
     [progress, setProgress] = useState(0),
     [progressLabel, setProgressLabel] = useState(''),
     [loaded, setLoaded] = useState(false);
-  const [local, setLocal] = useState<{ token: string; model: string; digest: string } | null>(null);
+  const [local, setLocal] = useState<{
+    token: string;
+    model: string;
+    digest: string;
+    monitoring?: boolean;
+  } | null>(null);
   const [busy, setBusy] = useState(false),
     busyRef = useRef(false),
     [saving, setSaving] = useState(false);
@@ -111,6 +121,9 @@ export default function App() {
     [lockEpoch, setLockEpoch] = useState(0);
   const [pendingImport, setPendingImport] = useState<Garden | null>(null),
     [welcome, setWelcome] = useState(true);
+  const [growthParent, setGrowthParent] = useState('');
+  const [shareSprout, setShareSprout] = useState<Sprout | null>(null);
+  const [shareEvidence, setShareEvidence] = useState(false);
   const [hasRecoveryCopy, setHasRecoveryCopy] = useState(false);
   const [hasRestoreCopy, setHasRestoreCopy] = useState(false);
   const [inferenceRecovery, setInferenceRecovery] = useState<Generation | null>(null);
@@ -545,17 +558,9 @@ export default function App() {
     });
   }
   function exportSprout(s: Sprout) {
-    if (!garden) return;
-    download(
-      'compost-club-sprout.md',
-      exportMarkdown({
-        ...garden,
-        sprouts: [s],
-        scraps: [],
-        generations: garden.generations?.filter((r) => r.id === s.id) ?? [],
-      }),
-      'text/markdown;charset=utf-8',
-    );
+    setShareSprout(s);
+    setShareEvidence(false);
+    setDialog('share');
   }
   async function fullscreen() {
     await action(async () => {
@@ -1195,6 +1200,10 @@ export default function App() {
                   <SproutCard
                     key={s.id}
                     sprout={s}
+                    onTend={() => {
+                      setGrowthParent(s.id);
+                      setDialog('growth');
+                    }}
                     disabled={locked || busy || saving}
                     onKeep={() =>
                       void action(async () => {
@@ -1274,6 +1283,10 @@ export default function App() {
                   <SproutCard
                     key={s.id}
                     sprout={s}
+                    onTend={() => {
+                      setGrowthParent(s.id);
+                      setDialog('growth');
+                    }}
                     disabled={locked || busy || saving}
                     onKeep={() =>
                       void action(async () => {
@@ -1363,6 +1376,11 @@ export default function App() {
               Scraps and sprouts live in this browser's IndexedDB. They are not synced. There is no
               analytics, account, cloud generation or paid API. Download JSON backups to keep a
               portable copy.
+            </p>
+            <p>
+              Optional technical monitoring is off by default. The person running the local server
+              can enable timings and token counts in Sentry. Idea texts and model responses stay
+              local; the local AI connection shows when monitoring is on.
             </p>
             <h3>Three honest ways to play</h3>
             <p>
@@ -1521,6 +1539,7 @@ export default function App() {
               {local && (
                 <p className="success-text">
                   Connected: {local.model}
+                  {local.monitoring ? ' · optional technical monitoring ON (no idea text)' : ''}
                   <br />
                   <code>{local.digest.slice(0, 24)}…</code>
                 </p>
@@ -1553,6 +1572,47 @@ export default function App() {
           )}
         </Modal>
       )}
+      {dialog === 'share' && shareSprout && (
+        <Modal title="Export this idea" onClose={() => setDialog(null)}>
+          <p>
+            The card includes the idea, both source texts and model attribution. Review these before
+            sharing. Raw model responses are excluded by default.
+          </p>
+          <label>
+            <input
+              type="checkbox"
+              checked={shareEvidence}
+              onChange={(e) => setShareEvidence(e.target.checked)}
+            />
+            Include original inference transcript for this idea
+          </label>
+          <button
+            className="button primary"
+            onClick={() =>
+              download(
+                'compost-club-sprout.md',
+                exportSproutCard(garden, shareSprout, shareEvidence),
+                'text/markdown;charset=utf-8',
+              )
+            }
+          >
+            Download idea card
+          </button>
+        </Modal>
+      )}
+      {dialog === 'growth' && (
+        <GrowthLab
+          garden={garden}
+          initial={growthParent}
+          disabled={locked || saving || !!inferenceRecovery}
+          commit={commit}
+          onBusy={(value) => {
+            busyRef.current = value;
+            setBusy(value);
+          }}
+          onClose={() => setDialog(null)}
+        />
+      )}
       {dialog === 'backup' && (
         <Modal title="Take a little growth with you." onClose={() => setDialog(null)}>
           {__OFFLINE__ && (
@@ -1580,6 +1640,17 @@ export default function App() {
                 }
               >
                 Download before-restore copy
+              </button>
+            )}
+            {!!garden.growth?.length && (
+              <button
+                className="button secondary"
+                onClick={() => {
+                  setGrowthParent(garden.sprouts.find((s) => s.kept)?.id ?? '');
+                  setDialog('growth');
+                }}
+              >
+                Review idea branches
               </button>
             )}
             <button className="button secondary" onClick={() => setDialog('history')}>
@@ -1665,7 +1736,21 @@ export default function App() {
               />
             </label>
           </div>
+          <RetainedCopies
+            kind={kind}
+            disabled={locked || busy || saving}
+            onChanged={() => {
+              void Promise.all([storage.inferenceRecovery(kind), storage.retainedCopies(kind)])
+                .then(([r, copies]) => {
+                  setInferenceRecovery(r ?? null);
+                  setHasRestoreCopy(copies.some((c) => c.key === `before-restore:${kind}`));
+                  setHasRecoveryCopy(copies.some((c) => c.key === `recovery:${kind}`));
+                })
+                .catch((e) => setError(errorText(e)));
+            }}
+          />
           <p className="small-print">
+            Full Markdown and JSON backups include private source history and raw model responses.
             Restore checks the entire file before showing a replacement preview. Maximum 2 MiB.
             Export labels always distinguish recorded and live model results.
           </p>
@@ -1808,7 +1893,9 @@ export default function App() {
             and {affected.generations.size} inference history record
             {affected.generations.size === 1 ? '' : 's'}, including their saved source snapshots.{' '}
             {affected.pairings} pairing record{affected.pairings === 1 ? '' : 's'} will also be
-            removed. The deleted text will not stay hidden in the lineage.
+            removed from the active garden, along with {affected.growth.size} growth records.
+            Recovery and before-restore copies may still contain this text. Downloaded files and
+            other browsers are separate copies; they are not erased.
           </p>
           <ul className="delete-list">
             {garden.scraps
@@ -1817,6 +1904,9 @@ export default function App() {
                 <li key={s.id}>{s.text.slice(0, 100)}…</li>
               ))}
           </ul>
+          <button className="button secondary" onClick={() => setDialog('backup')}>
+            Review recovery copies before deletion
+          </button>
           <button
             className="button secondary"
             onClick={() =>
@@ -1917,6 +2007,7 @@ function SproutCard({
   onCompost,
   onExport,
   onEdit,
+  onTend,
 }: {
   sprout: Sprout;
   disabled: boolean;
@@ -1924,6 +2015,7 @@ function SproutCard({
   onCompost: () => void;
   onExport: () => void;
   onEdit: () => void;
+  onTend: () => void;
 }) {
   const content = s.edited ?? s.output;
   const [rootsOpen, setRootsOpen] = useState(false);
@@ -2002,6 +2094,11 @@ function SproutCard({
           <Icon name="download" size={18} />
         </button>
       </div>
+      {s.kept && (
+        <button className="button secondary" disabled={disabled} onClick={onTend}>
+          Tend this idea
+        </button>
+      )}
       <div className="sprout-bottom">
         <button disabled={disabled || s.recomposted} onClick={onCompost}>
           <Icon name="cycle" size={14} />

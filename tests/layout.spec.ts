@@ -69,12 +69,14 @@ for (const viewport of [
     await page.reload();
     await page.getByRole('button', { name: /^Collection/ }).click();
     await expect(page.locator('.sprout-card h3')).toHaveText(title);
-    const pending = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export this sprout', exact: true }).click();
+    const pending = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Download idea card', exact: true }).click();
     const markdown = await readFile((await (await pending).path())!, 'utf8');
     for (const text of [title, fixture.a, fixture.b, 'Recorded demo'])
       expect(markdown).toContain(text);
     await noOverflow(page);
+    await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await page.getByRole('button', { name: 'My garden', exact: true }).click();
     await page.getByRole('button', { name: 'Demo clock: +15 min', exact: true }).click();
     await noOverflow(page);

@@ -15,6 +15,8 @@ const roots = [
 ];
 const files = [
   'package.json',
+  'render.yaml',
+  '.env.example',
   'package-lock.json',
   'tsconfig.json',
   'vite.config.ts',

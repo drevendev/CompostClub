@@ -13,6 +13,7 @@ import {
   inspectResponse,
   type Generation,
 } from './generation';
+import { validateGrowth, growthMarkdown, type Growth } from './growth';
 
 export const INTERVAL = 900_000;
 export const MAX_SCRAPS = 200;
@@ -76,6 +77,7 @@ export interface Garden {
   sprouts: Sprout[];
   attempts: Attempt[];
   generations?: Generation[];
+  growth?: Growth[];
   pending: Request | null;
   welcomeGranted: boolean;
   readySlots: number;
@@ -257,7 +259,8 @@ export function beginRequest(
   preferred?: [Snapshot, Snapshot],
 ): Garden {
   const g = reconcile(garden, now);
-  if (g.pending) throw new Error('An idea is already growing.');
+  if (g.pending || g.growth?.some((n) => ['pending', 'proposed'].includes(n.status)))
+    throw new Error('Finish or reject the current proposal first.');
   if (!g.readySlots)
     throw new Error('Let your pile rest. A new pairing is ready every 15 minutes.');
   const parents = preferred ?? availablePairs(g)[0];
@@ -411,6 +414,7 @@ export function deletionSet(
   generations: Set<string>;
   revisions: number;
   pairings: number;
+  growth: Set<string>;
 } {
   const scraps = new Set([id]),
     sprouts = new Set<string>();
@@ -437,22 +441,28 @@ export function deletionSet(
   const pairings = g.attempts.filter((a) =>
     a.key.split('|').some((p) => scraps.has(p.split('@')[0] ?? '')),
   ).length;
-  return { scraps, sprouts, generations, revisions, pairings };
+  const growth = new Set<string>();
+  for (const n of g.growth ?? [])
+    if (n.parent.kind === 'sprout' ? sprouts.has(n.parent.id) : growth.has(n.parent.id))
+      growth.add(n.id);
+  return { scraps, sprouts, generations, revisions, pairings, growth };
 }
 export function removeScrap(g: Garden, id: string): Garden {
-  if (g.pending) throw new Error('Cancel the current blend before removing a source.');
+  if (g.pending || g.growth?.some((n) => n.status === 'pending'))
+    throw new Error('Cancel the current generation before removing a source.');
   const affected = deletionSet(g, id);
   return {
     ...g,
     scraps: g.scraps.filter((s) => !affected.scraps.has(s.id)),
     sprouts: g.sprouts.filter((s) => !affected.sprouts.has(s.id)),
     generations: g.generations?.filter((r) => !affected.generations.has(r.id)) ?? [],
+    ...(g.growth ? { growth: g.growth.filter((n) => !affected.growth.has(n.id)) } : {}),
     attempts: g.attempts.filter(
       (a) => !a.key.split('|').some((p) => affected.scraps.has(p.split('@')[0] ?? '')),
     ),
   };
 }
-export function exportMarkdown(g: Garden): string {
+export function exportMarkdown(g: Garden, includeEvidence = true): string {
   return (
     `# Compost Club\n\nLet your wild ideas ferment.\n\n${g.kind === 'sample' ? 'Sample garden · recorded Gemma outputs · no live generation' : 'Personal garden · local processing'}\n\n` +
     g.sprouts
@@ -474,7 +484,23 @@ export function exportMarkdown(g: Garden): string {
             .join('\n')}`,
       )
       .join('\n') +
-    `\n\n## Inference history\n\n${(g.generations ?? []).map((r) => `${r.id} · ${r.status} · ${r.backend === 'replay' ? 'Recorded demo — no live AI' : r.backend}\nModel: ${r.model} @ ${r.modelRevision}; prompt: ${r.promptVersion}; language: ${r.language}\nA (revision ${r.parents[0].revision}): ${r.parents[0].text}\nB (revision ${r.parents[1].revision}): ${r.parents[1].text}\n${r.error ?? ''}\n${r.responses.map((s) => `${s.phase}: ${s.validationError ?? 'Structure valid; usefulness not certified'}\n${JSON.stringify(s.raw)}\n`).join('\n')}`).join('\n')}`
+    `\n\n## Growth branches\n\n${growthMarkdown(g)}` +
+    (includeEvidence
+      ? `\n\n## Inference history\n\n${(g.generations ?? []).map((r) => `${r.id} · ${r.status} · ${r.backend === 'replay' ? 'Recorded demo — no live AI' : r.backend}\nModel: ${r.model} @ ${r.modelRevision}; prompt: ${r.promptVersion}; language: ${r.language}\nA (revision ${r.parents[0].revision}): ${r.parents[0].text}\nB (revision ${r.parents[1].revision}): ${r.parents[1].text}\n${r.error ?? ''}\n${r.responses.map((s) => `${s.phase}: ${s.validationError ?? 'Structure valid; usefulness not certified'}\n${JSON.stringify(s.raw)}\n`).join('\n')}`).join('\n')}`
+      : '')
+  );
+}
+
+export function exportSproutCard(g: Garden, s: Sprout, includeEvidence = false): string {
+  return exportMarkdown(
+    {
+      ...g,
+      scraps: [],
+      sprouts: [s],
+      growth: [],
+      generations: includeEvidence ? (g.generations?.filter((r) => r.id === s.id) ?? []) : [],
+    },
+    includeEvidence,
   );
 }
 
@@ -486,7 +512,23 @@ export function importGarden(raw: string): Garden {
   const restored = g.pending
     ? failRequest(g, g.pending.id, 'Interrupted before reload or restore.', true)
     : g;
-  const resumed = { ...restored, pending: null };
+  const resumed = {
+    ...restored,
+    pending: null,
+    ...(restored.growth
+      ? {
+          growth: restored.growth.map((n) =>
+            n.status === 'pending'
+              ? {
+                  ...n,
+                  status: 'cancelled' as const,
+                  error: 'Interrupted before reload or restore.',
+                }
+              : n,
+          ),
+        }
+      : {}),
+  };
   serializeGarden(resumed);
   return resumed;
 }
@@ -542,6 +584,8 @@ function validateGarden(data: unknown): Garden {
     if (
       !s ||
       typeof s.id !== 'string' ||
+      !s.id ||
+      /[@|]/.test(s.id) ||
       ids.has(s.id) ||
       !Number.isSafeInteger(s.revision) ||
       s.revision < 1 ||
@@ -686,6 +730,7 @@ function validateGarden(data: unknown): Garden {
       runIds.add(run.id);
     }
   }
+  validateGrowth(g);
   return g;
 }
 function lengthLimit(s: string, max: number) {

@@ -134,10 +134,20 @@ export class BrowserAI {
   }
 }
 export const browserAI = new BrowserAI();
-export async function ollamaHealth(): Promise<{ token: string; model: string; digest: string }> {
+export async function ollamaHealth(): Promise<{
+  token: string;
+  model: string;
+  digest: string;
+  monitoring?: boolean;
+}> {
   const r = await fetch('./api/health', { signal: AbortSignal.timeout(5000) });
   if (!r.ok) throw new Error('Local AI needs the loopback server. See How it works → Run locally.');
-  return r.json() as Promise<{ token: string; model: string; digest: string }>;
+  return r.json() as Promise<{
+    token: string;
+    model: string;
+    digest: string;
+    monitoring?: boolean;
+  }>;
 }
 export async function ollamaGenerate(
   r: Request,

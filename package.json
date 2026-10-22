@@ -31,13 +31,15 @@
     "test:e2e": "playwright test",
     "test:recovery": "playwright test --config playwright.recovery.config.ts",
     "test:p1": "playwright test --config playwright.p1.config.ts",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run format:check",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run test:bridge && npm run format:check",
     "eval:local": "tsx scripts/eval-local.ts",
     "package:single": "vite build --mode offline && node scripts/package-single.mjs",
-    "package:demo": "npm run build && npm run package:single && node scripts/release.mjs"
+    "package:demo": "npm run build && npm run package:single && node scripts/release.mjs",
+    "test:bridge": "node --test tests/bridge.test.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.1",
+    "@sentry/node": "11.8.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
