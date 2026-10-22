@@ -120,10 +120,6 @@ export function decideGrowth(
       throw new Error(
         'The experiment seems unfinished. Edit or reject the proposal before accepting.',
       );
-    if (accept && !/[.!?]$/.test((edited ?? n.output)!.experiment.trim()))
-      throw new Error(
-        'The experiment seems unfinished. Edit or reject the proposal before accepting.',
-      );
     if (edited) {
       parseGrowth(JSON.stringify(edited));
       if (edited.outcome !== 'growth') throw new Error('An accepted branch must be growth.');

@@ -158,22 +158,31 @@ export async function createObserver({ env = process.env, transport } = {}) {
                     },
                     validate(fn) {
                       // Structural validation only; this never certifies usefulness.
-                      let result = 'valid';
-                      try {
-                        fn();
-                      } catch {
-                        result = 'invalid';
-                      }
+                      let called = false;
+                      const validate = () => {
+                        if (called) return;
+                        called = true;
+                        let result = 'valid';
+                        try {
+                          fn();
+                        } catch {
+                          result = 'invalid';
+                        }
+                        try {
+                          Sentry.getActiveSpan()?.setAttribute('compost.result', result);
+                        } catch {}
+                      };
                       try {
                         Sentry.startSpan(
                           {
                             name: 'Validate local response',
                             op: 'function',
-                            attributes: { 'compost.result': result },
                           },
-                          () => {},
+                          validate,
                         );
-                      } catch {}
+                      } catch {
+                        validate();
+                      }
                     },
                   };
                   try {

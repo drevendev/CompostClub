@@ -1740,9 +1740,13 @@ export default function App() {
             kind={kind}
             disabled={locked || busy || saving}
             onChanged={() => {
-              void storage.inferenceRecovery(kind).then((r) => setInferenceRecovery(r ?? null));
-              setHasRestoreCopy(false);
-              setHasRecoveryCopy(false);
+              void Promise.all([storage.inferenceRecovery(kind), storage.retainedCopies(kind)])
+                .then(([r, copies]) => {
+                  setInferenceRecovery(r ?? null);
+                  setHasRestoreCopy(copies.some((c) => c.key === `before-restore:${kind}`));
+                  setHasRecoveryCopy(copies.some((c) => c.key === `recovery:${kind}`));
+                })
+                .catch((e) => setError(errorText(e)));
             }}
           />
           <p className="small-print">

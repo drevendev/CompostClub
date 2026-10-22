@@ -142,21 +142,33 @@ test('Sentry OFF never loads a client; opt-in actual envelopes exclude private d
     }),
   });
   assert.equal(observer.enabled, true);
+  const Sentry = await import('@sentry/node');
+  let validationCalls = 0;
+  let nestedValidation = false;
   await observer.run(
     { model: 'gemma3:4b', operation: 'blend', phase: 'primary' },
     async (trace) => {
       trace.tokens(12, 5);
-      trace.validate(() => JSON.parse('not json PRIVATE_SENTINEL'));
+      const root = Sentry.getActiveSpan();
+      trace.validate(() => {
+        validationCalls++;
+        const validationSpan = Sentry.getActiveSpan();
+        nestedValidation =
+          validationSpan !== root &&
+          Sentry.spanToJSON(validationSpan).attributes['sentry.op'] === 'function';
+        JSON.parse('not json PRIVATE_SENTINEL');
+      });
       return 'PRIVATE_SENTINEL';
     },
   );
+  assert.equal(nestedValidation, true, 'Parsing must run inside the validation span');
   await assert.rejects(
     observer.run({ model: 'gemma3:4b', operation: 'tend', phase: 'primary' }, async () => {
       throw new Error('PRIVATE_SENTINEL');
     }),
   );
   await observer.flush();
-  const Sentry = await import('@sentry/node');
+  assert.equal(validationCalls, 1);
   let calls = 0;
   const sdkFailure = await observer.run(
     { model: 'gemma3:4b', operation: 'blend', phase: 'primary' },
@@ -184,6 +196,7 @@ test('Sentry OFF never loads a client; opt-in actual envelopes exclude private d
   );
   assert.ok(payload.includes('gen_ai.usage.input_tokens'));
   assert.ok(payload.includes('Validate local response'));
+  assert.ok(payload.includes('"compost.result":"invalid"'));
   assert.ok(!payload.includes('PRIVATE_SENTINEL'));
   assert.ok(!payload.includes('server_name'));
   for (const e of envelopes)

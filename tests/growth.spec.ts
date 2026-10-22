@@ -87,11 +87,41 @@ test('growth: real Chromium review/edit/branch/reload and privacy exports (expli
   await page.getByRole('button', { name: 'Download idea card', exact: true }).click();
   expect(await readFile((await (await dl2).path())!, 'utf8')).toContain(JSON.stringify(r.raw));
   await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  // Two independent copies: removing one must leave the other downloadable.
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open('compost-club-v1', 1);
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction('gardens', 'readwrite');
+        const store = tx.objectStore('gardens');
+        const current = store.get('personal');
+        current.onsuccess = () => store.put(current.result, 'recovery:personal');
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onabort = () => {
+          db.close();
+          reject(tx.error);
+        };
+      };
+    });
+  });
   await page.getByRole('button', { name: 'Backup and export', exact: true }).click();
   await page.getByRole('button', { name: 'Review before-restore copy', exact: true }).click();
   await page
     .getByRole('button', { name: 'Permanently remove before-restore copy', exact: true })
     .click();
+  await expect(
+    page.getByRole('button', { name: 'Download before-restore copy', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Download previous recovery copy', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Review recovery copy', exact: true }).click();
+  await page.getByRole('button', { name: 'Permanently remove recovery copy', exact: true }).click();
   await expect(
     page.getByText('No additional recovery copies in this garden.', { exact: true }),
   ).toBeVisible();
