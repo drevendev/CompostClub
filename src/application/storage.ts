@@ -71,6 +71,45 @@ export class GardenStorage {
     if (raw === undefined) throw new Error('There is no saved before-restore copy.');
     return JSON.stringify(raw, null, 2);
   }
+  async retainedCopies(kind: GardenKind): Promise<{ key: string; json: string }[]> {
+    const result = [];
+    for (const prefix of ['recovery:', 'before-restore:', 'inference:']) {
+      const key = prefix + kind;
+      const raw = await this.read(key);
+      if (raw !== undefined) result.push({ key, json: JSON.stringify(raw, null, 2) });
+    }
+    return result;
+  }
+  async removeRetainedCopy(kind: GardenKind, key: string, original: string): Promise<void> {
+    if (!['recovery:', 'before-restore:', 'inference:'].some((p) => key === p + kind))
+      throw new Error('Only a recovery copy in this garden can be removed.');
+    const conflict = 'The recovery copy changed. Review it again before removing it.';
+    if (!this.db) {
+      const map = key.startsWith('recovery:')
+        ? this.recovery
+        : key.startsWith('inference:')
+          ? this.unfiled
+          : this.beforeRestore;
+      if (!matchesOriginal(map.get(kind), original)) throw new Error(conflict);
+      map.delete(kind);
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const tx = this.db!.transaction('gardens', 'readwrite'),
+        store = tx.objectStore('gardens');
+      const read = store.get(key);
+      read.onsuccess = () => {
+        if (!matchesOriginal(read.result, original)) {
+          tx.abort();
+          return;
+        }
+        store.delete(key);
+      };
+      tx.oncomplete = () => resolve();
+      tx.onabort = () => reject(new Error(conflict));
+      tx.onerror = () => reject(tx.error ?? new Error('Could not remove recovery copy.'));
+    });
+  }
   async restoreFromRecovery(garden: Garden, original: string): Promise<Garden> {
     // Imported counters do not identify the record being replaced. Advance the
     // old local counter where readable; otherwise use a fresh timestamp epoch

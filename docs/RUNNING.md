@@ -61,6 +61,6 @@ The default output is a new timestamped file under `.local/`. An explicit `--out
 
 ## Privacy and provenance
 
-No telemetry, cloud generation, paid API, accounts or external fonts. User data stays in IndexedDB or explicit downloads. Local mode makes no external requests after setup. Browser mode contacts the disclosed model CDN only for weight/tokenizer downloads. Source content and model output render as text. Deleting a scrap previews dependent sprouts and removes their snapshots. Personal and sample gardens are separate.
+No telemetry by default, cloud generation, paid API, end-user accounts or external fonts. Operator-only Sentry tracing is a separate explicit opt-in; see [optional services](OPTIONAL_SERVICES.md). User data stays in IndexedDB or explicit downloads. Local mode makes no external requests after setup when optional operator monitoring is OFF. Browser mode contacts the disclosed model CDN only for weight/tokenizer downloads. Source content and model output render as text. Deleting a scrap previews dependent sprouts and removes their snapshots. Personal and sample gardens are separate.
 
 The six public inputs are specially authored fictional fixtures. All shipped recordings were produced locally; raw transcripts and hashes remain available. No private portfolio or archive texts are included.

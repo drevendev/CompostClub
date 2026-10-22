@@ -178,3 +178,7 @@ Comparison and security gates: [Context & Deployment Options](CONTEXT_AND_DEPLOY
 **Do not make a server by rebinding existing loopback Ollama bridge to 0.0.0.0**. The current local bridge is intentionally Host/Origin/session-token guarded. Mobile sync requires distinct authentication, durable shared storage, rate limits, HTTPS, conflict management and backups, not just a responsive page. Tailscale Personal is one **optional** tool, not an account already connected. The free Open-Meteo API currently applies **non-commercial-only** service terms (CC BY 4.0 data attribution) and is not automatically permissible for future paid SaaS. No infrastructure provisioning or payment authorized.
 
 **Decision gate:** build shared server only if manually importing JSON becomes a real repeated pain point; prefer a small private home hub for owner-only use, not an early commercial SaaS. Keep the current core fully functional when all optional context and network services are disabled.
+
+## Optional services and first growth slice — 22 October 2026
+
+Implementation candidate: Render configuration #62 (no deploy), opt-in metadata-only Sentry #63, recovery-copy privacy #39, explicit single-card transcript export #40, bridge #8/#9/#10/#23 and an initial Tend workflow for #50. [Setup, privacy checks and removal](OPTIONAL_SERVICES.md) defines the boundaries. Entire #64 still needs the owner account and a separate inspected development session; no product dependency was added. The complete DNA/GA epic #60 remains separate. No DEV/video publication is part of this patch.

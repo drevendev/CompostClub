@@ -62,7 +62,7 @@ For live generation, start with the [Ollama setup](docs/RUNNING.md#run-live-loca
 
 ## Data stays with the garden
 
-Scraps and results live in your browser's IndexedDB or explicit exports. There are no accounts, telemetry, cloud generation, external fonts or paid APIs. Model output and user input render as text.
+Scraps and results live in your browser's IndexedDB or explicit exports. There are no end-user accounts, telemetry by default, cloud generation, external fonts or paid APIs. Optional operator-only Sentry metadata tracing is off by default; [setup and removal](docs/OPTIONAL_SERVICES.md) also covers the prepared Render configuration and Entire workflow. Model output and user input render as text.
 
 Ollama mode uses a server bound to `127.0.0.1`, forwarding to a fixed loopback Ollama address. Browser AI contacts the disclosed Hugging Face/CDN endpoints only after download consent; ideas are processed on the device. Model weights carry separate terms and are excluded from Git. The [architecture](docs/ARCHITECTURE.md) describes the boundaries and current limitations.
 
