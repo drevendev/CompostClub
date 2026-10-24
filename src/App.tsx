@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { provenanceLabel } from './domain/provenance';
 import {
   addScrap,
   availablePairs,
@@ -42,6 +43,7 @@ import fixtures from '../fixtures/public/scraps.json';
 import { GardenScene } from './ui/GardenScene';
 import { Icon } from './ui/Icons';
 import { Modal } from './ui/Modal';
+import { Author } from './ui/Author';
 import { Recovery } from './ui/Recovery';
 import { InferenceHistory } from './ui/InferenceHistory';
 import { GrowthLab } from './ui/GrowthLab';
@@ -1401,6 +1403,7 @@ export default function App() {
               <code>http://127.0.0.1:4173</code>. The server never exposes Ollama to the internet.
             </p>
             <h3>A small open garden</h3>
+            <Author />
             <p>
               App code: MIT. Gemma weights: Google's Gemma Terms, separately licensed. Model
               creators: Google DeepMind; ONNX conversions: ONNX Community. The drawings are original
@@ -2024,7 +2027,11 @@ function SproutCard({
       <div className="sprout-card-top">
         <span>
           <Icon name="sprout" size={15} />
-          {s.backend === 'replay' ? 'RECORDED SPROUT' : 'NEW SPROUT'}
+          {s.imported
+            ? 'IMPORTED SPROUT'
+            : s.backend === 'replay'
+              ? 'RECORDED SPROUT'
+              : 'NEW SPROUT'}
         </span>
         <span>✧</span>
       </div>
@@ -2058,11 +2065,7 @@ function SproutCard({
               </section>
             </div>
             <small>
-              {s.backend === 'replay'
-                ? 'Recorded demo — no live AI'
-                : s.backend === 'browser'
-                  ? 'Live browser-local inference'
-                  : 'Live local Ollama inference'}
+              {provenanceLabel(s, s.rawOutput)}
               <br />
               {s.model}
               <br />

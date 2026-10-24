@@ -1,6 +1,8 @@
 # Idea DNA, Evolution Lab & Growth Tree — current local-stack specification
 
-**State:** prepared, NOT implemented. Owner priority, 21 October 2026: ship Idea DNA, real micro-genetic evolution and incremental idea growth in the CURRENT React/TypeScript + IndexedDB + local Gemma/Ollama setup. **Server, multi-garden migration and cloud sync are NOT prerequisites.** Implementation epic: https://github.com/drevendev/CompostClub/issues/60
+**Priority update, 23 October 2026:** the [local desktop experiment](LOCAL_EXPERIMENT_SCOPE.md) and its [ordered tasks](LOCAL_EXPERIMENT_TASKS.md) come first. This document remains the later DNA/GA feature design. Its manual-only/background and IndexedDB statements describe the earlier target; explicitly enabled desktop experiments follow the new scope, and future evolution must reconcile storage with its accepted versioned adapter. The initial manual Tend workflow is already delivered; full DNA/GA and richer tree work remain unimplemented.
+
+**Earlier state, 21 October 2026:** prepared, NOT implemented as a complete package. The owner requested Idea DNA, real micro-genetic evolution and incremental idea growth in the CURRENT React/TypeScript + IndexedDB + local Gemma/Ollama setup. **Server, multi-garden migration and cloud sync are NOT prerequisites.** Implementation epic: https://github.com/drevendev/CompostClub/issues/60
 
 ## 1. Existing foundations
 Current garden domain provides source scraps, revisions, two-parent immutable snapshots, saved sprouts, retryable inference attempts, 15-minute credits and backups. See src/domain/garden.ts, src/inference/contract.ts, src/application/storage.ts. Existing single personal + sample garden scope remains intact; use the current source history and model evidence without rewriting it.

@@ -15,6 +15,7 @@ export interface GrowthOutput {
   experiment: string;
 }
 export interface Growth {
+  imported?: true;
   id: string;
   parent: { kind: 'sprout' | 'growth'; id: string; title: string; concept: string };
   direction: Direction;
@@ -54,13 +55,16 @@ export function beginGrowth(
   model: string,
   digest: string,
   now: number,
+  maxGrowth = 100,
 ): Garden {
   if (g.kind !== 'personal') throw new Error('Tending uses live local AI in your personal garden.');
   if (g.pending || g.growth?.some((n) => ['pending', 'proposed'].includes(n.status)))
     throw new Error('Finish or reject the current proposal first.');
   if (g.readySlots < 1) throw new Error('Wait for a ready slot before tending.');
-  if ((g.growth?.length ?? 0) >= 100)
-    throw new Error('Growth history holds 100 records. Back up and review a source for removal.');
+  if ((g.growth?.length ?? 0) >= maxGrowth)
+    throw new Error(
+      `Growth history holds ${maxGrowth} records. Back up and review a source for removal.`,
+    );
   if (!DIRECTIONS.includes(direction)) throw new Error('Choose a growth direction.');
   const source =
     parent.kind === 'sprout'
@@ -127,7 +131,13 @@ export function decideGrowth(
     return {
       ...n,
       status: accept ? 'accepted' : 'rejected',
-      ...(accept && edited ? { edited } : {}),
+      ...(accept &&
+      edited &&
+      (['outcome', 'title', 'concept', 'experiment'] as const).some(
+        (key) => edited[key] !== n.output?.[key],
+      )
+        ? { edited }
+        : {}),
     };
   });
   return { ...next, readySlots: next.readySlots - (accept ? 1 : 0) };
@@ -141,14 +151,16 @@ function update(g: Garden, id: string, fn: (n: Growth) => Growth): Garden {
   if (!g.growth?.some((n) => n.id === id)) throw new Error('Growth request not found.');
   return { ...g, growth: g.growth.map((n) => (n.id === id ? fn(n) : n)) };
 }
-export function validateGrowth(g: Garden): void {
+export function validateGrowth(g: Garden, maxGrowth = 100): void {
   if (g.growth === undefined) return;
-  if (!Array.isArray(g.growth) || g.growth.length > 100) throw new Error('Invalid growth history.');
+  if (!Array.isArray(g.growth) || g.growth.length > maxGrowth)
+    throw new Error('Invalid growth history.');
   const seen = new Set<string>();
   let active = 0;
   for (const n of g.growth) {
     if (
       !n ||
+      (n.imported !== undefined && n.imported !== true) ||
       typeof n.id !== 'string' ||
       !n.id ||
       seen.has(n.id) ||
@@ -214,7 +226,7 @@ export function growthMarkdown(g: Garden): string {
   return (g.growth ?? [])
     .map(
       (n) =>
-        `### ${n.edited?.title ?? n.output?.title ?? n.direction}\n\nParent: ${n.parent.title} (${n.parent.kind} ${n.parent.id})\nStatus: ${n.status}; model: ${n.model} @ ${n.modelRevision}; prompt: ${n.promptVersion}\n\n${n.edited?.concept ?? n.output?.concept ?? ''}\n\nExperiment: ${n.edited?.experiment ?? n.output?.experiment ?? ''}`,
+        `### ${n.edited?.title ?? n.output?.title ?? n.direction}\n\nParent: ${n.parent.title} (${n.parent.kind} ${n.parent.id})\nStatus: ${n.status}; ${n.imported ? 'Imported — provenance not independently verified; ' : ''}model: ${n.model} @ ${n.modelRevision}; prompt: ${n.promptVersion}\n\n${n.edited ? 'Edited by you. Original model proposal preserved in private JSON; this outline omits raw evidence.\n\n' : ''}${n.edited?.concept ?? n.output?.concept ?? ''}\n\nExperiment: ${n.edited?.experiment ?? n.output?.experiment ?? ''}`,
     )
     .join('\n\n');
 }

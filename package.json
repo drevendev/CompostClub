@@ -5,6 +5,10 @@
   "type": "module",
   "description": "A quiet local AI garden for unfinished thoughts.",
   "license": "MIT",
+  "author": {
+    "name": "Dreven (Aleksei Bogun)",
+    "url": "https://github.com/drevendev"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/drevendev/CompostClub.git"
@@ -21,21 +25,29 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "start": "node server/index.mjs",
+    "desktop:build": "tsc --noEmit && vite build --mode desktop && node scripts/build-desktop.mjs",
+    "desktop:start": "electron dist-desktop/main.cjs",
+    "desktop:package": "npm run desktop:build && node scripts/package-desktop.mjs",
+    "test:desktop": "tsx --test desktop/tests/*.test.ts",
+    "test:capacity": "tsx scripts/desktop-capacity.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --max-warnings 0",
+    "lint": "eslint src desktop --max-warnings 0",
     "docs:check": "node scripts/docs-check.mjs",
     "format": "prettier --write src scripts server tests *.json *.ts *.html",
-    "format:check": "prettier --check src scripts server tests *.json *.ts *.html",
+    "format:check": "prettier --check src desktop scripts server tests *.json *.ts *.html",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:recovery": "playwright test --config playwright.recovery.config.ts",
     "test:p1": "playwright test --config playwright.p1.config.ts",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run test:bridge && npm run format:check",
+    "test:sample": "playwright test --config playwright.sample.config.ts",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run test:bridge && npm run test:desktop && npm run test:packaging && npm run format:check",
+    "desktop:install-runtime": "node node_modules/electron/install.js",
     "eval:local": "tsx scripts/eval-local.ts",
     "package:single": "vite build --mode offline && node scripts/package-single.mjs",
     "package:demo": "npm run build && npm run package:single && node scripts/release.mjs",
-    "test:bridge": "node --test tests/bridge.test.mjs"
+    "test:bridge": "node --test tests/bridge.test.mjs",
+    "test:packaging": "node --test tests/source-package.test.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.1",
@@ -50,6 +62,8 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
+    "electron": "45.0.0",
+    "esbuild": "0.28.2",
     "eslint": "10.13.0",
     "fake-indexeddb": "6.2.6",
     "prettier": "3.9.10",

@@ -59,7 +59,7 @@ export class GardenStorage {
   async load(kind: GardenKind): Promise<Garden> {
     const raw = await this.read(kind);
     if (raw === undefined) return createGarden(kind, Date.now());
-    return importGarden(JSON.stringify(raw));
+    return importGarden(JSON.stringify(raw), 'local');
   }
   async recoveryJSON(kind: GardenKind, previous = false): Promise<string> {
     const raw = await this.read(previous ? `recovery:${kind}` : kind);

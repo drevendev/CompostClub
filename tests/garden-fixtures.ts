@@ -8,15 +8,15 @@ import {
 } from '../src/domain/garden';
 import recordings from '../fixtures/public/recordings.json' with { type: 'json' };
 
-export function capacityGarden(count: number, status: 'success' | 'failed', now: number) {
+export function capacityGarden(count: number, status: 'failed', now: number) {
   let g = createGarden('personal', now, 'cap');
   for (let i = 0; i < count; i++)
     g = addScrap(g, `Fictional source number ${i}.`, now, { id: i.toString(36).padStart(2, '0') });
   // Synthetic pairing-index data only, never a model response or inference receipt.
-  g.attempts = availablePairs(g).map((parents) => ({
+  g.attempts = availablePairs(g).map((parents, i) => ({
     key: pairKey(parents),
     status,
-    requestId: 'x',
+    requestId: i.toString(36),
   }));
   return g;
 }

@@ -47,6 +47,19 @@ function start(g = seed()) {
     101,
   );
 }
+it('accepting unchanged proposal fields does not claim a human edit', () => {
+  const g = start();
+  const id = g.growth![0]!.id;
+  const proposed = proposeGrowth(recordGrowth(g, id, raw), id);
+  const accepted = decideGrowth(proposed, id, true, parseGrowth(raw));
+  expect(accepted.growth![0]!.edited).toBeUndefined();
+  expect(accepted.growth![0]!.responses).toEqual([raw]);
+  const changed = decideGrowth(proposed, id, true, {
+    ...parseGrowth(raw),
+    title: 'Owner revision',
+  });
+  expect(changed.growth![0]!.edited?.title).toBe('Owner revision');
+});
 it('accepts branches atomically, preserves evidence and parents through restore and cascades', () => {
   let g = start();
   const id = g.growth![0]!.id;
@@ -68,7 +81,7 @@ it('accepts branches atomically, preserves evidence and parents through restore 
   );
   const child = g.growth!.at(-1)!.id;
   g = decideGrowth(proposeGrowth(recordGrowth(g, child, raw), child), child, true);
-  expect(importGarden(serializeGarden(g))).toEqual(g);
+  expect(importGarden(serializeGarden(g), 'local')).toEqual(g);
   expect(deletionSet(g, 'a').growth.size).toBe(2);
   expect(removeScrap(g, 'a').growth).toEqual([]);
 });

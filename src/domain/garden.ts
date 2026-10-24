@@ -14,6 +14,7 @@ import {
   type Generation,
 } from './generation';
 import { validateGrowth, growthMarkdown, type Growth } from './growth';
+import { exactRecording, provenanceLabel } from './provenance';
 
 export const INTERVAL = 900_000;
 export const MAX_SCRAPS = 200;
@@ -21,6 +22,21 @@ export const MAX_SPROUTS = 1000;
 export const MAX_ATTEMPTS = 19900;
 export const MAX_SOURCE_REVISIONS = 100;
 export const MAX_BACKUP_BYTES = 2 * 1024 * 1024;
+export interface GardenLimits {
+  backupBytes: number;
+  generations: number;
+  growth: number;
+}
+export const BROWSER_LIMITS: GardenLimits = {
+  backupBytes: MAX_BACKUP_BYTES,
+  generations: MAX_GENERATIONS,
+  growth: 100,
+};
+export const DESKTOP_LIMITS: GardenLimits = {
+  backupBytes: 64 * 1024 * 1024,
+  generations: 1000,
+  growth: 1000,
+};
 export type GardenKind = 'personal' | 'sample';
 export type Backend = 'browser' | 'ollama' | 'replay';
 export interface SourceRevision {
@@ -45,6 +61,7 @@ export interface Snapshot {
   revision: number;
 }
 export interface Request {
+  imported?: true;
   id: string;
   key: string;
   parents: [Snapshot, Snapshot];
@@ -257,6 +274,7 @@ export function beginRequest(
   modelRevision: string,
   language: Language,
   preferred?: [Snapshot, Snapshot],
+  limits: GardenLimits = BROWSER_LIMITS,
 ): Garden {
   const g = reconcile(garden, now);
   if (g.pending || g.growth?.some((n) => ['pending', 'proposed'].includes(n.status)))
@@ -290,9 +308,9 @@ export function beginRequest(
     language,
     promptVersion: PROMPT_VERSION,
   };
-  if ((g.generations?.length ?? 0) >= MAX_GENERATIONS)
+  if ((g.generations?.length ?? 0) >= limits.generations)
     throw new Error(
-      'The inference history holds 100 runs. Export it, then remove a source with its history before growing again.',
+      `The inference history holds ${limits.generations} runs. Export it, then review a source with its history before growing again.`,
     );
   const next: Garden = {
     ...g,
@@ -303,8 +321,8 @@ export function beginRequest(
     ],
   };
   if (
-    new TextEncoder().encode(serializeGarden(next)).byteLength + GENERATION_HEADROOM >
-    MAX_BACKUP_BYTES
+    new TextEncoder().encode(serializeGarden(next, limits)).byteLength + GENERATION_HEADROOM >
+    limits.backupBytes
   )
     throw new Error(
       'The garden needs 192 KiB of free backup space for inference evidence. Export it and remove a source with its history before growing again.',
@@ -464,11 +482,11 @@ export function removeScrap(g: Garden, id: string): Garden {
 }
 export function exportMarkdown(g: Garden, includeEvidence = true): string {
   return (
-    `# Compost Club\n\nLet your wild ideas ferment.\n\n${g.kind === 'sample' ? 'Sample garden · recorded Gemma outputs · no live generation' : 'Personal garden · local processing'}\n\n` +
+    `# Compost Club\n\nLet your wild ideas ferment.\n\n${g.kind === 'sample' ? 'Sample garden · provenance labelled for each result' : 'Personal garden · local processing; imported claims are labelled separately'}\n\n` +
     g.sprouts
       .map((s) => {
         const content = s.edited ?? s.output;
-        return `## ${content.title}\n\n${content.concept}\n\n${s.edited ? 'Edited by you. Original model result preserved in JSON backup.\n\n' : ''}Grew from:\n\n- A: ${s.parents[0].text}\n- B: ${s.parents[1].text}\n\nExact contributions: “${s.output.fromA}” + “${s.output.fromB}”\n\nMode: ${s.backend === 'replay' ? 'Recorded demo — no live AI' : s.backend}. Model: ${s.model}, revision: ${s.modelRevision}. Prompt: ${s.promptVersion}. Request: ${s.id}.\n`;
+        return `## ${content.title}\n\n${content.concept}\n\n${s.edited ? 'Edited by you. Original model result preserved in JSON backup.\n\n' : ''}Grew from:\n\n- A: ${s.parents[0].text}\n- B: ${s.parents[1].text}\n\nExact contributions: “${s.output.fromA}” + “${s.output.fromB}”\n\nMode: ${provenanceLabel(s, s.rawOutput)}. Model: ${s.model}, revision: ${s.modelRevision}. Prompt: ${s.promptVersion}. Request: ${s.id}.\n`;
       })
       .join('\n') +
     `\n## Current scraps\n\n` +
@@ -486,7 +504,7 @@ export function exportMarkdown(g: Garden, includeEvidence = true): string {
       .join('\n') +
     `\n\n## Growth branches\n\n${growthMarkdown(g)}` +
     (includeEvidence
-      ? `\n\n## Inference history\n\n${(g.generations ?? []).map((r) => `${r.id} · ${r.status} · ${r.backend === 'replay' ? 'Recorded demo — no live AI' : r.backend}\nModel: ${r.model} @ ${r.modelRevision}; prompt: ${r.promptVersion}; language: ${r.language}\nA (revision ${r.parents[0].revision}): ${r.parents[0].text}\nB (revision ${r.parents[1].revision}): ${r.parents[1].text}\n${r.error ?? ''}\n${r.responses.map((s) => `${s.phase}: ${s.validationError ?? 'Structure valid; usefulness not certified'}\n${JSON.stringify(s.raw)}\n`).join('\n')}`).join('\n')}`
+      ? `\n\n## Inference history\n\n${(g.generations ?? []).map((r) => `${r.id} · ${r.status} · ${provenanceLabel(r, r.responses.at(-1)?.raw ?? '')}\nModel: ${r.model} @ ${r.modelRevision}; prompt: ${r.promptVersion}; language: ${r.language}\nA (revision ${r.parents[0].revision}): ${r.parents[0].text}\nB (revision ${r.parents[1].revision}): ${r.parents[1].text}\n${r.error ?? ''}\n${r.responses.map((s) => `${s.phase}: ${s.validationError ?? 'Structure valid; usefulness not certified'}\n${JSON.stringify(s.raw)}\n`).join('\n')}`).join('\n')}`
       : '')
   );
 }
@@ -504,10 +522,20 @@ export function exportSproutCard(g: Garden, s: Sprout, includeEvidence = false):
   );
 }
 
-export function importGarden(raw: string): Garden {
-  checkBackupSize(raw);
+export function importGarden(
+  raw: string,
+  source: 'import' | 'local' = 'import',
+  limits: GardenLimits = BROWSER_LIMITS,
+): Garden {
+  checkBackupSize(raw, limits);
   const data: unknown = JSON.parse(raw);
-  const g = validateGarden(data);
+  const g = validateGarden(data, limits);
+  if (source === 'import') {
+    for (const s of g.sprouts) if (!exactRecording(s, s.rawOutput)) s.imported = true;
+    for (const r of g.generations ?? [])
+      if (!exactRecording(r, r.responses.at(-1)?.raw ?? '')) r.imported = true;
+    for (const n of g.growth ?? []) n.imported = true;
+  }
   // A backup never resumes an old inference operation.
   const restored = g.pending
     ? failRequest(g, g.pending.id, 'Interrupted before reload or restore.', true)
@@ -529,22 +557,27 @@ export function importGarden(raw: string): Garden {
         }
       : {}),
   };
-  serializeGarden(resumed);
+  serializeGarden(resumed, limits);
   return resumed;
 }
-function checkBackupSize(raw: string) {
-  if (new TextEncoder().encode(raw).byteLength > MAX_BACKUP_BYTES)
-    throw new Error('The garden exceeds the 2 MiB backup limit. Nothing was saved or replaced.');
+function checkBackupSize(raw: string, limits: GardenLimits) {
+  if (new TextEncoder().encode(raw).byteLength > limits.backupBytes)
+    throw new Error(
+      `The garden exceeds the ${limits.backupBytes / 1024 / 1024} MiB backup limit. Nothing was saved or replaced.`,
+    );
 }
-export function serializeGarden(garden: Garden): string {
-  validateGarden(garden);
+export function serializeGarden(garden: Garden, limits: GardenLimits = BROWSER_LIMITS): string {
+  validateGarden(garden, limits);
   const raw = JSON.stringify(garden, null, 2);
   // Reserve the longest revision counter so a 9 → 10 save/restore cannot
   // make an otherwise unchanged boundary-sized backup exceed the budget.
-  checkBackupSize(JSON.stringify({ ...garden, revision: Number.MAX_SAFE_INTEGER }, null, 2));
+  checkBackupSize(
+    JSON.stringify({ ...garden, revision: Number.MAX_SAFE_INTEGER }, null, 2),
+    limits,
+  );
   return raw;
 }
-function validateGarden(data: unknown): Garden {
+function validateGarden(data: unknown, limits: GardenLimits): Garden {
   if (!data || typeof data !== 'object') throw new Error('Invalid garden backup.');
   const g = data as Garden;
   if (g.version !== 1 || !['sample', 'personal'].includes(g.kind))
@@ -585,6 +618,7 @@ function validateGarden(data: unknown): Garden {
       !s ||
       typeof s.id !== 'string' ||
       !s.id ||
+      ['__proto__', 'constructor', 'prototype'].includes(s.id) ||
       /[@|]/.test(s.id) ||
       ids.has(s.id) ||
       !Number.isSafeInteger(s.revision) ||
@@ -620,6 +654,8 @@ function validateGarden(data: unknown): Garden {
     if (
       !s ||
       typeof s.id !== 'string' ||
+      !s.id ||
+      ['__proto__', 'constructor', 'prototype'].includes(s.id) ||
       resultIds.has(s.id) ||
       !Array.isArray(s.parents) ||
       s.parents.length !== 2 ||
@@ -676,8 +712,8 @@ function validateGarden(data: unknown): Garden {
     )
       throw new Error('Malformed pairing history.');
   if (g.generations !== undefined) {
-    if (!Array.isArray(g.generations) || g.generations.length > MAX_GENERATIONS)
-      throw new Error('Inference history must contain at most 100 runs.');
+    if (!Array.isArray(g.generations) || g.generations.length > limits.generations)
+      throw new Error(`Inference history must contain at most ${limits.generations} runs.`);
     const runIds = new Set<string>();
     for (const run of g.generations) {
       if (
@@ -730,8 +766,93 @@ function validateGarden(data: unknown): Garden {
       runIds.add(run.id);
     }
   }
-  validateGrowth(g);
+  validateGrowth(g, limits.growth);
+  validateRelations(g);
   return g;
+}
+function validateRelations(g: Garden): void {
+  const checkSnapshot = (p: Snapshot) => {
+    const source = g.scraps.find((s) => s.id === p.id);
+    if (!source || p.revision > source.revision)
+      throw new Error('A referenced source revision never existed.');
+    const revisions = sourceRevisions(source);
+    const known = revisions.find((r) => r.revision === p.revision);
+    if (known ? known.text !== p.text : p.revision >= revisions[0]!.revision)
+      throw new Error('A source snapshot contradicts preserved revision history.');
+  };
+  for (const r of [...g.sprouts, ...(g.generations ?? []), ...(g.pending ? [g.pending] : [])]) {
+    if (r.imported !== undefined && r.imported !== true)
+      throw new Error('Invalid imported provenance.');
+    if (!Array.isArray(r.parents) || r.parents.length !== 2 || r.key !== pairKey(r.parents))
+      throw new Error('Invalid request parents.');
+    r.parents.forEach(checkSnapshot);
+  }
+  const keys = new Set<string>();
+  const requests = new Set<string>();
+  for (const a of g.attempts) {
+    if (keys.has(a.key) || requests.has(a.requestId)) throw new Error('Duplicate pairing history.');
+    keys.add(a.key);
+    requests.add(a.requestId);
+    const sprout = g.sprouts.find((s) => s.id === a.requestId);
+    const run = g.generations?.find((r) => r.id === a.requestId);
+    if (a.status === 'success' && (!sprout || sprout.key !== a.key))
+      throw new Error('A consumed pair has no matching sprout.');
+    if (a.status === 'failed' && sprout)
+      throw new Error('A successful sprout cannot have a failed pair.');
+    if (
+      run &&
+      (run.key !== a.key ||
+        run.status === 'pending' ||
+        (run.status === 'success') !== (a.status === 'success'))
+    )
+      throw new Error('Pairing history contradicts inference evidence.');
+  }
+  for (const s of g.sprouts) {
+    if (!g.attempts.some((a) => a.key === s.key && a.requestId === s.id && a.status === 'success'))
+      throw new Error('A saved sprout is missing its consumed pair.');
+    const run = g.generations?.find((r) => r.id === s.id);
+    if (
+      run &&
+      (run.status !== 'success' ||
+        run.responses.at(-1)?.raw !== s.rawOutput ||
+        JSON.stringify(run.parents) !== JSON.stringify(s.parents))
+    )
+      throw new Error('Sprout and inference evidence disagree.');
+  }
+  for (const r of g.generations ?? []) {
+    if (r.status === 'success' && !g.sprouts.some((s) => s.id === r.id))
+      throw new Error('Successful inference has no sprout.');
+    if (r.status === 'pending' && g.pending?.id !== r.id)
+      throw new Error('Orphan pending inference.');
+  }
+  if (
+    g.pending &&
+    g.generations !== undefined &&
+    !g.generations.some(
+      (r) =>
+        r.id === g.pending!.id &&
+        r.status === 'pending' &&
+        JSON.stringify(r.parents) === JSON.stringify(g.pending!.parents),
+    )
+  )
+    throw new Error('Pending request has no matching journal.');
+  const visiting = new Set<string>(),
+    visited = new Set<string>();
+  const visit = (key: string) => {
+    if (visiting.has(key)) throw new Error('Cyclic source ancestry.');
+    if (visited.has(key)) return;
+    visiting.add(key);
+    if (key.startsWith('source:')) {
+      const s = g.scraps.find((s) => `source:${s.id}` === key)!;
+      if (s.parentSproutId) visit(`sprout:${s.parentSproutId}`);
+    } else {
+      const s = g.sprouts.find((s) => `sprout:${s.id}` === key)!;
+      s.parents.forEach((p) => visit(`source:${p.id}`));
+    }
+    visiting.delete(key);
+    visited.add(key);
+  };
+  g.scraps.forEach((s) => visit(`source:${s.id}`));
 }
 function lengthLimit(s: string, max: number) {
   return [...s].length > max;

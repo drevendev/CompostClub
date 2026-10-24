@@ -1,4 +1,5 @@
 import type { Generation } from '../domain/generation';
+import { provenanceLabel } from '../domain/provenance';
 
 export function InferenceHistory({ runs }: { runs: Generation[] }) {
   return (
@@ -14,7 +15,7 @@ export function InferenceHistory({ runs }: { runs: Generation[] }) {
             {run.status} · {run.model} · {run.language}
           </summary>
           <p>
-            {run.backend === 'replay' ? 'Recorded demo — no live AI' : `Local ${run.backend}`} ·{' '}
+            {provenanceLabel(run, run.responses.at(-1)?.raw ?? '')} ·{' '}
             {new Date(run.createdAt).toLocaleString()}
           </p>
           <p>

@@ -7,6 +7,7 @@ The MIT app licence does not relicense model weights, runtimes or dependencies.
 - **ONNX Runtime Web** by Microsoft: MIT; browser runtime supplied through the pinned Transformers.js dependency tree. Runtime WASM is served from the app origin.
 - **Sentry Node SDK 11.8.0** by Functional Software, Inc.: MIT, operator-only optional dependency; licence in `node_modules/@sentry/node/LICENSE`. It is not bundled into browser or recorded HTML builds.
 - **React / React DOM** by Meta and contributors: MIT.
+- **Electron 45.0.0**: MIT; the portable desktop distribution retains its `LICENSE` and `LICENSES.chromium.html`, including Chromium and other bundled component notices. **esbuild 0.28.2**: MIT; used only to build the desktop host/preload. Neither includes AI model weights.
 - **Vite, Vitest, TypeScript, Playwright, ESLint, Prettier, tsx, fake-indexeddb and vite-plugin-singlefile** retain their respective upstream licences as distributed in `node_modules`. They are development/build tools; the project lockfile records exact versions and integrity.
 - **Ollama** runtime: MIT. The portable runtime and downloaded model files used for local evaluation are excluded from source and release artifacts.
 

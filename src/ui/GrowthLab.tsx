@@ -312,6 +312,7 @@ export function GrowthLab({
           <p>{(n.edited ?? n.output)?.concept}</p>
           <p>Try: {(n.edited ?? n.output)?.experiment}</p>
           <p>
+            {n.imported && 'Imported — provenance not independently verified. '}
             {n.model} · {n.modelRevision} · {n.promptVersion}
           </p>
           {n.responses.map((r, i) => (

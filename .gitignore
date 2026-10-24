@@ -2,6 +2,8 @@ node_modules/
 dist/
 dist-offline/
 dist-lab/
+dist-desktop/
+dist-desktop-ui/
 release/
 .local/
 brief/

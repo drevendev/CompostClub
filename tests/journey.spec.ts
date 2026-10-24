@@ -1,6 +1,19 @@
 import { expect, test } from './acceptance';
 import { readFile, copyFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { author } from '../src/content/author';
+
+async function checkAuthor(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: 'How it works', exact: true }).click();
+  const block = page.getByRole('region', { name: 'About the author', exact: true });
+  await expect(block).toContainText(author.publicName);
+  for (const link of author.links) {
+    const anchor = block.getByRole('link', { name: link.label, exact: true });
+    await expect(anchor).toHaveAttribute('href', link.url);
+    await expect(anchor).toHaveAttribute('rel', 'noopener noreferrer');
+  }
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+}
 
 test('real local model: add → blend → keep → reload → export and restore', async ({
   page,
@@ -84,7 +97,7 @@ test('real local model: add → blend → keep → reload → export and restore
 
 test('sample garden replays only verified pairs; edit/recompost/clock/reload work', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Try the sample garden', exact: true }).click();
   await expect(page.getByText(/recorded Gemma outputs · no live generation/)).toBeVisible();
@@ -105,10 +118,12 @@ test('sample garden replays only verified pairs; edit/recompost/clock/reload wor
   await page.getByRole('button', { name: 'Save edit', exact: true }).click();
   await expect(page.locator('.scrap').first()).toContainText('A totally new custom thought');
   await page.locator('.intro h1').click();
-  await page.screenshot({ path: 'evidence/desktop-sample.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('desktop-sample.png'), fullPage: true });
 });
 
-test('mobile, keyboard, reduced motion and large text fit the viewport', async ({ page }) => {
+test('mobile, keyboard, reduced motion and large text fit the viewport', async ({
+  page,
+}, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
@@ -119,7 +134,7 @@ test('mobile, keyboard, reduced motion and large text fit the viewport', async (
     true,
   );
   await page.locator('.intro h1').click();
-  await page.screenshot({ path: 'evidence/mobile-sample.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mobile-sample.png'), fullPage: true });
   await page.addStyleTag({ content: 'html {font-size: 200%} body * {letter-spacing: .05em}' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
@@ -193,6 +208,7 @@ test('offline HTML runs from file with network blocked, denied storage and a ren
     });
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('file:///' + path.resolve(filename).replaceAll('\\', '/'));
+    await checkAuthor(page);
     await page.getByRole('button', { name: 'Try the sample garden', exact: true }).click();
     await page.getByRole('button', { name: 'Discover a recorded sprout', exact: true }).click();
     await expect(page.locator('.sprout-card')).toBeVisible();

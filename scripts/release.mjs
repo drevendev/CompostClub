@@ -1,97 +1,43 @@
-import { readFile, writeFile, mkdir, readdir, cp } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { readFile, writeFile, mkdir, cp } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-const roots = [
-  'src',
-  'fixtures',
-  'scripts',
-  'server',
-  'tests',
-  'prompts',
-  '.github',
-  'experiments',
-  'docs',
-  'public',
-];
-const files = [
-  'package.json',
-  'render.yaml',
-  '.env.example',
-  'package-lock.json',
-  'tsconfig.json',
-  'vite.config.ts',
-  'playwright.config.ts',
-  'playwright.recovery.config.ts',
-  'playwright.p1.config.ts',
-  'index.html',
-  'eslint.config.js',
-  '.prettierrc.json',
-  '.prettierignore',
-  'README.md',
-  'CONTRIBUTING.md',
-  'CHANGELOG.md',
-  'LICENSE',
-  'THIRD_PARTY_NOTICES.md',
-  'AGENTS.md',
-  '.gitignore',
-  '.gitattributes',
-  '.npmrc',
-  '.nvmrc',
-];
-async function walk(dir) {
-  for (const e of await readdir(dir, { withFileTypes: true })) {
-    const name = path.join(dir, e.name);
-    if (e.isDirectory()) await walk(name);
-    else files.push(name);
-  }
-}
-for (const dir of roots) await walk(dir);
-await walk('evidence/model');
-files.push(
-  'evidence/verification.json',
-  'evidence/pages-path.json',
-  'evidence/desktop-sample.png',
-  'evidence/mobile-sample.png',
-  'evidence/pages-preview.png',
-  'evidence/recovery.png',
-  'evidence/recovery-verification.json',
-  'evidence/inference-history.png',
-  'evidence/p1-verification.json',
-  'evidence/workflow-verification.json',
-  'evidence/stability-verification.json',
-  'evidence/pairing-capacity.json',
+import { packageSource, sha256 } from './source-package.mjs';
+const output = path.resolve('release');
+await mkdir(output, { recursive: true });
+const source = await packageSource(process.cwd(), output);
+const archive = path.join(
+  output,
+  'CompostClub-Source-' + new Date().toISOString().replaceAll(':', '-') + '.zip',
 );
-const manifest = {};
-for (const file of files.sort())
-  manifest[file.replaceAll('\\', '/')] = createHash('sha256')
-    .update(await readFile(file))
-    .digest('hex');
-const sourceSha256 = createHash('sha256').update(JSON.stringify(manifest)).digest('hex');
-await mkdir('release/pages', { recursive: true });
-await cp('dist', 'release/pages', { recursive: true });
-for (const file of files) {
-  const target = path.join('release/source', file);
-  await mkdir(path.dirname(target), { recursive: true });
-  await cp(file, target);
-}
-await writeFile(
-  'release/source-manifest.json',
-  JSON.stringify(
-    { sourceKind: 'explicit source archive, no Git metadata', sourceSha256, files: manifest },
-    null,
-    2,
-  ) + '\n',
-);
-await writeFile(
-  'release/build-identity.json',
-  JSON.stringify(
+if (process.platform === 'win32') {
+  const script =
+    'Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory($env:COMPOST_SOURCE_PATH, $env:COMPOST_ARCHIVE_PATH)';
+  await promisify(execFile)(
+    path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'),
+    [
+      '-NoProfile',
+      '-NonInteractive',
+      '-EncodedCommand',
+      Buffer.from(script, 'utf16le').toString('base64'),
+    ],
     {
-      date: new Date().toISOString(),
-      sourceSha256,
-      standalone: JSON.parse(await readFile('release/standalone-receipt.json', 'utf8')),
+      windowsHide: true,
+      env: { ...process.env, COMPOST_SOURCE_PATH: source.directory, COMPOST_ARCHIVE_PATH: archive },
     },
-    null,
-    2,
-  ) + '\n',
-);
-console.log('Packaged source identity:', sourceSha256);
+  );
+} else await promisify(execFile)('zip', ['-qr', archive, '.'], { cwd: source.directory });
+const pages = path.join(output, 'pages-' + randomUUID());
+await cp('dist', pages, { recursive: true, errorOnExist: true, force: false });
+const identity = {
+  date: new Date().toISOString(),
+  sourceSha256: source.identity.sourceSha256,
+  sourceDirectory: source.directory,
+  sourceArchive: archive,
+  sourceArchiveSha256: sha256(await readFile(archive)),
+  pagesDirectory: pages,
+  standalone: JSON.parse(await readFile('release/standalone-receipt.json', 'utf8')),
+};
+await writeFile('release/build-identity.json', JSON.stringify(identity, null, 2) + '\n');
+console.log('Packaged reviewed source:', JSON.stringify(identity));

@@ -2452,3 +2452,23 @@ footer {
 .modal input:not([type='checkbox']) {
   max-width: 100%;
 }
+/* App-owned author block, shared by the browser and desktop presentations. */
+.author-block {
+  margin: 24px 0;
+}
+.author-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+.author-links a {
+  color: #34503c;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 4px 0;
+}
+.author-links a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 2px;
+}

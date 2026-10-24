@@ -1,0 +1,180 @@
+{
+  "date": "2026-10-24T09:11:54.922Z",
+  "scope": "Local Windows desktop candidate; not a public release or owner-use observation",
+  "toolchain": {
+    "node": "24.22.0",
+    "npm": "11.17.0",
+    "electron": "45.0.0",
+    "chrome": "156.0.8078.48"
+  },
+  "checks": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "unitTests": 100,
+    "bridgeTests": 3,
+    "desktopTests": 16,
+    "packagingTests": 1,
+    "desktopTestsSkipped": 0,
+    "format": "passed",
+    "build": "passed",
+    "standalonePackaging": "passed",
+    "chromiumP1": 24,
+    "chromiumRecovery": 8,
+    "chromiumSampleOffline": 4,
+    "nativeLifecycle": 12
+  },
+  "compiledBuild": {
+    "files": {
+      "dist-desktop/main.cjs": "caac45b58ec827e911d043f8fb8ed840ec5c9539f2f9b43fa2a824cec01388b7",
+      "dist-desktop/package.json": "ada0cc4c3df13f8bd02e2e8c1443547d6fa4a256b6e08274b301400eefba1ecd",
+      "dist-desktop/preload.cjs": "3e257cd5c510d03b078de45694af75c3e2a744137500f47ba4e18a3657b1a63a",
+      "dist-desktop-ui/assets/desktop-CTm3VXEG.js": "4e66690affe435b6c70be86dd33d24fe4da899cd99f2e4d903ff084b9a5c4c46",
+      "dist-desktop-ui/assets/desktop-Pw_MWp4c.css": "b69e5125a03cd623861aa26b5bfb44659542b040c7178044638c2aab7176e89e",
+      "dist-desktop-ui/desktop.html": "b7db36b784d0a7943fd6faf50b85d0f7c8cfdb38b3843ab56e6de5cf382371b1",
+      "dist-desktop-ui/ONNX-RUNTIME-LICENSE.txt": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+      "dist-desktop-ui/THIRD_PARTY_LICENSES.txt": "39aea3a2009f1856b2d208ede6f2b463387f60f8c486e8c893c710976e2f0536"
+    },
+    "sha256": "719c90f620378bfbedd718d83d4fd1b2ec7cb9fa6442cb61f6c0cba6538e0f41",
+    "acceptanceScriptSha256": "f549c637904e1182d9c94d14c98d4df3ff13d6b902be1e1f403abdfa2be28fd3"
+  },
+  "portablePackage": {
+    "date": "2026-10-24T09:11:29.020Z",
+    "packageSha256": "686d6185b739e303796e248e1fb765e22c53da0e078ecd57fd87f9d5bb324dc6",
+    "packageFiles": 85,
+    "compiledBuildSha256": "719c90f620378bfbedd718d83d4fd1b2ec7cb9fa6442cb61f6c0cba6538e0f41",
+    "packageMatchesFinalNativeArtifacts": true,
+    "unchangedLongRunCompiledSections": {
+      "desktop/controller.ts": "c04f6af446d90254d85014469b0d3b995a7ca415561583fd4ef9c2b62aeb359d",
+      "desktop/runtime.ts": "da5edf44b54c82523af30300f692a12a1e7efcaeff6e818106a0cc68fc08c362",
+      "desktop/store.ts": "479b302f4ff7bd503de66a353355389ab304727114067f91ced7d06b9f9c7ef4"
+    }
+  },
+  "native": {
+    "checks": [
+      "real desktop launch",
+      "starts paused",
+      "renderer loads with isolated IPC",
+      "40-card batch through real UI and editable preview",
+      "original bytes and excluded participation survive reload",
+      "430px native window without horizontal overflow",
+      "validated public backup import; synthetic three-credit setup disclosed",
+      "explicit source participation",
+      "owned installed Ollama setup",
+      "Codex folder outside source/data",
+      "genuine scheduled 4B call",
+      "cancel genuine owned inference",
+      "pause preserves slot",
+      "owned model process stopped",
+      "genuine Tend proposal retained; acceptance guard rejection recorded; no replacement output",
+      "genuine Russian-requested manual blend; original result/failure retained, language quality not certified",
+      "atomic Codex manifest present"
+    ],
+    "rendererErrors": [],
+    "actualModelCalls": 4,
+    "model": "gemma3:4b",
+    "digest": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    "actualCallsScope": "Fictional public inputs, with explicit controlled starting credits; no owner usefulness approval",
+    "pause": {
+      "durationMs": 546,
+      "readySlots": 2,
+      "modelProcessStopped": true,
+      "status": "paused"
+    },
+    "finalPaused": true,
+    "idleElectronAggregateWorkingSetKiB": 737588,
+    "sampledOwnedTreeWorkingSetBytesMax": 3797479424,
+    "resourceLimits": "Observed samples, not a hardware guarantee or dedicated GPU/game benchmark",
+    "manualTendStatus": "proposed",
+    "manualTendAcceptance": {
+      "accepted": false,
+      "error": "The experiment seems unfinished. Edit or reject the proposal before accepting."
+    },
+    "russianRequestedStatus": "success"
+  },
+  "nativeLifecycle": {
+    "checks": [
+      "controlled login registration retains the exact data directory; OS autostart not enabled",
+      "native restore of exact labelled public recording; no model invocation",
+      "real native Keep action publishes a recorded-labelled Codex card",
+      "staged private backup preserves exact original response",
+      "future-version restore rejected without replacing active ideas",
+      "second process exits and requests existing window; no second writer",
+      "controlled wake lifecycle event pauses; physical OS sleep not simulated as proof",
+      "confirmed source cascade removes result and consumed pair",
+      "reviewed snapshot cleanup preserves current generation and analysis note",
+      "tray add event opens composer from Settings and focuses input",
+      "real UTF-8 file read, Cyrillic preview and original bytes retained",
+      "abrupt native process exit followed by CLI-path cold restart retains committed WAL data and starts paused"
+    ],
+    "rendererErrors": [],
+    "scope": "real Electron controls; exact recorded fixture only; native dialogs controlled"
+  },
+  "realDefaultInterval": {
+    "buildSha256": "c31b28cd7fa9c7944d5a5f5198ada8017dc70afae684f56a7237fededdcd1e16",
+    "intervalObservedMs": 3615837,
+    "checks": [
+      "real desktop launch",
+      "starts paused",
+      "renderer loads with isolated IPC",
+      "40-card batch through real UI and editable preview",
+      "original bytes and excluded participation survive reload",
+      "430px native window without horizontal overflow",
+      "validated public backup import; synthetic three-credit setup disclosed",
+      "explicit source participation",
+      "owned installed Ollama setup",
+      "Codex folder outside source/data",
+      "genuine scheduled 4B call",
+      "cancel genuine owned inference",
+      "pause preserves slot",
+      "owned model process stopped",
+      "window close leaves tray process active",
+      "two real scheduled calls at default 60-minute spacing with window closed",
+      "atomic Codex manifest present"
+    ],
+    "exactFinalBuild": false,
+    "finalUnchangedCompiledComponents": {
+      "desktop/controller.ts": "c04f6af446d90254d85014469b0d3b995a7ca415561583fd4ef9c2b62aeb359d",
+      "desktop/runtime.ts": "da5edf44b54c82523af30300f692a12a1e7efcaeff6e818106a0cc68fc08c362",
+      "desktop/store.ts": "479b302f4ff7bd503de66a353355389ab304727114067f91ced7d06b9f9c7ef4"
+    },
+    "boundary": "Long run predates final shell/search/UTF-8 quota/unchanged-edit-label fixes; controller, runtime and store compiled sections are byte-identical. Exact final artifacts have their own native live and lifecycle acceptance."
+  },
+  "codexRead": {
+    "cards": 3,
+    "cyrillic": true,
+    "manifestSha256": "8015101b2b5f5fa87a8b45f61539c30fa37e1c81517bd656ba50f2dd24aa7a63",
+    "noteSha256": "da17423fa954c19cf3249ffb399410d8759dec295e7f60c3aac0377a0a63da54",
+    "notePreservedAfterRealPublish": true,
+    "noInferenceOnExport": true,
+    "scope": "Real local Codex read of public fictional exports; not owner usefulness review"
+  },
+  "capacityDiagnostic": {
+    "date": "2026-10-24T08:30:41.982Z",
+    "scope": "Accelerated pure-domain exact public-fixture replay and backup capacity; no live inference or elapsed observation",
+    "liveCalls": 0,
+    "sources": 40,
+    "recordedReplays": 126,
+    "gardenBytes": 507651,
+    "workspaceBytes": 451304,
+    "retainedSnapshots": 64,
+    "snapshotBytes": 28437908,
+    "verifiedQuotaRefusal": true,
+    "legacyBrowserLimitRetained": true,
+    "originalResponsesSurviveRestore": true,
+    "elapsedMs": 1804
+  },
+  "standalone": {
+    "date": "2026-10-24T09:03:36.785Z",
+    "bytes": 376839,
+    "budget": 2097152,
+    "sha256": "37ebb863caf2f12fcb110c039c12d9ef1490afec40138f3e8198aafdae7dc97b",
+    "mode": "fixed-fixture recorded demo; no live AI; no weights"
+  },
+  "remaining": [
+    "LE-10: owner private idea pairs and usefulness/resource acceptance",
+    "LE-12: actual 7–14 day owner observation; not started",
+    "Physical Windows sleep/login and an actual game/dedicated GPU benchmark not performed",
+    "Mixed-language model concepts and unfinished Tend outputs observed; originals retained; no creative-quality pass claimed"
+  ],
+  "privacy": "Original model responses and local raw receipts remain outside public source. Public summary contains no owner idea content or machine paths. No publication, push or agent automation performed."
+}

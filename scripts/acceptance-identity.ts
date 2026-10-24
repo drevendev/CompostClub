@@ -40,22 +40,12 @@ export async function acceptanceIdentity(root = process.cwd()) {
   } catch {
     /* Explicit source archives need not contain Git metadata. */
   }
-  const source = await files(root, [
-    'src/',
-    'server/',
-    'scripts/',
-    'tests/',
-    'fixtures/',
-    'prompts/',
-    'public/',
-    'package.json',
-    'package-lock.json',
-    'vite.config.ts',
-    'tsconfig.json',
-    'playwright.config.ts',
-    'playwright.recovery.config.ts',
-    'playwright.p1.config.ts',
-  ]);
+  const selection = JSON.parse(
+    await readFile(path.join(root, 'scripts/source-files.json'), 'utf8'),
+  ) as { version: number; files: string[] };
+  if (selection.version !== 1 || !Array.isArray(selection.files))
+    throw new Error('Acceptance needs the reviewed public source selection.');
+  const source = await files(root, selection.files);
   const build = await files(root, ['dist/', 'release/compost-club-preview.html']);
   return {
     commit,

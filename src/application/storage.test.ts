@@ -64,6 +64,8 @@ function history(count: number): Garden {
   g = beginRequest(g, 100, 'replay', r.model, r.revision, 'en');
   g = completeRequest(g, g.pending!.id, r.raw, 100);
   const first = g.sprouts[0]!;
+  // Legacy capacity fixture has no retained per-call inference journal.
+  g.generations = [];
   g.scraps[0]!.revision = count;
   g.sprouts = Array.from({ length: count }, (_, i) => {
     const parents = structuredClone(first.parents);
@@ -128,7 +130,7 @@ it('roundtrips the largest allowed pretty backup across a revision digit boundar
   const saved = await store.save(g, 8);
   const backup = serializeGarden(saved);
   expect(Buffer.byteLength(backup)).toBeLessThanOrEqual(MAX_BACKUP_BYTES);
-  expect(importGarden(backup)).toEqual(saved);
+  expect(importGarden(backup, 'local')).toEqual(saved);
   const restored = await store.restore(importGarden(backup), 9);
   expect(restored.revision).toBe(10);
   expect(importGarden(serializeGarden(restored))).toEqual(await store.load('personal'));

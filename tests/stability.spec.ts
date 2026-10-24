@@ -228,13 +228,18 @@ for (const count of [2, 3, 200]) {
     const g =
       count === 2
         ? recordedPersonal(now)
-        : { ...capacityGarden(count, 'success', now), readySlots: 0 };
+        : { ...capacityGarden(count, 'failed', now), readySlots: 0 };
     await install(page, g);
     await page.clock.fastForward(INTERVAL);
     await expect(page.getByLabel('1 of 3 slots ready', { exact: true })).toBeVisible();
     await expect(
       page.getByRole('heading', {
-        name: count === 200 ? 'Pairing history is full' : 'Your pile needs a new ingredient',
+        name:
+          count === 200
+            ? 'Pairing history is full'
+            : count === 2
+              ? 'Your pile needs a new ingredient'
+              : 'An unfinished pairing awaits',
         exact: true,
       }),
     ).toBeVisible();

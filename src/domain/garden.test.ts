@@ -333,7 +333,7 @@ describe('untrusted model and backup boundaries', () => {
     const g = grown();
     if (g.sprouts[0])
       g.sprouts[0].edited = { title: 'My version', concept: 'A different little concept.' };
-    expect(importGarden(JSON.stringify(g))).toEqual(g);
+    expect(importGarden(JSON.stringify(g), 'local')).toEqual(g);
   });
   it.each([
     null,

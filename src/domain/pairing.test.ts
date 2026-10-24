@@ -32,16 +32,16 @@ it.each([2, 3, 200])(
     g = {
       ...g,
       readySlots: 0,
-      attempts: pairs.map((parents) => ({
+      attempts: pairs.map((parents, i) => ({
         key: pairKey(parents),
-        status: 'success',
-        requestId: 'x',
+        status: 'failed',
+        requestId: i.toString(36),
       })),
     };
     const restored = reconcile(importGarden(serializeGarden(g)), 100 + INTERVAL);
     expect(restored.readySlots).toBe(1);
     expect(availablePairs(restored)).toHaveLength(0);
-    expect(retryablePairs(restored)).toHaveLength(0);
+    expect(retryablePairs(restored)).toHaveLength(pairs.length);
     expect(() =>
       beginRequest(restored, 100 + INTERVAL, 'ollama', 'test-only', 'test-only', 'en'),
     ).toThrow('Every pairing');
@@ -65,10 +65,10 @@ it('preserves selection order while excluding attempted pairs and keeping failed
 it('indexes 19,900 attempts once, with a bounded key-read budget independent of machine speed', () => {
   const g = planted(200),
     pairs = availablePairs(g);
-  g.attempts = pairs.map((parents) => ({
+  g.attempts = pairs.map((parents, i) => ({
     key: pairKey(parents),
     status: 'failed',
-    requestId: 'x',
+    requestId: i.toString(36),
   }));
   expect(g.attempts).toHaveLength(MAX_ATTEMPTS);
   expect(importGarden(serializeGarden(g)).attempts).toHaveLength(MAX_ATTEMPTS);
@@ -88,10 +88,10 @@ it('indexes 19,900 attempts once, with a bounded key-read budget independent of 
 });
 it('reserves pairing-index capacity before starting a new request but permits retries at the cap', () => {
   let g = planted(200);
-  g.attempts = availablePairs(g).map((parents) => ({
+  g.attempts = availablePairs(g).map((parents, i) => ({
     key: pairKey(parents),
     status: 'failed',
-    requestId: 'x',
+    requestId: i.toString(36),
   }));
   g = editScrap(g, g.scraps[0]!.id, 'A revised fictional source at index capacity.');
   const before = serializeGarden(g);

@@ -8,6 +8,7 @@ import { chromium } from '@playwright/test';
 // Adds local Kokoro narration and an attributed downloaded track to verified footage.
 const out = path.resolve(process.env.COMPOST_DEMO_DIR ?? 'release/dev-article');
 const capture = JSON.parse(await readFile(path.join(out, 'capture-receipt.json'), 'utf8'));
+const frameSeconds = capture.video.verifiedFrameSeconds ?? [2, 18, 28, 39, 50, 57, 66, 75, 84];
 const timing = JSON.parse(
   await readFile(path.join(out, 'narration-heart/narration-timing.json'), 'utf8'),
 );
@@ -206,8 +207,14 @@ try {
       paint.letterSpacing = '2px';
       paint.textAlign = 'center';
       paint.textBaseline = 'alphabetic';
-      paint.fillText('RECORDED SAMPLE · SYNTHETIC ENGLISH NARRATION · CAPTIONS', 960, 1006);
-      if (video.currentTime >= 79) {
+      paint.fillText(
+        cues[0].projectSeeds
+          ? 'REAL PROJECT SEEDS · SYNTHETIC ENGLISH NARRATION · CAPTIONS'
+          : 'RECORDED SAMPLE · SYNTHETIC ENGLISH NARRATION · CAPTIONS',
+        960,
+        1006,
+      );
+      if (video.currentTime >= (cues.at(-1).sceneStart ?? 79)) {
         paint.font = '12px "Segoe UI", Arial, sans-serif';
         paint.letterSpacing = '0.4px';
         paint.fillText(
@@ -365,12 +372,16 @@ try {
     Math.abs(verification.duration - capture.video.duration) > 0.3
   )
     throw new Error('Narrated picture duration/dimensions changed unexpectedly.');
-  if (verification.rms < 0.01 || verification.peak >= 1 || verification.audioDuration < 88.7)
+  if (
+    verification.rms < 0.01 ||
+    verification.peak >= 1 ||
+    verification.audioDuration < capture.video.duration - 0.4
+  )
     throw new Error('Narration is silent, clipped or incomplete.');
   for (const cue of verification.synchronization)
     if (cue.correlation < 0.75 || Math.abs(cue.lagMs) > 100)
       throw new Error(`Narration synchronization failed: ${JSON.stringify(cue)}`);
-  for (const second of [2, 18, 28, 39, 50, 57, 66, 75, 84]) {
+  for (const second of frameSeconds) {
     await page.evaluate(async (second) => {
       const video = document.querySelector('video');
       const seeked = new Promise((resolve) =>
@@ -407,7 +418,7 @@ try {
       'Downloaded Kevin MacLeod music; source/license/edits attributed in credits and end frame',
       'Music at least 18 dB below speech RMS for every cue; smooth ducking and edge fades',
       'Each speech clip fits its scene without cutting or time stretching',
-      'AAC decoded and correlated against all ten expected voice segments',
+      `AAC decoded and correlated against all ${timing.cues.length} expected voice segments`,
       'Final MP4 frames decoded at nine positions',
       'No page errors or external requests',
     ],
