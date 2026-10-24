@@ -1,5 +1,7 @@
 # Local desktop experiment — ordered implementation tasks
 
+**Next release, 24 October 2026:** [v0.2 specification](NEXT_RELEASE_SPEC.md) and [R0–R9 delivery plan](NEXT_RELEASE_TASKS.md) define the successor. This checklist remains the initial desktop implementation/readiness record. Early owner use informs the new context/quality work but does not complete LE-10/LE-12 or a 7–14 day study. Historical checked implementation items are not evidence that the new schema, checker, named gardens or changed prompts already pass acceptance.
+
 Agreed 23 October; implementation authorized 24 October 2026 (Asia/Nicosia). Canonical requirements: [local experiment scope](LOCAL_EXPERIMENT_SCOPE.md). [Desktop guide](LOCAL_DESKTOP_RUNNING.md), [architecture/capacities](LOCAL_DESKTOP_ADR.md) and [verification summary](../evidence/desktop-verification.json).
 
 Task IDs are local tracking IDs, not newly created GitHub issues. Existing issue links identify related work; no GitHub issue was created or closed. The local implementation includes code, exact dependency pins, explicit backup migration and a portable Windows build. Existing installed owner-authorized model files were connected; weights were not downloaded or bundled.

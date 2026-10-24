@@ -1,15 +1,21 @@
 # Idea DNA, Evolution Lab & Growth Tree — current local-stack specification
 
+**Release precedence, 24 October 2026:** [v0.2 Coherent Gardens](NEXT_RELEASE_SPEC.md) and its [ordered tasks](NEXT_RELEASE_TASKS.md) now define the next release. v0.2 includes source-backed typed DNA, deliberate growth and named gardens after quality/integrity gates. The genuine population GA in #52/#60 remains the explicitly retained subsequent milestone. Its algorithm below is preserved; its older two-sentence/call assumptions must reuse the v0.2 rich contract, screening and full compute accounting. Earlier manual-only statements do not prohibit separately opted-in desktop background blending; automatic growth/GA stays outside v0.2. This planning update implements none of those features.
+
+The dated design below is retained as the earlier algorithm/product contract; the new release specification resolves conflicting order, storage and runtime assumptions.
+
 **Priority update, 23 October 2026:** the [local desktop experiment](LOCAL_EXPERIMENT_SCOPE.md) and its [ordered tasks](LOCAL_EXPERIMENT_TASKS.md) come first. This document remains the later DNA/GA feature design. Its manual-only/background and IndexedDB statements describe the earlier target; explicitly enabled desktop experiments follow the new scope, and future evolution must reconcile storage with its accepted versioned adapter. The initial manual Tend workflow is already delivered; full DNA/GA and richer tree work remain unimplemented.
 
 **Earlier state, 21 October 2026:** prepared, NOT implemented as a complete package. The owner requested Idea DNA, real micro-genetic evolution and incremental idea growth in the CURRENT React/TypeScript + IndexedDB + local Gemma/Ollama setup. **Server, multi-garden migration and cloud sync are NOT prerequisites.** Implementation epic: https://github.com/drevendev/CompostClub/issues/60
 
 ## 1. Existing foundations
+
 Current garden domain provides source scraps, revisions, two-parent immutable snapshots, saved sprouts, retryable inference attempts, 15-minute credits and backups. See src/domain/garden.ts, src/inference/contract.ts, src/application/storage.ts. Existing single personal + sample garden scope remains intact; use the current source history and model evidence without rewriting it.
 
 Dependencies: #47 correct unambiguous imported source IDs, #54 validate/restore versioned schema, #51 Idea DNA, #50 Growth Tree, #52 Evolution Lab, #53 birth metadata. All are detailed acceptance Issues; this document binds them to one coherent implementation contract.
 
 ## 2. Meaning of Idea DNA
+
 Idea DNA has two distinct layers:
 
 A. **Ancestry**: immutable root idea identifier, author/supplied origin or unknown, original text and revision, source snapshots, parent references, exact model/prompt/response identity, human edits, and relation type (blend, crossover, mutation, tend, manual). A child can have two parents: underlying ancestry is a directed acyclic graph (DAG), even if drawn as a tree in the UI.
