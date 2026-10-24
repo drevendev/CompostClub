@@ -25,19 +25,20 @@ Migration and context design can be reviewed before R0 audit closure, but expand
 
 ## 2. Required scenario matrix
 
-| Area              | Minimum cases                                                                                                                                                                                                                       |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Original/import   | Long original; truncated catalog summary; Markdown/encoded/relative links; duplicate title with distinct content; exact duplicate bytes; rejected decode; user-selected sections; unknown type; malicious instructions/HTML as text |
-| Profile/reference | User/import/model-proposed/approved origins; unresolved reference; contradictory provided property; stale reference revision; unselected reference exclusion; no network request on save                                            |
-| Generation/check  | Valid draft and check; invalid draft repair; invalid checker repair; shared one-repair cap; wrong evidence ID; wrong language; unsupported attribution; insufficient context; no blend; truncation; timeout in either stage         |
-| Atomicity         | Failure before/after receipt persistence, assessment save and candidate commit; disk full; late response; two writers/instances; stale source or preference; exactly-once pair/slot commit; emergency retained response             |
-| Counting          | Attempts vs candidates vs kept vs calls; DNA/preferences/manual checks; filtered drafts; human override; credit reservation release; growth proposal acceptance without double counting; no refund of dispatched calls              |
-| Scheduler         | Two due gardens, starvation/tie case, disabled garden, UI switching, no catch-up, 15/30/60/120/240 intervals, candidate/backlog/attempt/call limits, date boundary between stages, rollback and DST                                 |
-| Exchange          | 0/10/100%; seeded stable plan; missing local/cross pair; sample excluded; one donor maximum; manual route; revocation after generation/before screening and after screening/before commit; reverse receiving route duplicate        |
-| Growth            | Kept or deliberate source root; each direction; RU/EN; pending proposal cap; three accepted generations/two alternatives; human edit; rejected/filtered branch; no automatic parent promotion                                       |
-| Migration         | Browser v1, desktop v2, legacy growth, missing historical data vs contradictory revision, malformed/future schema, interrupted migration, original rollback, retained copies and paths                                              |
-| Privacy/export    | Kept/all/filtered scopes; redacted reading vs dependency-closed recovery export; imported claims; edited text; donor revocation; cross-garden deletion preview; existing backups/snapshots disclosed                                |
-| Capacity/UI       | Two 200-source gardens and more than 200 retained originals, supported workspace maximum, quota refusal before write, bounded DAG depth, 390px browser/430px native, 200% text, keyboard/Escape and reduced motion                  |
+| Area              | Minimum cases                                                                                                                                                                                                                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Original/import   | Long original; truncated catalog summary; Markdown/encoded/relative links; duplicate title with distinct content; exact duplicate bytes; rejected decode; user-selected sections; unknown type; malicious instructions/HTML as text                                                                |
+| Profile/reference | User/import/model-proposed/approved origins; unresolved reference; genre/proper-name ambiguity; approved scoped aliases; contradictory provided property; stale reference revision; unselected reference exclusion; no network request on save                                                     |
+| Generation/check  | Valid draft and check; invalid draft repair; invalid checker repair; shared one-repair cap; wrong evidence ID; wrong language; unsupported attribution; insufficient context; valid terminal negative without checker; malformed negative with refused repair; truncation; timeout in either stage |
+| Atomicity         | Failure before/after receipt persistence, assessment save and candidate commit; disk full; late response; two writers/instances; stale source or preference; exactly-once pair/slot commit; emergency retained response                                                                            |
+| Counting          | Attempts vs candidates vs kept vs calls; DNA/preferences/manual checks; filtered drafts; human override; credit reservation release; growth proposal acceptance without double counting; no refund of dispatched calls                                                                             |
+| Scheduler         | Two due gardens, starvation/tie case, disabled garden, UI switching, no catch-up, 15/30/60/120/240 intervals, candidate/backlog/attempt/call limits, one/two remaining calls, date boundary between stages, rollback and DST                                                                       |
+| Exchange          | 0/10/100%; seeded stable plan; missing local/cross pair; sample excluded; one donor maximum; manual route; revocation after generation/before screening and after screening/before commit; reverse receiving route duplicate                                                                       |
+| Growth            | Kept or deliberate source root; each direction; RU/EN; pending proposal cap; three accepted generations/two alternatives; human edit; rejected/filtered branch; no automatic parent promotion                                                                                                      |
+| Lifecycle         | Close to tray versus Exit; pause/quit in both stages; owned release and shared-process survival; journal/persistence/export failure; external process absence; next-start interrupted/prepared classification                                                                                      |
+| Migration         | Browser v1, desktop v2, legacy growth, missing historical data vs contradictory revision, malformed/future schema, interrupted migration, original rollback, retained copies and paths                                                                                                             |
+| Privacy/export    | Kept/all/filtered scopes; redacted reading vs dependency-closed recovery export; imported claims; edited text; donor revocation; cross-garden deletion preview; existing backups/snapshots disclosed                                                                                               |
+| Capacity/UI       | Two 200-source gardens and more than 200 retained originals, supported workspace maximum, quota refusal before write, bounded DAG depth, 390px browser/430px native, 200% text, keyboard/Escape and reduced motion                                                                                 |
 
 Controlled selection simulations demonstrate seed/probability rules, not output usefulness. An accelerated clock is not a real background interval. A valid backup hash proves integrity, not external inference authenticity. An accepted proposed test is not an actually performed experiment.
 
@@ -82,9 +83,16 @@ These are **planning dispositions**, not automatic closures or assertions that a
 
 Closed integrity/privacy work (#39/#40/#47), published launch tasks and declined Render/Entire work are not reopened or duplicated. #67/#68/#69/#22/#70 remain open in GitHub until the requested audit and evidence review, even though fixes appear in current source. This avoids both unnecessary reimplementation and unsupported closure claims.
 
-## 4. Gaps needing implementation tickets when work starts
+## 4. Focused follow-up tickets and remaining gaps
 
-The planning PR does not create duplicate issues or silently edit existing bodies. File narrowly scoped tickets linked to #29 when implementation is authorized, using R IDs for traceability:
+Final review adds two narrowly scoped tickets, without changing existing issue bodies or creating competing epics:
+
+- [#72](https://github.com/drevendev/CompostClub/issues/72), R3/R4/R8: preserve primary validation errors when format repair is unavailable; terminal-negative schemas, one/two-call preflight and exact failure accounting.
+- [#73](https://github.com/drevendev/CompostClub/issues/73), R0/R3/R8/R9: local pause/release/shutdown-preparation evidence; external exit verification and honest recovery under journal/storage failures.
+
+The issue reconciliation above covers the 32 pre-existing open issues; these two additions bring the reviewed open backlog to 34. Both require implementation and acceptance; this planning change closes neither. R2/R3/R8 also include scoped terminology/alias ambiguity under existing #20/#51, rather than a duplicate semantic-quality ticket.
+
+For the remaining gaps, file narrowly scoped tickets linked to #29 when implementation is authorized, using R IDs for traceability:
 
 - R2: reference records and deterministic context preparation; complete-source/duplicate-title import behavior.
 - R3: staged semantic assessment and its durable transaction/accounting contract.

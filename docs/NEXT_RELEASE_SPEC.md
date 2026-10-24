@@ -1,12 +1,12 @@
 # v0.2 — Coherent Gardens: next full local release
 
-Status: proposed release contract, 24 October 2026. **No feature in this document is implemented by the planning PR.** Baseline reviewed: `2afeb18de9f8c72e9938ca9eb973ed2e43e622de`. [Roadmap](ROADMAP.md), [ordered delivery tasks](NEXT_RELEASE_TASKS.md), canonical tracker [#29](https://github.com/drevendev/CompostClub/issues/29).
+Status: finalized planning contract, reviewed 24 October 2026; implementation and release acceptance remain pending. **No feature in this document is implemented by the planning PR.** Baseline reviewed: `2afeb18de9f8c72e9938ca9eb973ed2e43e622de`. [Roadmap](ROADMAP.md), [ordered delivery tasks](NEXT_RELEASE_TASKS.md), canonical tracker [#29](https://github.com/drevendev/CompostClub/issues/29).
 
 ## 1. Outcome, evidence and precedence
 
 A person can keep separate local gardens, combine selected ideas into a comprehensible candidate, see its sources and limitations, explain why they reject it, and deliberately develop a promising idea into inspectable branches. Background work has visible frequency, output and compute limits. A valid JSON response is never presented as proof of a useful concept.
 
-The first private desktop observation exposed these failure classes: thematic juxtaposition without a mechanism; missing user/player decisions; incorrect attribution of a proposed feature to a reference work; incomplete source excerpts; and feedback that is stored but not used. Private titles, texts, reviews, repository addresses, receipts and screenshots are withheld. The observation is formative evidence, not a public benchmark or a completed long-use study. Reproduction and public acceptance use newly authored, labelled fictional material.
+The first private desktop observation exposed these failure classes: thematic juxtaposition without a mechanism; missing user/player decisions; incorrect attribution of a proposed feature to a reference work; incomplete source excerpts; feedback that is stored but not used; ambiguous genre terms promoted into invented proper names; and a format failure obscured by an unavailable repair. Private titles, texts, reviews, repository addresses, receipts and screenshots are withheld. The observation is formative evidence, not a public benchmark or a completed long-use study. Reproduction and public acceptance use newly authored, labelled fictional material.
 
 This contract resolves release order after the [desktop experiment](LOCAL_EXPERIMENT_SCOPE.md) and the earlier [evolution design](IDEA_EVOLUTION_SPEC.md). Within v0.2 it takes precedence over their older manual-only, short-output, single-garden and cross-pollination fallback rules. The desktop has opt-in background operation; the browser/recorded entry retains its existing explicit-action behavior. The public sample never becomes a private source or donor.
 
@@ -97,7 +97,11 @@ Opening a supplied external reference requires an explicit click and narrow vali
 
 Reference availability is explicit. If an essential comparison depends on an uninspected reference, return `needs_context` rather than inventing its mechanics. Optional references may be omitted with a visible warning. Removing a reference blocks future use; previous job snapshots remain disclosed until deliberate cleanup.
 
-### 5.4 Reproducible context packs
+### 5.4 Terminology without invented facts
+
+Distinguish a supplied proper name from a genre/mechanic label, transliteration, typo or unresolved word. A title alone is not evidence that a named world, character or mechanic exists. Preserve original spelling; propose a source-linked alias/glossary entry with original span, intended meaning, approval and scope. Never silently correct the source, globally replace a term across gardens, or infer a permanent rule from one rejection. If the intended meaning changes the core mechanism, return `needs_context`; otherwise show the uncertainty and avoid unsupported claims. Approved aliases enter versioned context packs and invalidate undispatched packs when changed. Imported reference assertions remain assertions even after spelling approval.
+
+### 5.5 Reproducible context packs
 
 The model receives a bounded manifest containing selected source revisions/facets, complete supporting spans, selected reference properties, target profile, user objective and approved preferences. It does not receive the entire archive, raw database, unselected reviews or every ancestor.
 
@@ -135,7 +139,7 @@ List cards retain a four-line preview and full reader. Show **draft**, **screene
 
 ### 7.1 Two stages and their limits
 
-Normal attempt: one local generation, deterministic format/source checks, then one separate local semantic assessment. At most **one format repair across both stages**, giving a hard limit of **three dispatched calls per attempt**. Screening requests have a bounded output cap of 480 tokens and 4 KiB raw structured content. No automatic semantic rewrite loop in v0.2; **Revise this draft** is an explicit new job with the same parents and a selected finding/question.
+Normal candidate attempt: one local generation, deterministic format/source checks, then one separate local semantic assessment. A structurally valid terminal `no_blend`, `no_growth` or `needs_context` response stops before screening, retains its explanation and releases unused screening/repair holds. Each terminal outcome has its own discriminated schema; negative output cannot also carry a displayable candidate. A malformed negative remains a format failure, never an automatically sanitized honest negative. At most **one format repair across both stages**, giving a hard limit of **three dispatched calls per attempt**. Screening requests have a bounded output cap of 480 tokens and 4 KiB raw structured content. No automatic semantic rewrite loop in v0.2; **Revise this draft** is an explicit new job with the same parents and a selected finding/question.
 
 The screening call sees the exact candidate revision and its prepared evidence, not hidden chain-of-thought or the generator's claimed confidence. Return decision, specific findings, affected candidate field, supporting/contradicting context IDs and missing information. Validate all cited IDs/spans mechanically. Do not request or store hidden reasoning; retain the actual returned findings and raw response.
 
@@ -160,6 +164,8 @@ Recheck enabled state, source revisions, permissions, target garden and selected
 A successful blend atomically saves the screened candidate, exact lineage, consumed pair and spent receiver slot. A filtered draft, format error, cancellation, timeout or `no_blend` consumes no slot and no successful pair. Its actual dispatched calls remain spent, and its unchanged pair requires an explicit retry/revision. Human rejection of an already committed screened candidate does not refund its slot or model calls.
 
 Reserve an exclusive job/credit allowance and the two required stage calls before work; hold one optional format-repair call if budget remains. With exactly two calls available, the UI discloses that repair is unavailable rather than silently borrowing tomorrow's budget. Charge each call durably immediately before dispatch. No other job can use a held allowance. Release unspent holds on completion/cancel/recovery, but never refund dispatched calls. If storage cannot preserve the response, use the existing emergency retention/export path and pause further work.
+
+With only one call available, a new two-stage job waits before dispatch and spends neither attempt nor credit. Preserve the primary failure, stage and validation detail separately from a secondary repair refusal (call limit, date change, cancellation or storage attention). The journal and card must not replace an invalid-response cause with only a budget message. A valid negative and a budget wait do not increment the operational-failure streak; a dispatched malformed response that cannot be repaired counts as one failed job. Refused repair adds no charge or second failure. Show the earliest remaining wait reason and actual spent calls. [Focused diagnostic task #72](https://github.com/drevendev/CompostClub/issues/72).
 
 An unfinished job recovered after crash/restart is interrupted, preserves evidence/usage and starts paused. It never silently reruns the generator, checker or repair. If a checker is interrupted after a draft was saved, the draft remains recoverable with an explicit **Check this draft** action.
 
@@ -202,6 +208,12 @@ Daily accounting uses the persisted installation timezone/date and survives DST,
 Three consecutive **operationally failed jobs** pause for attention. Semantic `needs_revision`, `needs_context` and honest negatives are visible outcomes rather than transport failures, but attempt/call caps still stop endless poor generation. A single blocked selection does not monopolize other eligible gardens. Default stage timeout is 180 seconds, at most 540 seconds per three-call attempt; these are hard stops, not latency promises. Measure typical/p95 latency and resource cost on the actual supported machine.
 
 Changing global compute/model settings pauses the workspace; changing a garden's selection/exchange policy pauses that garden and cancels affected work before later dispatch. Editing/renaming a display label has no scheduling effect. Pause releases the application's owned model process and never kills shared services. Tray close, Exit, restart and wake keep their existing explicit semantics.
+
+### 9.1 Auditable pause and shutdown
+
+Keep bounded local lifecycle events for pause/exit request, active-stage cancellation/drain, owned-runtime release confirmed/failed and shutdown prepared/failed, with session/job correlation, UTC times and measured elapsed time. These records contain no idea/prompt/output text or private filesystem paths and do not imply cloud telemetry. They follow full-evidence backup/export consent, not default reading exports.
+
+Close-to-tray is not Exit. Persist shutdown preparation only after owned-process termination is confirmed, active jobs and pending publishing drain and emergency raw responses are safely retained. Failed release, persistence or export remains visible and retryable; it cannot silently exit or claim success. A full journal must not prevent aborting compute: record an evidence gap through the available recovery path and preserve the error for the user. A process cannot certify its own subsequent OS termination. Check actual exit externally in native acceptance; next-start recovery can classify a prepared shutdown or interruption without inventing an exit timestamp. The legacy final reason alone cannot establish exact exit time or release latency. [Focused lifecycle task #73](https://github.com/drevendev/CompostClub/issues/73).
 
 ## 10. Deliberate growth and a readable tree
 
@@ -284,6 +296,8 @@ Keyboard, Escape/focus return, screen-reader labels, 200% text, 390px browser wi
 
 ### 15.1 Deterministic correctness
 
+Include fictional terminology cases: supplied genre alias versus proper name, misspelling/transliteration with no approved correction, a correction scoped to one source/garden, changed alias invalidating a prepared pack, and a reference title that supplies no mechanic. Screening must expose uncertainty rather than invent a world or silently rewrite original text. Include last-call malformed-negative/repair-refusal cases from #72 and lifecycle interruption/persistence cases from #73.
+
 Run pure domain/storage tests for tuple identity, DAG/revision validation, migration and failure rollback, all stage transitions, call/attempt/candidate/credit holds, human overrides, 0/10/100 exchange, no fallback/reroll, same-pair reverse route, revocation between stages, stale response, fair scheduling, date boundary/DST/clock rollback, quotas and every export scope. Synthetic models/clocks are labelled diagnostics, never live inference evidence.
 
 ### 15.2 Small real local evaluation
@@ -308,7 +322,7 @@ These are bounded product decision thresholds, not statistical significance or p
 
 On actual Windows Electron/Chromium: migrate a fictional populated v2 workspace, preserve originals, create two named gardens, set a receiver to 10% with consent, perform and inspect one genuine cross-garden candidate (100% can force a separately labelled deterministic route), review outcomes, grow one kept seed through three accepted steps and two alternatives, compare, edit, reject, reload, export/restore and preview cascade deletion. Show one human-accepted real local candidate; a proposed paper test is not an actually performed experiment (#27 remains distinct).
 
-Observe at least **three scheduled dispatches at the real configured 15-minute spacing** with the window closed, including genuine generation/check calls, without accelerated clocks. Pause during generation and screening; confirm no later dispatch/commit and measured owned-process release. Restart/wake stays paused. Test an interrupted stage, disk/export failure, budget exhaustion and consent revocation. Measure idle and active resources on the actual machine; do not require new downloads for acceptance.
+Observe at least **three scheduled dispatches at the real configured 15-minute spacing** with the window closed, including genuine generation/check calls, without accelerated clocks. Pause during generation and screening; confirm no later dispatch/commit and measured owned-process release. Restart/wake stays paused. Test an interrupted stage, disk/export failure, budget exhaustion and consent revocation. Exercise idle Exit and Exit during each model stage; compare persisted lifecycle preparation with externally observed owned-process termination, shared-process survival and the next paused launch. Report missing legacy lifecycle timestamps as unavailable rather than estimated. Measure idle and active resources on the actual machine; do not require new downloads for acceptance.
 
 Required release commands remain `npm run verify`, `npm run docs:check`, `npm run build`, `npm run package:single`, applicable browser recovery/P1/sample suites, exact packaged Windows acceptance and desktop lifecycle acceptance. Bind receipts to the final source/package, not an intermediate build. Include the verified **recorded** standalone HTML + SHA-256, reviewed source archive + manifest identity, portable desktop identity, migration/rollback guide and explicit limitations. Runtime weights, portable inference tools, private seeds and local evidence stay out of public source/builds. The planning PR explicitly lists the two new public documents in the reviewed source-file selection; the implementation release must audit its complete final selection again.
 
