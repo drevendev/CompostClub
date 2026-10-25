@@ -1,3 +1,13 @@
+@font-face {
+  font-family: 'Golos';
+  src: url('./fonts/GolosText.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Literata';
+  src: url('./fonts/Literata.ttf') format('truetype');
+  font-display: swap;
+}
 .desktop-app {
   min-height: 100vh;
   display: grid;
@@ -762,6 +772,268 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .desktop-app * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Schema-3 working screens: all content participates in ordinary document flow. */
+.coherent-app {
+  font-family: Golos, system-ui, sans-serif;
+  background: #f7f5ec;
+  color: #263e30;
+}
+.coherent-app .desktop-sidebar {
+  overflow-y: auto;
+  padding: 24px 18px;
+  gap: 14px;
+}
+.coherent-app .desktop-brand {
+  margin-bottom: 16px;
+  gap: 9px;
+}
+.coherent-app .desktop-brand strong {
+  font-family: Literata, Georgia, serif;
+  font-size: 18px;
+}
+.coherent-app small {
+  display: block;
+  color: #52634e;
+}
+.coherent-app nav {
+  display: grid;
+  gap: 5px;
+}
+.coherent-app nav button {
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+}
+.coherent-app nav button[aria-current='page'] {
+  background: #e1e8d6;
+  border-color: #8c9c77;
+}
+.coherent-app .sidebar-end {
+  margin-top: auto;
+  display: grid;
+  gap: 8px;
+}
+.coherent-app .desktop-main {
+  grid-column: 2;
+  padding: 30px clamp(16px, 3vw, 48px);
+  min-width: 0;
+  max-width: 1600px;
+  width: 100%;
+}
+.coherent-app .garden-header,
+.coherent-app .section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.coherent-app h1,
+.coherent-app h2,
+.coherent-app h3 {
+  font-family: Literata, Georgia, serif;
+  font-weight: 500;
+  color: #294333;
+  overflow-wrap: anywhere;
+}
+.coherent-app h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  margin: 0;
+}
+.coherent-app h2 {
+  font-size: 23px;
+}
+.coherent-app h3 {
+  font-size: 18px;
+}
+.coherent-app .eyebrow {
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  color: #65795b;
+}
+.coherent-app .panel,
+.coherent-app .rhythm {
+  padding: clamp(16px, 2.4vw, 28px);
+  margin-top: 22px;
+  border: 1px solid #d5dbc9;
+  border-radius: 18px;
+  background: #fffdf6;
+}
+.coherent-app .rhythm {
+  background: #edf1e2;
+  border-color: #bccba9;
+}
+.coherent-app .rhythm p {
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+.coherent-app .rhythm-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+.coherent-app .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: center;
+}
+.coherent-app form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.coherent-app label,
+.coherent-app fieldset {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.coherent-app input,
+.coherent-app textarea,
+.coherent-app select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #a7b39a;
+  border-radius: 8px;
+  color: #263e30;
+  background: #fffef9;
+  padding: 10px;
+  font: inherit;
+}
+.coherent-app textarea {
+  resize: vertical;
+}
+.coherent-app .check {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+}
+.coherent-app .check input {
+  width: auto;
+  flex: 0 0 auto;
+}
+.coherent-app .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
+}
+.coherent-app .card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+.coherent-app .source-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #dce0d0;
+  border-radius: 13px;
+  background: #fffef9;
+  margin-bottom: 14px;
+}
+.coherent-app .preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.coherent-app pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+  font:
+    13px/1.65 Golos,
+    system-ui,
+    sans-serif;
+  padding: 12px;
+  background: #f1f2e9;
+  border-radius: 8px;
+}
+.coherent-app details {
+  margin: 12px 0;
+}
+.coherent-app summary {
+  cursor: pointer;
+  padding: 8px 0;
+  overflow-wrap: anywhere;
+}
+.coherent-app .wide-reader {
+  width: min(980px, calc(100vw - 28px));
+}
+.coherent-app .modal {
+  color: #263e30;
+  font:
+    15px/1.6 Golos,
+    system-ui,
+    sans-serif;
+  background: #fffdf6;
+}
+.coherent-app .compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.coherent-app button,
+.coherent-app a,
+.coherent-app summary {
+  touch-action: manipulation;
+}
+.coherent-app :focus-visible {
+  outline: 3px solid #755392;
+  outline-offset: 3px;
+}
+.coherent-app footer {
+  padding: 32px 0;
+  color: #63755b;
+}
+.coherent-app .error {
+  padding: 16px;
+  margin-top: 16px;
+  border: 2px solid #a75d4e;
+  background: #fff2e9;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 850px) {
+  .coherent-app {
+    display: block;
+  }
+  .coherent-app .desktop-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid #ccd5bf;
+    padding: 16px;
+  }
+  .coherent-app .desktop-sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  }
+  .coherent-app .desktop-main {
+    padding: 18px 12px;
+  }
+  .coherent-app .sidebar-end {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .coherent-app .compare {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coherent-app *,
+  .coherent-app *::before,
+  .coherent-app *::after {
     animation: none !important;
     transition: none !important;
   }

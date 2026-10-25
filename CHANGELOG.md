@@ -2,7 +2,16 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
-## Unreleased
+## 0.2.0-rc.1 — 2026-10-25
+
+- Add schema-3 named desktop gardens, complete source/file originals and revision history, reproducible selected context, scoped aliases, approved DNA/preferences and explicit supported reference facts.
+- Introduce bounded rich local candidates and a separate fallible semantic check, durable dispatch/raw evidence, shared repair limits, filtered draft review and labelled human overrides.
+- Add independent manual jobs, per-garden rhythm/credit, global compute and daily accounting, seeded opt-in exchange, deliberate growth DAG/revisions, migration rollback and redacted exports.
+- Integrate calm native screens, bundled licensed typography and Windows garden icon; retain browser/recorded compatibility and fix superseded browser-model load cancellation.
+- Retain the negative frozen local evaluation: 40 genuine calls across baseline/new pipeline; 0 screened/displayable results in 16 cases. Owner usefulness decisions and a live accepted growth demonstration remain pending. All profiles stay experimental; this local RC does not certify the v0.2 promotion gate or publish a release.
+- Include deterministic, storage, Chromium, lifecycle and artifact checks with a reviewed source selection. See the [RC acceptance record](docs/COHERENT_GARDENS_ACCEPTANCE.md).
+
+## Earlier unreleased browser improvements
 
 - Retain up to 100 exact raw/text revisions per source, including edits before generation; inspect/download history, include it in backups and Markdown, disclose missing legacy revisions and count saved revisions in cascade deletion previews.
 - Keep keyboard skip focus independent from the garden URL and restore garden selection during browser back/forward navigation.

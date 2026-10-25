@@ -4,6 +4,8 @@ Planning snapshot: 24 October 2026, repository `main` at `2afeb18de9f8c72e9938ca
 
 Authoritative behavior: [v0.2 specification](NEXT_RELEASE_SPEC.md). [Roadmap](ROADMAP.md) is the release overview. Historical desktop implementation: [local tasks](LOCAL_EXPERIMENT_TASKS.md). Preserved subsequent GA contract: [evolution spec](IDEA_EVOLUTION_SPEC.md).
 
+Implementation update, 25 October 2026: see the [RC implementation trace and acceptance record](COHERENT_GARDENS_ACCEPTANCE.md). The table below preserves the original plan. R8 human usefulness/accepted live growth remains open; local RC delivery does not close issues or promote model quality.
+
 ## 1. Implementation sequence
 
 Every row is proposed work, not a completed feature. Land small reviewable implementation PRs with relevant evidence; the complete v0.2 release requires all R0–R9 gates. No deadline or date-based waiver replaces acceptance. Pure preparation and manual editing must remain useful without a model.

@@ -2,6 +2,8 @@
 
 Status: finalized planning contract, reviewed 24 October 2026; implementation and release acceptance remain pending. **No feature in this document is implemented by the planning PR.** Baseline reviewed: `2afeb18de9f8c72e9938ca9eb973ed2e43e622de`. [Roadmap](ROADMAP.md), [ordered delivery tasks](NEXT_RELEASE_TASKS.md), canonical tracker [#29](https://github.com/drevendev/CompostClub/issues/29).
 
+Implementation status, 25 October 2026: [local experimental RC and remaining acceptance gates](COHERENT_GARDENS_ACCEPTANCE.md). This specification remains the promotion contract; a local RC does not mark owner usefulness or R8 complete.
+
 ## 1. Outcome, evidence and precedence
 
 A person can keep separate local gardens, combine selected ideas into a comprehensible candidate, see its sources and limitations, explain why they reject it, and deliberately develop a promising idea into inspectable branches. Background work has visible frequency, output and compute limits. A valid JSON response is never presented as proof of a useful concept.

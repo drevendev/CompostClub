@@ -1,5 +1,7 @@
 # Run the personal desktop experiment
 
+**0.2.0-rc.1:** use the current [Coherent Gardens RC guide](COHERENT_GARDENS_RC.md) for schema-3 migration, named gardens, budgets and rollback. The [acceptance record](COHERENT_GARDENS_ACCEPTANCE.md) retains the negative quality result. The instructions below preserve the earlier desktop baseline; its old defaults and screens are historical.
+
 The behavior is defined in the [scope](LOCAL_EXPERIMENT_SCOPE.md); [implementation tasks](LOCAL_EXPERIMENT_TASKS.md) distinguish implemented application features from the owner's actual observation period. This guide covers the Windows desktop candidate. Browser and recorded HTML instructions remain in [RUNNING.md](RUNNING.md).
 
 ## Start the portable application

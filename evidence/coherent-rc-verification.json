@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0-rc.1",
+  "date": "2026-10-25",
+  "status": "Final artifact verification in progress; experimental local RC, usefulness not promoted",
+  "privacy": "Sanitized aggregates only. No owner content, paths, raw model receipts or inference-pack hashes.",
+  "unitTests": 154,
+  "desktopTests": 42,
+  "bridgeTests": 3,
+  "sourcePackagingTests": 1,
+  "ownerQualityReview": "Pending future real-card trials; no automated usefulness judgments",
+  "evaluation": {
+    "compatible": 12,
+    "controls": 4,
+    "baselineCalls": 17,
+    "newPipelineCalls": 23,
+    "screenedDisplayable": 0,
+    "seen": true,
+    "qualityGate": "Not passed"
+  }
+}

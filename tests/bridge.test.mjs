@@ -45,6 +45,10 @@ test('real HTTP bridge: early reservation, split UTF-8, URL containment, 404s an
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  let startupError = '';
+  child.stderr.on('data', (chunk) => {
+    startupError += chunk.toString();
+  });
   try {
     let health;
     for (let i = 0; i < 100; i++) {
@@ -55,7 +59,7 @@ test('real HTTP bridge: early reservation, split UTF-8, URL containment, 404s an
         await delay(50);
       }
     }
-    assert.ok(health?.token, JSON.stringify(health));
+    assert.ok(health?.token, JSON.stringify({ health, startupError, exitCode: child.exitCode }));
     const headers = { 'content-type': 'application/json', origin, 'x-compost-token': health.token };
     const body = Buffer.from(
       JSON.stringify({

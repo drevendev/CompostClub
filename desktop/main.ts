@@ -14,9 +14,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { open, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { DesktopStore } from './store';
-import { DesktopController, type DesktopServices } from './controller';
+import { CoherentStore as DesktopStore } from './coherent-store';
+import { CoherentController as DesktopController } from './coherent-controller';
+import type { DesktopServices } from './controller';
 import { isAuthorLink } from '../src/content/author';
+import { safeUrl } from '../src/domain/coherent/prepare';
 
 const root = path.resolve(__dirname, '..');
 app.setName('Compost Club');
@@ -47,6 +49,7 @@ if (!single) {
       minWidth: 430,
       minHeight: 650,
       title: 'Compost Club',
+      icon: path.join(root, 'dist-desktop-ui', 'garden-icon.png'),
       backgroundColor: '#f6f2e9',
       show: process.env.COMPOST_ACCEPTANCE !== '1',
       webPreferences: {
@@ -60,7 +63,17 @@ if (!single) {
     });
     window.setMenuBarVisibility(false);
     window.webContents.setWindowOpenHandler(({ url }) => {
-      if (isAuthorLink(url)) {
+      let reference = false;
+      try {
+        reference =
+          safeUrl(url) === url &&
+          !!controller?.store.state.references.some(
+            (r) => !r.removed && r.url && safeUrl(r.url) === url,
+          );
+      } catch {
+        /* Unsupported URL stays blocked. */
+      }
+      if (isAuthorLink(url) || reference) {
         void shell.openExternal(url).catch((error: unknown) => {
           dialog.showErrorBox('Could not open author link', String(error));
         });
@@ -248,7 +261,7 @@ if (!single) {
             },
             {
               label: 'Resume experiment',
-              enabled: !state.busy && !state.workspace.experiment.enabled,
+              enabled: !state.busy && state.workspace.paused,
               click: () => {
                 void controller!
                   .command({ op: 'resume' })

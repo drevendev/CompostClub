@@ -1,0 +1,200 @@
+{
+  "version": 2,
+  "label": "Independently authored fictional game cases; no owner material. Freeze before inference; opening results makes this set seen.",
+  "promptRevisions": 2,
+  "review": "Owner must review every raw draft, including filtered and invalid cases. No automatic usefulness scores.",
+  "referenceFacts": [
+    {
+      "id": "2048",
+      "name": "2048",
+      "url": "https://gabrielecirulli.github.io/2048/",
+      "property": "Directional moves slide numbered tiles; touching equal numbers merge.",
+      "status": "source-supported property",
+      "clearance": "Concise independently worded factual description from the creator's instructions; no assets or source code copied."
+    },
+    {
+      "id": "baba",
+      "name": "Baba Is You",
+      "url": "https://hempuli.com/baba/",
+      "property": "Rules exist as manipulable objects, so rearranging them changes interactions.",
+      "status": "source-supported property",
+      "clearance": "Concise independently worded factual description from the creator's product page; no assets copied."
+    },
+    {
+      "id": "breach",
+      "name": "Into the Breach",
+      "url": "https://www.subsetgames.com/itb.html",
+      "property": "Enemy attacks are telegraphed before the player's turn-based counteraction.",
+      "status": "source-supported property",
+      "clearance": "Concise independently worded factual description from the developer's product page; no assets copied."
+    },
+    {
+      "id": "obra",
+      "name": "Return of the Obra Dinn",
+      "url": "https://obradinn.com/",
+      "property": "The player acts as an insurance investigator boarding a returned ship with no visible crew.",
+      "status": "source-supported property",
+      "clearance": "Concise independently worded factual premise from the developer's product page; no further mechanics asserted."
+    }
+  ],
+  "cases": [
+    {
+      "id": "cg-en-07",
+      "language": "en",
+      "kind": "compatible",
+      "a": "Game: a miner chooses a steam valve to move one elevator; each opening lowers pressure for the other shaft.",
+      "b": "Game: brass counterweights can be moved to save pressure, but a moved weight blocks one landing until the next turn.",
+      "objective": "Design a six-turn mine evacuation puzzle for one player. Goal: bring two miners to the surface. Pressure routing and temporarily blocked landings must affect the same choice.",
+      "contributions": [
+        "shared steam pressure between elevators",
+        "counterweight movement blocks a landing"
+      ]
+    },
+    {
+      "id": "cg-en-02",
+      "language": "en",
+      "kind": "compatible",
+      "reference": "2048",
+      "a": "Game: a gardener slides seed trays; equal seed labels can combine into a new tray. Keep this as a proposed new garden rule.",
+      "b": "Game: water markers move with trays, and a dry tray blocks the next slide until one water marker is spent.",
+      "objective": "Create a short grid puzzle about choosing merges while reserving water. Borrow only the supplied 2048 sliding/merging property; water is a new proposal, not a fact about 2048.",
+      "contributions": ["sliding and merging", "water expenditure blocks a later move"]
+    },
+    {
+      "id": "cg-en-03",
+      "language": "en",
+      "kind": "compatible",
+      "reference": "baba",
+      "a": "Game: a canal cartographer moves rule plaques to change which channel carries a barge.",
+      "b": "Game: every moved plaque makes a selected bridge unusable for one turn, threatening deliveries.",
+      "objective": "Design a one-player delivery puzzle with rule rearrangement and bridge timing. Borrow only supplied Baba Is You rule manipulation; canal and bridge rules are proposed differences.",
+      "contributions": ["manipulable routing rule", "temporary bridge lock"]
+    },
+    {
+      "id": "cg-en-04",
+      "language": "en",
+      "kind": "compatible",
+      "a": "Game: a beekeeper assigns one worker to a blossom; each assignment reduces that flower's pollen but opens a shortcut.",
+      "b": "Game: shortcut use spends a wing token; resting recovers it but lets the rain counter advance.",
+      "objective": "Design a five-round tactical pollination puzzle. Goal: visit three flowers before rain. Make resource consumption and rest timing interact.",
+      "contributions": ["pollen consumption opens paths", "rest recovers flight at a time cost"]
+    },
+    {
+      "id": "cg-en-05",
+      "language": "en",
+      "kind": "compatible",
+      "a": "Game: a potter rotates a kiln shelf to warm one vessel while cooling another; each vessel needs a target heat.",
+      "b": "Game: placing a repair seal prevents one crack but permanently blocks a shelf position.",
+      "objective": "Create a small turn-based kiln puzzle. Goal: finish two vessels in six turns. Heat routing and spatial repair costs must affect the same choices.",
+      "contributions": ["heat redistribution", "repair blocks a usable position"]
+    },
+    {
+      "id": "cg-en-06",
+      "language": "en",
+      "kind": "compatible",
+      "a": "Game: a courier changes a tram switch to deliver parcels; the abandoned line waits one turn.",
+      "b": "Game: each delivered parcel grants a ticket that may reopen a waiting line or pay the final station toll.",
+      "objective": "Design a six-turn parcel puzzle. Goal: deliver three parcels and pay the toll. Reopening routes competes with preserving the final payment.",
+      "contributions": ["switching delays one route", "delivery reward has competing uses"]
+    },
+    {
+      "id": "cg-ru-01",
+      "language": "ru",
+      "kind": "compatible",
+      "reference": "breach",
+      "a": "Игра: смотритель дамбы видит заранее отмеченные места следующего прорыва и выбирает один заслон для защиты.",
+      "b": "Игра: закрытие заслона перемещает лодку на соседний канал, но оставляет другой участок без защиты.",
+      "objective": "Предложи пошаговую игру на шесть ходов: спасти две лодки и сохранить дамбу. Из Into the Breach заимствовать только показ атак заранее; вода и лодки — новые правила, не факты об оригинале.",
+      "contributions": ["заранее видимый прорыв", "защита меняет маршруты лодок"]
+    },
+    {
+      "id": "cg-ru-02",
+      "language": "ru",
+      "kind": "compatible",
+      "reference": "obra",
+      "a": "Игра: архивист находит карточки груза на вернувшемся пустом судне и решает, какие два свидетельства сопоставить.",
+      "b": "Игра: каждое вскрытие опечатанного ящика даёт свидетельство, но расходует один из трёх жетонов доступа.",
+      "objective": "Сделай компактную игру расследования: установить маршрут исчезнувшего груза по трём уликам. Из Obra Dinn дан только статус страхового расследователя и пустое судно; любые карточки и жетоны явно новые.",
+      "contributions": ["сопоставление свидетельств", "ограниченный доступ к дополнительным уликам"]
+    },
+    {
+      "id": "cg-ru-03",
+      "language": "ru",
+      "kind": "compatible",
+      "a": "Игра: библиотекарь перемещает полки, чтобы читатель дошёл до нужной книги; сдвиг открывает один проход и закрывает другой.",
+      "b": "Игра: жетон тишины позволяет двигать полку рядом с читателем, но восстанавливается только после пропущенного хода.",
+      "objective": "Предложи головоломку на пять ходов для доставки двух книг. Выбор прохода и восстановление тишины должны влиять друг на друга.",
+      "contributions": ["перестройка проходов", "шум ограничивает перестройку рядом с читателем"]
+    },
+    {
+      "id": "cg-ru-04",
+      "language": "ru",
+      "kind": "compatible",
+      "a": "Игра: садовник поворачивает желоб, поливая одну грядку и осушая соседнюю; нужно вырастить два ростка.",
+      "b": "Игра: семя можно перенести раньше срока ценой следующего действия, которое придётся пропустить.",
+      "objective": "Создай тактическую игру на шесть ходов: вырастить два разных ростка до засухи. Полив и заём будущего действия должны образовать единый механизм.",
+      "contributions": ["перераспределение воды", "раннее действие за счёт будущего хода"]
+    },
+    {
+      "id": "cg-ru-05",
+      "language": "ru",
+      "kind": "compatible",
+      "a": "Игра: часовщик переставляет шестерни, ускоряя одни часы и замедляя другие; обе стрелки должны встретиться на метке.",
+      "b": "Игра: временный фиксатор удерживает шестерню на один ход, но закрывает соседнюю ячейку для перестановки.",
+      "objective": "Предложи короткую головоломку синхронизации часов. Фиксатор и перераспределение скорости должны влиять на одно решение игрока.",
+      "contributions": [
+        "перестановка меняет две скорости",
+        "фиксация создаёт пространственное ограничение"
+      ]
+    },
+    {
+      "id": "cg-ru-06",
+      "language": "ru",
+      "kind": "compatible",
+      "a": "Игра: перевозчик решает, какой из двух паромов загрузить; выбранный груз открывает причал, но увеличивает осадку.",
+      "b": "Игра: вода убывает после каждого рейса, а один разгрузочный жетон позволяет вернуть часть осадки ценой недоставленного ящика.",
+      "objective": "Создай игру на четыре рейса: доставить три ящика до отлива. Выбор груза, глубина и жертва частью доставки должны взаимодействовать.",
+      "contributions": [
+        "груз открывает причал и меняет осадку",
+        "разгрузка спасает маршрут ценой цели"
+      ]
+    },
+    {
+      "id": "cg-negative-01",
+      "language": "en",
+      "kind": "control",
+      "a": "A title only: The Quiet Province. No mechanics or source document have been supplied.",
+      "b": "Game: place one bridge to move a pawn to the exit.",
+      "objective": "A comparison depends essentially on The Quiet Province's actual mechanics. Do not invent a world from its title.",
+      "contributions": ["missing essential reference context", "bridge placement"],
+      "essentialReference": true
+    },
+    {
+      "id": "cg-negative-02",
+      "language": "ru",
+      "kind": "control",
+      "a": "Игра требует, чтобы все действия одновременно были необратимы, а любое действие можно было полностью отменить без следов.",
+      "b": "Игра запрещает случайность и одновременно требует непредсказуемого случайного определения каждого исхода.",
+      "objective": "Эти ограничения объявлены обязательными, менять их нельзя. Укажи противоречие вместо обещания работающей игры.",
+      "contributions": ["несовместимые правила отмены", "несовместимые требования к случайности"]
+    },
+    {
+      "id": "cg-negative-03",
+      "language": "en",
+      "kind": "control",
+      "a": "Game note: use the genre label mosslike. Its meaning is unresolved; it is not an approved proper name or a supplied world.",
+      "b": "Game: move one pawn to trade tokens at a gate.",
+      "objective": "The central mechanism depends on the intended meaning of mosslike. Ask for context; do not invent a Mosslike kingdom.",
+      "contributions": ["unresolved essential genre label", "token trade at a gate"]
+    },
+    {
+      "id": "cg-negative-04",
+      "language": "ru",
+      "kind": "control",
+      "a": "Референс с названием 2048. Единственное данное свойство: равные числовые плитки сливаются при касании.",
+      "b": "Заметка утверждает без источника, что в 2048 есть страховой инспектор и сюжет о пропавшем экипаже.",
+      "objective": "Не приписывай 2048 неподтверждённый сюжет. Отметь ошибочную атрибуцию или нехватку контекста; это отрицательный контроль.",
+      "contributions": ["поддержанное слияние плиток", "неподдержанный сюжетный факт"]
+    }
+  ]
+}

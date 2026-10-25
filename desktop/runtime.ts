@@ -116,6 +116,7 @@ export class OwnedOllama {
     signal: AbortSignal,
     onTransport: (raw: string) => void,
     beforeDispatch: () => void,
+    limits = { tokens: 384, timeout: 120000 },
   ): Promise<string> {
     if (!this.running) throw new Error('Local model is not connected.');
     const tagsResponse = await fetch(this.url + '/api/tags', {
@@ -137,9 +138,9 @@ export class OwnedOllama {
         format,
         stream: false,
         keep_alive: 0,
-        options: { num_ctx: 4096, num_predict: 384, temperature: 0.6, seed },
+        options: { num_ctx: 4096, num_predict: limits.tokens, temperature: 0.6, seed },
       }),
-      signal: AbortSignal.any([signal, AbortSignal.timeout(120000)]),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(limits.timeout)]),
     });
     if (!response.body) throw new Error('No model response body.');
     const reader = response.body.getReader(),
@@ -174,7 +175,7 @@ export class OwnedOllama {
       );
     }
     const body = new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks));
-    let data: { response?: string; error?: string };
+    let data: { response?: string; error?: string; done_reason?: string };
     try {
       data = JSON.parse(body) as typeof data;
     } catch {
@@ -183,6 +184,10 @@ export class OwnedOllama {
     if (!response.ok || typeof data.response !== 'string')
       throw new Error(
         data.error ?? `Local model HTTP ${response.status}; original response retained.`,
+      );
+    if (data.done_reason === 'length')
+      throw new Error(
+        'Model output truncated at the provider limit; original response retained in transport evidence.',
       );
     return data.response;
   }

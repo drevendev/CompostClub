@@ -28,9 +28,9 @@ The [published DEV article](https://dev.to/drevendev/let-your-wild-ideas-ferment
 
 ## Use the local desktop candidate
 
-The Windows candidate runs without an application server or terminal: an application window and tray control a local SQLite garden and an explicitly selected installed Ollama/model. It starts paused, supports batch/file input, bounded background pairings, review, validated backups and a stable Markdown/JSON export directory for Codex. Pause cancels owned work and releases its model process before reporting success.
+The experimental **0.2.0-rc.1 Coherent Gardens** Windows candidate adds named gardens, preserved full originals and source preparation, explicit references, rich generation with a fallible semantic checker, approved feedback preferences, deliberate growth and opt-in cross-garden exchange. An application window and tray control a local SQLite workspace and an explicitly selected installed Ollama/model. It starts paused; manual jobs have separate explicit authorization. Pause drains owned work and releases its model process before reporting success.
 
-Open the supplied portable application shortcut, or build with `npm run desktop:package`. Follow the [desktop setup/use/recovery guide](docs/LOCAL_DESKTOP_RUNNING.md). No weights or personal data are bundled. The private owner quality pilot and actual 7–14 day observation are still pending; structural checks do not certify creative usefulness. The browser instructions below remain available separately.
+Open the supplied portable application shortcut, or build with `npm run desktop:package`. Follow the [RC setup, migration and rollback guide](docs/COHERENT_GARDENS_RC.md) and [acceptance record](docs/COHERENT_GARDENS_ACCEPTANCE.md). No weights or personal data are bundled. **Usefulness is not promoted:** the frozen local comparison produced 0 screened/displayable candidates in 16 cases, and owner review is pending future real-card trials. Filtered drafts and original failures remain inspectable. The actual 7–14 day observation is still pending. The browser instructions below describe the separate smaller v0.1 application.
 
 ## Try the sample garden
 

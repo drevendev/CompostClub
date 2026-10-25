@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-21T06:16:07.583Z",
+  "date": "2026-10-25T09:35:44.047Z",
   "path": "/CompostClub/",
   "published": false,
   "result": "PASS",
@@ -9,8 +9,8 @@
   "external": [],
   "assets": [
     "browser.worker-CzBbr6Ae.js",
-    "index-Baj9tkEn.js",
-    "index-CPTaE6NZ.css",
+    "index-Br3mSngx.css",
+    "index-rJSU8JkX.js",
     "ort-wasm-simd-threaded.asyncify-CxOG5pUO.wasm"
   ]
 }
