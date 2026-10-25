@@ -34,10 +34,18 @@ Personal and sample gardens use separate records in the `compost-club-v1` Indexe
 
 A successful result stores its output, immutable source snapshots, consumed pair and spent slot together. Failed/cancelled generations retain their slot. Pending inference is never resumed from a backup. Source text and model output render as text, not HTML.
 
-The first review found gaps in persistence limits, recovery, retry durability and UI state. These are open defects, not guarantees established by the earlier happy-path acceptance tests; see [review issues](https://github.com/drevendev/CompostClub/issues?q=is%3Aissue+label%3Areview). The bridge is intended for local use and has not received a production security audit.
+Source edits append the previous raw/text/origin/revision to a bounded history before installing the new revision in the same validated garden write. Legacy sources disclose their first known revision; absent originals are not reconstructed. Deletion previews count and remove retained source revisions along with dependent results. The pair picker builds an attempted-key index once and decorates each candidate with its key/rank before sorting. The UI memoizes selection for a garden snapshot and distinguishes available combinations from time credits; failure retries remain deliberate.
+
+Writes and portable backups share validation and the 2 MiB pretty-printed JSON budget. Original scrap text is capped at 8 KiB without silent truncation. Unreadable records open a [recovery screen](RECOVERY.md): the original can be downloaded, and a confirmed restore atomically retains it under `recovery:personal` or `recovery:sample` before replacing the active garden. These keys hold the most recent recovery copy separately from normal garden backups. A stale recovery preview cannot overwrite a changed record.
+
+The remaining reliability work is tracked in [review issues](https://github.com/drevendev/CompostClub/issues?q=is%3Aissue+is%3Aopen+label%3Areview). The bridge is intended for local use and has not received a production security audit.
 
 ## Build boundary
 
 `npm run build` creates relative-path static assets. Static hosts cannot run Ollama. `npm run package:single` embeds the recorded sample into one HTML file, disables live generation and includes dependency licence texts. File-origin storage can change when the file is renamed or moved; JSON export is the portable data route.
 
 `scripts/release.mjs` uses an explicit source allowlist. Private briefings, attachments, owner archives, local experiments, model weights, binaries and raw runner reports are excluded from source archives. Git publication is separately audited with a staged-file allowlist.
+
+## Optional services and idea growth
+
+[Operator service setup and removal](OPTIONAL_SERVICES.md) documents Render static hosting, no-op-by-default Sentry metadata tracing and a future isolated Entire session. None is required by the garden domain or offline HTML. Growth records use an explicitly versioned additive `tend-1` contract in legacy garden version 1; original backups remain readable. Raw proposals, parent snapshots and edits stay separate. Use a pre-growth backup before downgrading to a build that cannot understand growth records; older builds do not enforce growth ancestry on deletion.

@@ -1,0 +1,17 @@
+{
+  "kind": "real-local-model-failure",
+  "scope": "Failed Chromium explicit-retry journey; not successful acceptance or quality evaluation",
+  "source": "Unchanged HTTP error body extracted from preserved Playwright trace; only public fictional inputs",
+  "date": "2026-10-21T07:46:55.152Z",
+  "model": "gemma3:1b",
+  "modelRevision": "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
+  "requestId": "605d0195-3e32-48b2-8a38-565556d5e76e",
+  "language": "en",
+  "a": "A tiny library lends pocket rainstorms to gardeners.",
+  "b": "A robot turns lost kitchen words into funny recipe names.",
+  "repair": "",
+  "httpStatus": 500,
+  "rawHttpResponse": "{\"error\":\"prediction aborted, token repeat limit reached\"}",
+  "modelRawResponse": null,
+  "explanation": "Ollama returned an error without generated.response. No missing model text has been reconstructed. The separate preceding 503 was a labelled test-only transport injection."
+}

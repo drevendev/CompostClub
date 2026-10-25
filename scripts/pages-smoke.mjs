@@ -58,7 +58,7 @@ try {
     const response = await fetch(origin + prefix + 'assets/' + file, { method: 'HEAD' });
     expect(response.ok).toBe(true);
   }
-  await page.getByText('A QUIETER KIND OF CREATIVITY', { exact: true }).click();
+  await page.locator('.intro h1').click();
   await page.screenshot({ path: 'evidence/pages-preview.png', fullPage: true });
   expect(errors).toEqual([]);
   expect(badResponses).toEqual([]);

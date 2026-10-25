@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-21T09:30:17.512Z",
+  "disclosure": "Synthetic pairing-index diagnostic on fictional inputs. One measured call after fixture construction; not a controlled benchmark, inference receipt or model timing.",
+  "runtime": {
+    "node": "v24.19.0",
+    "platform": "win32"
+  },
+  "scraps": 200,
+  "attempts": 19900,
+  "availablePairs": 0,
+  "explicitRetryChoices": 19900,
+  "selectionMs": 21.939899999999966,
+  "retrySelectionMs": 27.494399999999985,
+  "measuredAttemptKeyReads": 19900,
+  "backupBytes": 1795441,
+  "domainSourceSha256": "7a96d618f5f84bca0e6396aac9f337c289d07cc97c534125458ffe9f02eb6ff8",
+  "browserInteraction": {
+    "source": "synthetic pairing-index data; no inference",
+    "scraps": 200,
+    "attempts": 19900,
+    "loadAndInteractionMs": 1110.0865999999987,
+    "backupBytes": 1795441,
+    "browser": {
+      "name": "chromium",
+      "version": "156.0.8078.4"
+    },
+    "platform": "win32",
+    "sourceSha256": "03a82cb482dea2045cbfc81b00080c59725d48fc7c36100ba82b53141fff81d0",
+    "buildSha256": "570a12800081855e3b10e402cd5425991336bf7d6e72b8d8123949d21ae266b4",
+    "disclosure": "One actual Chromium load/retry-page/selection/backup interaction with a synthetic pairing index. Timing includes setup and interaction; no inference."
+  }
+}

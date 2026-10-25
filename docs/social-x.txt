@@ -1,0 +1,7 @@
+Let your wild ideas ferment. 🌱
+
+Compost Club blends two unfinished thoughts with local Gemma to grow a new idea. Keep its roots, develop a branch, or compost it again.
+
+How I built it: https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o
+
+#Hacktoberfest #Gemma #OpenSource

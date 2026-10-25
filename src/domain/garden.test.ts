@@ -8,6 +8,9 @@ import {
   deletionSet,
   editScrap,
   failRequest,
+  recordResponse,
+  retryablePairs,
+  serializeGarden,
   importGarden,
   INTERVAL,
   reconcile,
@@ -15,6 +18,7 @@ import {
   removeScrap,
 } from './garden';
 import { normalize, parseOutput, schemaFor, validateScrap } from '../inference/contract';
+import { MAX_RAW_SCRAP_BYTES } from '../inference/contract';
 
 const now = 1_000_000;
 function planted() {
@@ -71,6 +75,87 @@ describe('idle credits', () => {
     expect(reconcile(planted(), now + INTERVAL * 3).readySlots).toBe(3));
 });
 describe('pairing and source identity', () => {
+  it.each(['transport_error', 'cancelled', 'no_blend', 'interrupted'])(
+    'offers an explicit retry after %s survives reload, without spending the slot',
+    (status) => {
+      let g = started();
+      const request = g.pending!;
+      if (status === 'no_blend')
+        g = recordResponse(
+          g,
+          request.id,
+          JSON.stringify({
+            outcome: 'no_blend',
+            title: '',
+            concept: 'No coherent mix.',
+            fromA: '',
+            fromB: '',
+          }),
+        );
+      if (status !== 'interrupted')
+        g = failRequest(g, request.id, 'An unsuccessful test blend.', status === 'cancelled');
+      const restored = importGarden(serializeGarden(g));
+      expect(restored.readySlots).toBe(1);
+      expect(restored.pending).toBeNull();
+      expect(availablePairs(restored)).toHaveLength(0);
+      expect(retryablePairs(restored)).toEqual([request.parents]);
+      const retried = beginRequest(
+        restored,
+        now,
+        'ollama',
+        'gemma3:1b',
+        'test-digest',
+        'en',
+        retryablePairs(restored)[0],
+      );
+      expect(retried.pending!.id).not.toBe(request.id);
+      expect(retried.generations![0]).toEqual(restored.generations![0]);
+      const done = completeRequest(retried, retried.pending!.id, output(retried), now + 1);
+      expect(done.readySlots).toBe(0);
+      expect(retryablePairs(done)).toHaveLength(0);
+      expect(() =>
+        beginRequest(
+          { ...done, readySlots: 1 },
+          now,
+          'ollama',
+          'gemma3:1b',
+          'test-digest',
+          'en',
+          request.parents,
+        ),
+      ).toThrow('already grown');
+    },
+  );
+  it('retains multiple retry choices, excluding edited or deleted source revisions', () => {
+    let g = addScrap(planted(), 'A postcard becomes a tiny walking route.', now, { id: 'c' });
+    const pairs = availablePairs(g);
+    for (const pair of pairs.slice(0, 2)) {
+      g = beginRequest(g, now, 'ollama', 'gemma3:1b', 'test-digest', 'en', pair);
+      g = failRequest(g, g.pending!.id);
+    }
+    expect(retryablePairs(importGarden(serializeGarden(g)))).toHaveLength(2);
+    const changed = editScrap(
+      g,
+      pairs[0]![0].id,
+      'A revised fictional source with a different meaning.',
+    );
+    expect(retryablePairs(changed).some((pair) => pair.some((p) => p.id === pairs[0]![0].id))).toBe(
+      false,
+    );
+    const removed = removeScrap(g, pairs[0]![0].id);
+    expect(retryablePairs(removed).some((pair) => pair.some((p) => p.id === pairs[0]![0].id))).toBe(
+      false,
+    );
+  });
+  it('offers legacy failed pairs without inventing missing inference history', () => {
+    const g = started(),
+      request = g.pending!;
+    const failed = failRequest(g, request.id);
+    delete failed.generations;
+    const restored = importGarden(serializeGarden(failed));
+    expect(retryablePairs(restored)).toEqual([request.parents]);
+    expect(restored.generations).toBeUndefined();
+  });
   it('is deterministic and chooses every pair once', () => {
     const g = addScrap(planted(), 'An old postcard becomes a tiny walking route.', now, {
       id: 'c',
@@ -137,6 +222,45 @@ describe('pairing and source identity', () => {
   });
 });
 describe('untrusted model and backup boundaries', () => {
+  it('restores identical output fields in any key order and preserves the original raw bytes', () => {
+    const g = grown(),
+      sprout = g.sprouts[0]!;
+    sprout.output = Object.fromEntries(
+      Object.entries(sprout.output).reverse(),
+    ) as typeof sprout.output;
+    const restored = importGarden(serializeGarden(g));
+    expect(restored.sprouts[0]!.rawOutput).toBe(sprout.rawOutput);
+    expect(restored.sprouts[0]!.output).toEqual(sprout.output);
+  });
+  it.each(['title', 'concept', 'fromA', 'fromB', 'outcome'] as const)(
+    'still rejects an actual change to output.%s after reordering',
+    (key) => {
+      const g = grown(),
+        sprout = g.sprouts[0]!;
+      sprout.output = {
+        ...sprout.output,
+        [key]: key === 'outcome' ? 'no_blend' : 'An altered field.',
+      };
+      expect(() => importGarden(JSON.stringify(g))).toThrow();
+    },
+  );
+  it('rejects extra output fields, missing parents and unsupported language in a reordered backup', () => {
+    for (const change of [
+      (s: Record<string, unknown>) => {
+        s.output = { ...(s.output as object), extra: 'untrusted' };
+      },
+      (s: Record<string, unknown>) => {
+        s.parents = [];
+      },
+      (s: Record<string, unknown>) => {
+        s.language = 'unknown';
+      },
+    ]) {
+      const g = grown();
+      change(g.sprouts[0]! as unknown as Record<string, unknown>);
+      expect(() => importGarden(JSON.stringify(g))).toThrow();
+    }
+  });
   it('requires exact Unicode source fragments', () => {
     const a = 'Тихий робот собирает слова.',
       b = 'Сад забытых обещаний цветёт.';
@@ -189,6 +313,18 @@ describe('untrusted model and backup boundaries', () => {
     expect(() => validateScrap('x'.repeat(801))).toThrow();
     expect([...validateScrap('🌱'.repeat(800))]).toHaveLength(800);
   });
+  it('bounds original UTF-8 bytes, including whitespace, without trimming the stored original', () => {
+    const original = '🌱'.repeat(800) + ' '.repeat(MAX_RAW_SCRAP_BYTES - 3200);
+    const g = addScrap(createGarden('personal', now), original, now);
+    expect(g.scraps[0]?.raw).toBe(original);
+    expect(validateScrap(original)).toBe('🌱'.repeat(800));
+    expect(() => addScrap(g, original + ' ', now)).toThrow('8 KiB');
+    expect(() => editScrap(g, g.scraps[0]!.id, original + ' ')).toThrow('8 KiB');
+    expect(g.scraps[0]?.revision).toBe(1);
+    expect(() => addScrap(g, 'A small fictional library.' + ' '.repeat(2097152), now)).toThrow(
+      '8 KiB',
+    );
+  });
   it('uses only exact quotes in the Ollama structured schema', () => {
     const s = schemaFor('A small garden grows old ideas.', 'A quiet robot brings new words.');
     expect(s.properties.fromA.enum[1]).toBe('A small garden grows old ideas.');
@@ -197,7 +333,7 @@ describe('untrusted model and backup boundaries', () => {
     const g = grown();
     if (g.sprouts[0])
       g.sprouts[0].edited = { title: 'My version', concept: 'A different little concept.' };
-    expect(importGarden(JSON.stringify(g))).toEqual(g);
+    expect(importGarden(JSON.stringify(g), 'local')).toEqual(g);
   });
   it.each([
     null,

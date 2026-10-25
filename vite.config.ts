@@ -7,9 +7,17 @@ export default defineConfig(({ mode }) => ({
   plugins: [react(), ...(mode === 'offline' ? [viteSingleFile()] : [])],
   define: { __OFFLINE__: JSON.stringify(mode === 'offline') },
   build: {
-    outDir: mode === 'offline' ? 'dist-offline' : mode === 'lab' ? 'dist-lab' : 'dist',
+    outDir:
+      mode === 'desktop'
+        ? 'dist-desktop-ui'
+        : mode === 'offline'
+          ? 'dist-offline'
+          : mode === 'lab'
+            ? 'dist-lab'
+            : 'dist',
     chunkSizeWarningLimit: 16000,
     ...(mode === 'lab' ? { rollupOptions: { input: 'experiments/index.html' } } : {}),
+    ...(mode === 'desktop' ? { rollupOptions: { input: 'desktop.html' } } : {}),
   },
   worker: { format: 'es' },
   server: {

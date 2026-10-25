@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './acceptance';
 test('loopback bridge rejects foreign origins, missing tokens and oversized requests', async ({
   request,
 }) => {
@@ -33,7 +33,7 @@ test('loopback bridge rejects foreign origins, missing tokens and oversized requ
 
 test('a simulated transport failure keeps the slot; an explicit retry uses the real model', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start your pile', exact: true }).click();
   for (const text of [
@@ -62,8 +62,30 @@ test('a simulated transport failure keeps the slot; an explicit retry uses the r
   });
   await page.getByRole('button', { name: 'Let it ferment', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Test-only transport failure');
-  await expect(page.getByRole('heading', { name: '1 pairing is ready' })).toBeVisible();
+  await expect(page.getByLabel('1 of 3 slots ready', { exact: true })).toBeVisible();
   expect(await page.locator('.sprout-card').count()).toBe(0);
   await page.getByRole('button', { name: 'Retry this pairing', exact: true }).click();
   await expect(page.locator('.sprout-card')).toBeVisible({ timeout: 125000 });
+  const generation = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const r = indexedDB.open('compost-club-v1', 1);
+      r.onsuccess = () => resolve(r.result);
+    });
+    const garden = await new Promise<{ generations: unknown[] }>((resolve) => {
+      const r = db.transaction('gardens').objectStore('gardens').get('personal');
+      r.onsuccess = () => resolve(r.result as { generations: unknown[] });
+    });
+    db.close();
+    return garden.generations.at(-1);
+  });
+  await testInfo.attach('transport-diagnostic', {
+    contentType: 'application/json',
+    body: Buffer.from(
+      JSON.stringify({ kind: 'test-only-transport-failure', modelResponseSubstituted: false }),
+    ),
+  });
+  await testInfo.attach('live-inference', {
+    contentType: 'application/json',
+    body: Buffer.from(JSON.stringify({ source: 'real-loopback-ollama', generation })),
+  });
 });
