@@ -8,7 +8,9 @@ import { create } from '../../src/domain/coherent/workspace';
 import type { CoherentView } from '../coherent-types';
 void test('local operator requires session capability and explicit exchange consent, serializes commands, and opens no UI', async () => {
   await mkdir('.local', { recursive: true });
-  const dir = await mkdtemp(path.resolve('.local/operator-test-'));
+  // Unix socket paths have an OS length bound; keep the diagnostic fixture
+  // short even inside a deeply nested CI checkout.
+  const dir = await mkdtemp(path.resolve('.local/op-'));
   const view: CoherentView = {
     workspace: create(Date.now(), 'UTC'),
     busy: false,
