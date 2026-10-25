@@ -4,6 +4,8 @@ Status: finalized planning contract, reviewed 24 October 2026; implementation an
 
 Implementation status, 25 October 2026: [local experimental RC and remaining acceptance gates](COHERENT_GARDENS_ACCEPTANCE.md). This specification remains the promotion contract; a local RC does not mark owner usefulness or R8 complete.
 
+Subsequent operator configuration adds [direct local Codex access and an explicit 1–10 credit-capacity override](OPERATOR.md); the default remains three. This does not waive the quality or lifecycle promotion gates below.
+
 ## 1. Outcome, evidence and precedence
 
 A person can keep separate local gardens, combine selected ideas into a comprehensible candidate, see its sources and limitations, explain why they reject it, and deliberately develop a promising idea into inspectable branches. Background work has visible frequency, output and compute limits. A valid JSON response is never presented as proof of a useful concept.

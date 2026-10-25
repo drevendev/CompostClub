@@ -42,6 +42,7 @@ const app = path.join(directory, 'resources', 'app');
 await mkdir(app, { recursive: true });
 await cp('dist-desktop', path.join(app, 'dist-desktop'), { recursive: true });
 await cp('dist-desktop-ui', path.join(app, 'dist-desktop-ui'), { recursive: true });
+await cp('scripts/desktop-operator.mjs', path.join(directory, 'operator.mjs'));
 for (const file of ['LICENSE', 'THIRD_PARTY_NOTICES.md']) await cp(file, path.join(app, file));
 await mkdir(path.join(app, 'licenses'), { recursive: true });
 for (const file of ['GolosText-OFL.txt', 'Literata-OFL.txt'])

@@ -442,7 +442,9 @@ function App() {
             <span>
               На просмотр {count.pending}/{w.settings.backlog}
             </span>
-            <span>Слотов {credit(w, g.id, Date.now())}</span>
+            <span>
+              Слотов {credit(w, g.id, Date.now())}/{g.credits.cap ?? 3}
+            </span>
           </div>
           <p>
             Попытка может не дать кандидата. Включены сады:{' '}

@@ -36,6 +36,19 @@ import { recordedPersonal } from '../../../tests/garden-fixtures';
 import type { Identity } from './types';
 
 describe('coherent gardens · synthetic diagnostics, no inference claims', () => {
+  it('an explicit ten-credit operator preset persists without changing the default cap or refunding calls', () => {
+    const w = fixture(),
+      g = w.gardens[0]!;
+    expect(balance(g, NOW + 100 * 900000)).toBe(3);
+    g.credits = { balance: 10, cap: 10, at: NOW };
+    expect(balance(g, NOW + 100 * 900000)).toBe(10);
+    g.credits.balance = 8;
+    expect(balance(g, NOW + 900000)).toBe(9);
+    expect(balance(g, NOW - 900000)).toBe(8);
+    validate(w);
+    g.credits.cap = 11;
+    expect(() => validate(w)).toThrow('credits');
+  });
   it('p0 selection does not inspect donor profiles or originals, including compatibility metadata', () => {
     const w = fixture(),
       g = w.gardens[0]!,

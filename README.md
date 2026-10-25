@@ -32,6 +32,10 @@ The experimental **0.2.0-rc.1 Coherent Gardens** Windows candidate adds named ga
 
 Open the supplied portable application shortcut, or build with `npm run desktop:package`. Follow the [RC setup, migration and rollback guide](docs/COHERENT_GARDENS_RC.md) and [acceptance record](docs/COHERENT_GARDENS_ACCEPTANCE.md). No weights or personal data are bundled. **Usefulness is not promoted:** the frozen local comparison produced 0 screened/displayable candidates in 16 cases, and owner review is pending future real-card trials. Filtered drafts and original failures remain inspectable. The actual 7–14 day observation is still pending. The browser instructions below describe the separate smaller v0.1 application.
 
+The [card contract for repositories, Obsidian and Codex](docs/CARD_CONTRACT.md) specifies stable IDs, exact revisions, originals, model proposals, human decisions and previewed synchronization. It documents adapter boundaries; it does not enable automatic remote synchronization.
+
+Codex can [control the running desktop through its authenticated local operator interface](docs/OPERATOR.md): status, settings, review, jobs, pause/resume and safe Exit, without GUI automation or editing a live database. The portable includes `operator.mjs`. An explicit operator preset can raise the default three-credit capacity to ten.
+
 ## Try the sample garden
 
 Requires **Node 24, npm 11**, Git and a recent browser. From a terminal:

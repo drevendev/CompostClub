@@ -88,7 +88,10 @@ export function validate(w: Workspace): void {
         Number.isFinite(g.lastServed) &&
         Number.isInteger(g.credits.balance) &&
         g.credits.balance >= 0 &&
-        g.credits.balance <= 3 &&
+        Number.isInteger(g.credits.cap ?? 3) &&
+        (g.credits.cap ?? 3) >= 1 &&
+        (g.credits.cap ?? 3) <= 10 &&
+        g.credits.balance <= (g.credits.cap ?? 3) &&
         Number.isFinite(g.credits.at),
       'Invalid rhythm/credits.',
     );

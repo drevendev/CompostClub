@@ -19,6 +19,7 @@ import { CoherentController as DesktopController } from './coherent-controller';
 import type { DesktopServices } from './controller';
 import { isAuthorLink } from '../src/content/author';
 import { safeUrl } from '../src/domain/coherent/prepare';
+import { startOperator, type OperatorHandle } from './operator';
 
 const root = path.resolve(__dirname, '..');
 app.setName('Compost Club');
@@ -35,9 +36,11 @@ if (!single) {
 } else {
   let window: BrowserWindow | null = null,
     controller: DesktopController | undefined,
+    operator: OperatorHandle | undefined,
     tray: Tray | undefined,
     closing = false;
   const show = () => {
+    if (closing) return;
     if (!window || window.isDestroyed()) createWindow();
     window!.show();
     window!.focus();
@@ -51,7 +54,9 @@ if (!single) {
       title: 'Compost Club',
       icon: path.join(root, 'dist-desktop-ui', 'garden-icon.png'),
       backgroundColor: '#f6f2e9',
-      show: process.env.COMPOST_ACCEPTANCE !== '1',
+      show:
+        process.env.COMPOST_ACCEPTANCE !== '1' &&
+        !app.commandLine.hasSwitch('compost-start-hidden'),
       webPreferences: {
         preload: path.join(__dirname, 'preload.cjs'),
         sandbox: true,
@@ -93,14 +98,19 @@ if (!single) {
       }
     });
     void window.loadFile(path.join(root, 'dist-desktop-ui', 'desktop.html'));
-    window.webContents.on('did-finish-load', () => {
-      if (controller) window?.webContents.send('compost:state', controller.view());
+    const contents = window.webContents;
+    contents.on('did-finish-load', () => {
+      if (!closing && controller && !contents.isDestroyed())
+        contents.send('compost:state', controller.view());
+    });
+    window.on('closed', () => {
+      window = null;
     });
   };
   app.on('second-instance', show);
   void app
     .whenReady()
-    .then(() => {
+    .then(async () => {
       Menu.setApplicationMenu(null);
       session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) =>
         callback(false),
@@ -235,6 +245,7 @@ if (!single) {
       tray = new Tray(icon);
       tray.setToolTip('Compost Club · paused');
       const update = () => {
+        if (closing) return;
         const state = controller!.view();
         tray?.setToolTip(`Compost Club · ${state.status}`);
         tray?.setContextMenu(
@@ -272,12 +283,22 @@ if (!single) {
             { label: 'Exit', click: () => app.quit() },
           ]),
         );
-        if (window && !window.isDestroyed()) window.webContents.send('compost:state', state);
+        if (window && !window.isDestroyed() && !window.webContents.isDestroyed())
+          window.webContents.send('compost:state', state);
       };
       controller.subscribe(update);
       update();
+      operator = await startOperator(
+        app.getPath('userData'),
+        (command, confirmed) => {
+          if (closing) return Promise.reject(new Error('Application is shutting down.'));
+          return controller!.command(command, confirmed);
+        },
+        () => app.quit(),
+      );
       tray.on('double-click', show);
       ipcMain.handle('compost:command', async (event, input: unknown) => {
+        if (closing) throw new Error('Application is shutting down.');
         if (
           !window ||
           event.sender !== window.webContents ||
@@ -290,12 +311,16 @@ if (!single) {
           return { ...controller!.view(), error: e instanceof Error ? e.message : String(e) };
         }
       });
-      const timer = setInterval(() => controller!.tick(), 5000);
+      const timer = setInterval(() => {
+        if (!closing) controller!.tick();
+      }, 5000);
       timer.unref();
       powerMonitor.on('suspend', () => {
+        if (closing) return;
         void controller!.pause('Paused for sleep. Resume explicitly after wake.').catch(() => {});
       });
       powerMonitor.on('resume', () => {
+        if (closing) return;
         void controller!.pause('Paused after wake. Resume explicitly when ready.').catch(() => {});
       });
       app.on('activate', show);
@@ -314,7 +339,8 @@ if (!single) {
     closing = true;
     void controller
       ?.close()
-      .then(() => {
+      .then(async () => {
+        await operator?.close();
         tray?.destroy();
         app.exit();
       })

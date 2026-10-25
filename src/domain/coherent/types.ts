@@ -117,7 +117,7 @@ export interface Garden {
   interval: number;
   nextAt: number;
   lastServed: number;
-  credits: { balance: number; at: number };
+  credits: { balance: number; at: number; cap?: number };
   policy: { revision: number; probability: number; donors: string[]; donate: boolean };
   plan: SelectionPlan | null;
   legacy: LegacyGarden | null;

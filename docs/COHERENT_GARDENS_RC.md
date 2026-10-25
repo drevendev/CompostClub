@@ -25,7 +25,7 @@ Schema 3 cannot be opened with the old executable. For rollback, Exit the RC, ke
 
 Create up to four named gardens and select a type/objective. Add a complete original or import explicitly selected UTF-8 files. Import previews exact duplicates, similar titles and distinct contents; choose link, skip or a new copy. File originals and bytes remain preserved. Editing adds a revision. Reading the original never starts inference.
 
-Open a source to inspect the complete original, immutable history, prepared model text, exact UTF-8 spans, omissions and selected context. Markdown/URL normalization affects only the model representation. Approve source facets and aliases explicitly; suggested DNA is a proposal. Alias corrections have an explicit source/garden scope and never rewrite the original. Essential omitted context blocks the job instead of silently shortening it.
+Open a source to inspect the complete original, immutable history, prepared model text, exact original spans, omissions and selected context. Span offsets use UTF-16 code units with an exclusive end; UTF-8 byte accounting is separate. Markdown/URL normalization affects only the model representation. Approve source facets and aliases explicitly; suggested DNA is a proposal. Alias corrections have an explicit source/garden scope and never rewrite the original. Essential omitted context blocks the job instead of silently shortening it. See the [card and synchronization contract](CARD_CONTRACT.md) for repository/Obsidian/Codex mappings.
 
 A reference record separates its name/link, supplied property, intended difference, evidence spans and support status. A title or URL alone supplies no mechanic. Saving a link never fetches it. Only safe HTTP(S) reference links can open externally. Reference/source text is untrusted text, including any apparent instructions or HTML.
 
@@ -41,7 +41,7 @@ Reviews save reasons and free text verbatim. Select reviews when requesting a pr
 
 ## Rhythm, budgets and exchange
 
-New workspace defaults are a 15-minute interval, 12 attempts, 8 new candidates, 24 model calls per day and 5 pending reviews. Intervals of 15/30/60/120/240 minutes are selectable. Each garden accrues up to three credits; one global compute owner runs at a time. The UI distinguishes attempts, failed jobs, semantic outcomes, shown candidates and human decisions. Increasing a limit cannot guarantee more useful results.
+New workspace defaults are a 15-minute interval, 12 attempts, 8 new candidates, 24 model calls per day and 5 pending reviews. Intervals of 15/30/60/120/240 minutes are selectable. Each garden defaults to a three-credit capacity; an explicit [local operator preset](OPERATOR.md) can set 1–10. One global compute owner runs at a time. The UI distinguishes attempts, failed jobs, semantic outcomes, shown candidates and human decisions. Increasing a limit cannot guarantee more useful results.
 
 Charges are durable immediately before dispatch. Repairs, DNA and preference calls share the global allowance. A blend reserves enough for both stages. A failed/negative/cancelled blend keeps its credit. A displayed candidate, consumed pair and credit commit together once. Growth proposals hold a credit until acceptance or rejection. Day accounting uses the saved timezone and resists clock rollback; restore cannot refund dispatched calls. Review backpressure and repeated operational failures stop unattended work.
 

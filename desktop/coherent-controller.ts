@@ -234,7 +234,7 @@ export class CoherentController {
     // newly retained response with a renderer's earlier workspace snapshot.
     this.change(fn);
   }
-  async command(input: unknown): Promise<CoherentView> {
+  async command(input: unknown, operatorConfirmed = false): Promise<CoherentView> {
     if (
       !input ||
       typeof input !== 'object' ||
@@ -318,12 +318,39 @@ export class CoherentController {
         )
           await this.pause();
         break;
+      case 'operatorCredits': {
+        if (!operatorConfirmed) throw new Error('Explicit operator authorization is required.');
+        const cap = integer(c.cap, 1, 10),
+          balance = integer(c.balance, 0, cap);
+        await this.pause('Operator explicitly changed credit capacity.');
+        this.change((w) => {
+          const g = garden(w, id());
+          g.credits = { cap, balance, at: now };
+        });
+        break;
+      }
+      case 'operatorParticipation': {
+        if (!operatorConfirmed) throw new Error('Explicit operator authorization is required.');
+        const selected = strings(c.sources, 200),
+          gid = id();
+        await this.mutateSelected((w) => {
+          const sources = w.sources.filter((s) => s.garden === gid);
+          if (
+            !w.gardens.some((g) => g.id === gid) ||
+            selected.some((id) => !sources.some((s) => s.id === id))
+          )
+            throw new Error('Participation list must contain existing sources from this garden.');
+          for (const s of sources) s.participating = selected.includes(s.id);
+        });
+        break;
+      }
       case 'exchange': {
         const probability = integer(c.probability, 0, 100),
           donors = strings(c.donors, 3),
           donate = boolean(c.donate);
         if (
           (probability > 0 || donate) &&
+          !operatorConfirmed &&
           !(await this.services.confirm(
             `Allow this garden's selected sources to participate in local cross-garden jobs? Receiver probability ${probability}%; donor permission ${donate}. One selected source may be sent to a receiving garden. Existing snapshots remain after revocation.`,
           ))

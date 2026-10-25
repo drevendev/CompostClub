@@ -140,11 +140,14 @@ export function editSource(w: Workspace, id: string, title: string, value: strin
     }
 }
 export function balance(g: Garden, now: number): number {
-  return Math.min(3, g.credits.balance + Math.max(0, Math.floor((now - g.credits.at) / 900000)));
+  return Math.min(
+    g.credits.cap ?? 3,
+    g.credits.balance + Math.max(0, Math.floor((now - g.credits.at) / 900000)),
+  );
 }
 export function reconcile(g: Garden, now: number) {
   const n = Math.max(0, Math.floor((now - g.credits.at) / 900000));
-  g.credits.balance = Math.min(3, g.credits.balance + n);
+  g.credits.balance = Math.min(g.credits.cap ?? 3, g.credits.balance + n);
   g.credits.at += n * 900000;
 }
 export function credit(w: Workspace, g: string, now: number) {
