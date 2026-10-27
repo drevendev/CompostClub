@@ -33,11 +33,17 @@ const application = await electron.launch({
   timeout: 30000,
 });
 const pid = await application.evaluate(() => process.pid);
+const hidden = process.argv.includes('--hidden-ui');
 try {
-  await application.evaluate(({ BrowserWindow }) => {
-    const win = BrowserWindow.getAllWindows()[0]!;
-    win.showInactive();
-  });
+  if (hidden)
+    await application.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows()[0]!.webContents.setBackgroundThrottling(false);
+    });
+  else
+    await application.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0]!;
+      win.showInactive();
+    });
   const page = await application.firstWindow();
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('request', (r) => {
@@ -45,6 +51,13 @@ try {
   });
   await page.getByRole('button', { name: 'Настройки', exact: true }).click();
   await page.getByLabel('Способ генерации').selectOption('claude');
+  for (const model of ['haiku', 'sonnet', 'opus']) {
+    await page.getByLabel('Модель Claude', { exact: true }).selectOption(model);
+    const selected = await page.evaluate(() => window.compost.invoke({ op: 'snapshot' }));
+    assert.equal(selected.provider?.requestedModel, model);
+    assert.equal(selected.claudeConnection?.state, 'unchecked');
+  }
+  await page.getByLabel('Модель Claude', { exact: true }).selectOption('sonnet');
   const setupToken = 'sk-ant-oat01-NATIVE_DIAGNOSTIC_NOT_A_REAL_TOKEN';
   await page.getByLabel('Claude setup-token', { exact: true }).fill(setupToken);
   await page.getByRole('button', { name: 'Сохранить setup-token защищённо' }).click();
@@ -62,11 +75,13 @@ try {
   const dialog = page.getByRole('dialog', { name: 'Передача контекста Claude' });
   await dialog.waitFor();
   assert.ok((await dialog.textContent())!.includes('official-claude-code'));
-  await dialog.screenshot({ path: path.join(output, 'claude-consent.png') });
-  await dialog
-    .getByRole('button', { name: 'Разрешить эту отправку и начать' })
-    .scrollIntoViewIfNeeded();
-  await dialog.screenshot({ path: path.join(output, 'claude-consent-actions.png') });
+  if (!hidden) {
+    await dialog.screenshot({ path: path.join(output, 'claude-consent.png') });
+    await dialog
+      .getByRole('button', { name: 'Разрешить эту отправку и начать' })
+      .scrollIntoViewIfNeeded();
+    await dialog.screenshot({ path: path.join(output, 'claude-consent-actions.png') });
+  }
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'detached' });
   // Repeat after dismissal: no orphaned local Eureka ID may block another preview.
@@ -95,10 +110,11 @@ try {
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '200%';
   });
-  await page.screenshot({
-    path: path.join(output, 'consent-430-forced-colors.png'),
-    fullPage: true,
-  });
+  if (!hidden)
+    await page.screenshot({
+      path: path.join(output, 'consent-430-forced-colors.png'),
+      fullPage: true,
+    });
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth + 1,
   );
@@ -129,6 +145,9 @@ try {
         narrowForcedColors: true,
         authenticationChecked: false,
         claudeSetupTokenOsEncryption: true,
+        modelPicker: ['haiku', 'sonnet', 'opus'],
+        hiddenWindow: hidden,
+        screenshots: !hidden,
         genuineCreativeAcceptance: 'not run; requires authenticated owner provider',
       },
       null,

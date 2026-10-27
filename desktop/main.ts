@@ -1,4 +1,5 @@
 import { ClaudeRuntime } from './claude-runtime';
+import { createDesktopObserver } from './telemetry';
 import { EncryptedCredentialStore } from './credentials';
 import { GroqRuntime } from './groq-runtime';
 import { OwnedOllama } from './runtime';
@@ -237,6 +238,7 @@ if (!single) {
           }).openAtLogin,
       };
       const credentials = new EncryptedCredentialStore(app.getPath('userData'), safeStorage);
+      const telemetry = await createDesktopObserver(app.getPath('userData'));
       await credentials.initialize();
       const claudeTokens = new EncryptedCredentialStore(
         app.getPath('userData'),
@@ -258,6 +260,7 @@ if (!single) {
           claudeTokens,
           claudeTokens,
         ),
+        telemetry,
       );
       createWindow();
       if (requestedShow) show();

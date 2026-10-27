@@ -28,7 +28,7 @@ The [published DEV article](https://dev.to/drevendev/let-your-wild-ideas-ferment
 
 ## Manual external generation preview
 
-The 0.2.0-rc.4 candidate adds an explicitly selected manual connection to **official Claude Code using your own Claude subscription**, plus optional Groq BYOK. Choose a provider in desktop Settings, preview the exact selected context and authorize one bounded job. There is no remote background generation or automatic fallback. Local storage, local Ollama and the recorded sample remain available independently. No account, model or CLI is installed for you.
+The 0.2.0-rc.5 candidate adds an explicitly selected manual connection to **official Claude Code using your own Claude subscription**, plus optional Groq BYOK. Desktop Settings now offers **Haiku, Sonnet and Opus**, visible authentication status and removable operator-only Sentry metadata tracing (OFF without opt-in). Each job freezes its selected alias and context; there is no remote background or automatic fallback. A bounded fictional RU run produced screened Sonnet/Opus proposals; Haiku format failures remain retained and its creative acceptance is open. Local storage, local Ollama and the recorded sample remain independent. No account, model or CLI is installed for you.
 
 [Setup, privacy, subscription login, optional Groq key and acceptance status](docs/PROVIDER_PATCH.md). This is an experimental source/PR candidate, not a stable quality claim or an installed owner upgrade. Local Gemma RU issues remain open.
 

@@ -9,6 +9,7 @@ const safe = new Set([
   'snapshot',
   'configureProvider',
   'configureClaude',
+  'configureClaudeModel',
   'checkClaude',
   'confirmRemote',
   'cancelRemote',

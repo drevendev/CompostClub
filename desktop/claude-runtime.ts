@@ -6,8 +6,22 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import type { RemoteObservation } from './groq-runtime';
 import { bytes } from '../src/domain/coherent/hash';
+import { assertClaudeModel } from '../src/domain/coherent/provider';
 
 const exec = promisify(execFile);
+export function claudeJsonContent(raw: string) {
+  const match = /^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/i.exec(raw.trim());
+  if (match) {
+    try {
+      const value: unknown = JSON.parse(match[1]!);
+      if (value && typeof value === 'object' && !Array.isArray(value))
+        return { text: match[1]!, normalization: 'single-json-markdown-fence' as const };
+    } catch {
+      /* Keep ambiguous or invalid output unchanged for ordinary failure/repair. */
+    }
+  }
+  return { text: raw, normalization: 'none' as const };
+}
 export const claudeFlags = [
   '-p',
   '--output-format',
@@ -138,7 +152,8 @@ export class ClaudeRuntime {
       throw new Error('Claude working directory must not traverse a link.');
     return { executable, cwd };
   }
-  async start() {
+  async start(model = 'sonnet') {
+    assertClaudeModel(model);
     const { executable, cwd } = await this.location(),
       options = {
         cwd,
@@ -186,7 +201,7 @@ export class ClaudeRuntime {
       throw new Error(
         'Этот адаптер использует вашу подписку Claude. Проверьте вход через claude auth login; API billing автоматически не включается.',
       );
-    return { model: 'sonnet', digest: '' };
+    return { model, digest: '' };
   }
   async release() {
     for (const child of this.children) {
@@ -208,9 +223,14 @@ export class ClaudeRuntime {
     signal: AbortSignal,
     onTransport: (raw: string) => void,
     beforeDispatch: () => void,
-    limits = { tokens: 3072, timeout: 180000 },
+    limits: { tokens: number; timeout: number; requestedModel?: string } = {
+      tokens: 3072,
+      timeout: 180000,
+    },
     onObservation?: (o: RemoteObservation) => void,
   ): Promise<string> {
+    const requestedModel = limits.requestedModel ?? 'sonnet';
+    assertClaudeModel(requestedModel);
     const { executable, cwd } = await this.location();
     const content =
       prompt +
@@ -228,7 +248,9 @@ export class ClaudeRuntime {
       errors: Buffer[] = [];
     try {
       await new Promise<void>((resolve, reject) => {
-        const child = this.spawnProcess(executable, claudeFlags, {
+        const args = [...claudeFlags];
+        args[args.indexOf('--model') + 1] = requestedModel;
+        const child = this.spawnProcess(executable, args, {
           cwd,
           windowsHide: true,
           shell: false,
@@ -277,6 +299,14 @@ export class ClaudeRuntime {
     }
     const raw = Buffer.concat(stdout).toString('utf8');
     const stderr = Buffer.concat(errors).toString('utf8');
+    let normalization: 'none' | 'single-json-markdown-fence' = 'none';
+    try {
+      const parsed = JSON.parse(raw) as { result?: unknown };
+      if (typeof parsed.result === 'string')
+        normalization = claudeJsonContent(parsed.result).normalization;
+    } catch {
+      /* Original transport is retained before the parser reports the error. */
+    }
     const envelope = JSON.stringify({
       format: 'claude-cli-transport',
       complete: code !== null,
@@ -286,6 +316,7 @@ export class ClaudeRuntime {
       stdoutBytes: Buffer.concat(stdout).toString('base64'),
       stderrBytes: Buffer.concat(errors).toString('base64'),
       clientVersion: this.version,
+      normalization,
     });
     const token = environment.CLAUDE_CODE_OAUTH_TOKEN;
     if (token && envelope.includes(token)) {
@@ -333,6 +364,6 @@ export class ClaudeRuntime {
       throw new Error(
         'Claude returned an error or unexpected turn count. Original output retained.',
       );
-    return result.result;
+    return claudeJsonContent(result.result).text;
   }
 }

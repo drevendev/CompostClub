@@ -2,6 +2,14 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
+## 0.2.0-rc.5 — 2026-10-28
+
+- Add explicit Haiku/Sonnet/Opus selection, freeze the requested alias for every stage, invalidate old consent after selection changes and preserve reported model versions separately.
+- Show connection-check progress/success/failure and invalidate late/stale results when the token, executable, provider or model changes.
+- Extend removable, default-OFF operator Sentry metadata to desktop provider/configuration/auth/consent/stop/model/validation operations. Telemetry throws or hangs cannot retry or gate inference; prompts, outputs, raw errors and credentials remain excluded.
+- Recognize one complete outer JSON Markdown fence without changing values, preserve the exact original and disclose normalization. Keep Windows profile crypto metadata with protected credentials during an isolated profile transition.
+- Genuine bounded fictional RU evidence: Sonnet and Opus each committed one screened proposal; Haiku's initial fence failure and subsequent length-limit failure remain retained. Eight cumulative CLI stage calls; no further generation to obtain a pass. All three remain selectable; Haiku creative-format acceptance and owner usefulness remain open.
+
 ## 0.2.0-rc.4 — 2026-10-28
 
 - Add explicit manual Claude subscription generation through official Claude Code, protected setup-token entry, optional Groq BYOK, selected-context consent and requested/reported provider provenance. Remote scheduling and fallback remain disabled.

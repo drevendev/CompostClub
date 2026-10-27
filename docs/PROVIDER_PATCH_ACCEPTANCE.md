@@ -1,37 +1,45 @@
-# Provider patch acceptance · 0.2.0-rc.4
+# Provider patch acceptance · 0.2.0-rc.5
 
-Experimental source/PR candidate verified on 27–28 October 2026. The implementation and diagnostic gates below are complete; genuine remote creative acceptance remains open. No stable release or personal installation upgrade is claimed.
+Experimental candidate verified on 28 October 2026. Installed official Claude Code is the owner-selected connection. Genuine bounded results below supersede the earlier zero-call status without replacing earlier receipts. Haiku format acceptance and owner usefulness remain open; no stable release or personal installation upgrade is claimed.
 
-## Genuine remote inference
+## Genuine subscription evidence
 
-**Not run yet.** The owner has already created a Claude setup-token. A dedicated password field now accepts it and stores it in a separate OS-encrypted credential file. The real token has not been provided to this isolated preview during the checks recorded here. No personal idea was sent and no creative provider call was made. [Setup-token field and optional connection setup](PROVIDER_PATCH.md).
+The already installed official Claude Code **2.1.259** was selected in the existing isolated preview. Its real protected setup-token passed a no-generation authentication check. No client/model update, API-key billing switch or personal installation replacement occurred.
 
-Transport/process diagnostics use fictional data and clearly synthetic responses. They cannot close semantic-quality issues #82/#83 or the owner usefulness gate. A draft PR may be reviewed with this gate open; stable/release promotion is not claimed.
+The new protocol is frozen in `fixtures/public/claude-model-acceptance.json`: one fictional RU pair with six districts, two borrowed signal tokens, mandatory flooding duration, repayment/action loss and no new loan before repayment. The baseline allowed one attempt per Haiku/Sonnet/Opus and at most nine cumulative CLI stage calls. It used six:
 
-## Verification record
+| Requested alias | Reported model              | Calls | Result                                                                    |
+| --------------- | --------------------------- | ----- | ------------------------------------------------------------------------- |
+| Haiku           | `claude-haiku-4-5-20251001` | 2     | Both responses had an outer JSON Markdown fence; no card, credit retained |
+| Sonnet          | `claude-sonnet-5`           | 2     | One screened committed proposal                                           |
+| Opus            | `claude-opus-5`             | 2     | One screened committed proposal                                           |
 
-- `npm run verify`: 176 unit, 73 desktop/process/storage/operator tests, 3 real HTTP/privacy bridge tests and 1 source-packaging test; zero skips. TypeScript, ESLint and formatting passed.
-- `npm run docs:check`: 44 Markdown destinations checked. Production build, recorded standalone and Windows desktop packaging passed.
-- Genuine Chromium: recovery 8/8; P1/workflow/layout/growth 24/24; sample/offline 4/4. Pages-subpath/assets/worker/WASM smoke passed. Browser transport stubs remain labelled diagnostics.
-- Exact final portable: both provider consent dialogs, readable selected source text, serialized context disclosure, repeated Escape/dismiss/reopen, OS-encrypted sentinel Groq key and Claude setup-token save/remove, key absence from snapshots, 430px native/viewport, 200% text, forced colors and reduced motion passed. Renderer HTTP requests: 0; page errors: 0; creative calls: 0. Fictional originals survived close/reopen and launch remained paused.
-- An earlier no-creative-call CLI probe is historical diagnostic context only. The final UI/storage run does not inspect the owner’s installed login; owner-provided setup-token is the intended test authentication. Real child-process diagnostics prove bounded stdin/stdout/cancellation behavior using synthetic output, and are not counted as Claude-generated results.
+Manual reading of the Sonnet/Opus cores and examples found the declared counts, costs and triggers present. Proposed extra mechanics remain hypotheses. Model screening is fallible and is not owner usefulness approval.
 
-## Windows launch follow-up · #93
+After deterministic original-preserving wrapper compatibility and diagnostic tests, one separately recorded corrective Haiku regression used two more calls. JSON then parsed, but `interaction` exceeded the declared 240-code-point bound (340 then 403); a repaired contribution also exceeded its bound. No card was created and the credit stayed available. Both failed attempts and exact originals are retained. **Eight cumulative calls; stop.** The original baseline is not overwritten or claimed to pass. #97 tracks wrapper compatibility; #99 retains the negative length/quality result. All three models remain selectable; Haiku creative-format acceptance is not claimed.
 
-The original portable `93d9461b96f546dfea990c115de8eea95affc82eb495570c30617ecb3e0490e9` reproduced a cache access warning from the second direct launch process on a disposable fictional profile. The owner preview was functional but minimized. The old show/focus handler **did restore** the window in the controlled test, so the missing explicit restore is not claimed as the proven cause of the owner's earlier minimized state.
+An initial evaluation bootstrap failed before any model call because its fresh Windows crypto profile lacked the source profile key. Keeping protected `Local State` metadata with the isolated profile before Electron readiness restored decryption without plaintext token handling. The bootstrap failure remains retained (#98).
 
-Final corrected portable manifest SHA-256: `4d5f2a1ae87e39da7ff3e7228010e49f6c5a2eb5aa38ffc6a23055cc8bb00c36`.
+The existing operator-approved Compost Club Sentry configuration accepted **26 baseline + 10 corrective metadata envelopes**. This proves ingest acknowledgement, not a new stored-dashboard-event inspection. Actual SDK-envelope sentinel tests exclude prompt/source/output/raw-error/token/account/machine fields; automatic integrations/logs are disabled and IP is explicitly anonymized. A deterministic filter correction retains the observed major-version model IDs. Traces do not certify semantic usefulness or exact server billing.
 
-- Exact-package real Chromium/OS token-storage acceptance was repeated successfully on the corrected bytes, with zero creative calls, renderer HTTP requests or page errors; originals survived reopen.
-- The source-owned PowerShell launcher and actual generated Windows shortcut passed ordinary cold start, minimized-window restore, close-to-tray restore, repeated launch and two concurrent launchers. The existing PID was reused; readiness verified visible/non-minimized/rendered UI. Originals, zero jobs/calls and paused launch survived reopen.
-- A deliberate second **direct executable** launch still emits the original three Chromium cache warnings; that reproduction stderr is retained. The corrected shortcut avoids the second Chromium process. No Chromium-internal cache repair is claimed.
-- Cold launcher stderr retained no cache error. It did retain Electron's unrelated `safeStorage.isEncryptionAvailable` deprecation warning. No diagnostic output was filtered away; no cache, token or idea was deleted and no ACL/security setting changed.
-- Full verify passed: 176 unit + 73 desktop + 3 bridge + 1 packaging tests, zero skips. The HTTP/process checks require the host execution context; the restricted child-server attempt timed out and is not counted as a pass. Production build, recorded standalone and docs checks passed again. The 36 browser recovery/P1/offline checks above belong to the preceding provider acceptance; the follow-up adds genuine exact-package window/launcher acceptance.
+The older 36-call matched RU/EN/adversarial matrix has not run. These limited successes do not close #82/#83, Haiku #99 or owner usefulness. The PR remains draft.
 
-Recorded standalone HTML: 378315 bytes; SHA-256 `92de86b858cfb45e04a146d6a1207086ebb47f7570560d872bae4310db1938b6`. It is the unchanged, visibly recorded public-fixture sample, not proof of a remote model run.
+## RC5 verification
 
-The reviewed source archive identity is generated after this document is saved and is included in the local delivery identity. Historical RC2/RC3 receipts remain unchanged. No private database, credential, CLI binary, Ollama runtime or model weight is in the source selection.
+- Full verify: **176 unit + 85 desktop/process/storage/operator + 4 bridge/privacy + 1 packaging tests**, zero skips; TypeScript, ESLint and formatting passed.
+- Model pinning across both stages, consent invalidation, reopen, connection-check races and exact-original JSON-fence handling passed.
+- Throwing or indefinitely pending monitoring, broken setters and omitted callbacks cannot repeat inference, bypass validation or prevent completion. Invalid/disabled optional monitoring configuration leaves the application usable.
+- Exact final portable `8cf873208b5b3e986931a83147d4bd1c4404dd4e06ae5e16371d617ed016a0b2` passed hidden Chromium consent/IPC/OS-encryption/model-picker/narrow-layout checks. A separate check on the restored owner preview confirmed the protected token, real connection state `ready` with CLI 2.1.259, monitoring enabled, unchanged originals and zero added creative calls. Hidden-window tests avoid Windows screen control and do not claim new visible-window screenshots. An initial locator-screenshot attempt on a hidden window timed out; it is retained as a failed diagnostic, not counted as a pass.
+- Final build/recorded HTML/source ZIP/current-file/portable identities are verified in the delivery receipt. No private profile, credential, operator DSN, generated raw receipt or crypto metadata enters the reviewed source selection or portable application contents.
 
-![Manual Claude context preview on fictional data](images/provider-consent.png)
+## Historical RC4 evidence
 
-The genuine evaluation inputs are frozen in `fixtures/public/provider-acceptance.json`. Its explicitly opt-in Claude harness is bounded to one variant and 36 total calls, retains failures and never runs during verify. The set has not been sent to a remote model during this implementation. Semantic results, checker false positives and owner usefulness remain unclaimed.
+RC4 passed 176 unit + 73 desktop + 3 bridge + 1 packaging tests and 36 Chromium recovery/P1/sample-offline scenarios. Pages-subpath/worker/WASM smoke passed. Its exact portable covered consent, repeated dismissal, 430px/200%/forced colors, actual Windows encryption of fictional credentials, zero renderer HTTP/errors and preserved fictional originals.
+
+The Windows-launch regression (#93) reproduced cache errors in the second direct executable process while the existing writer stayed healthy. The old show/focus handler did restore a minimized window in the controlled test, so missing explicit restore is not claimed as the proven explanation for the owner's earlier minimized state. The corrected launcher/shortcut reused the existing authenticated writer and verified visible/restored/rendered readiness. Cold, minimized, tray-hidden and concurrent launch cases passed without cache deletion or ACL changes. A direct second executable launch can still reproduce Chromium's warnings; the supplied launcher avoids that process.
+
+RC4 corrected portable identity: `4d5f2a1ae87e39da7ff3e7228010e49f6c5a2eb5aa38ffc6a23055cc8bb00c36`. Its historical receipts remain unchanged. RC5 supersedes it; see the current delivery identity.
+
+The recorded standalone remains an explicitly labelled public-fixture demonstration, not evidence of live Claude generation. Its exact SHA-256 and reviewed source archive identity accompany every delivery.
+
+![Historical manual context preview on fictional data](images/provider-consent.png)

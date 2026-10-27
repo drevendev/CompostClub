@@ -18,6 +18,12 @@ export interface ImportPreview {
   }[];
 }
 export interface CoherentView {
+  telemetry?: { enabled: boolean };
+  claudeConnection?: {
+    state: 'unchecked' | 'checking' | 'ready' | 'failed';
+    model: string;
+    version: string;
+  };
   claudeToken?: { available: boolean; present: boolean };
   provider?: ProviderSnapshot & { credentialAvailable: boolean; credentialPresent: boolean };
   remotePreview?: {

@@ -1,5 +1,12 @@
 import { ClaudeRuntime } from './claude-runtime';
-import { isRemote } from '../src/domain/coherent/provider';
+import {
+  noop,
+  noopTrace,
+  type Observer,
+  type Trace,
+  type TraceMeta,
+} from '../server/observability.mjs';
+import { assertClaudeModel, CLAUDE_MODELS, isRemote } from '../src/domain/coherent/provider';
 import { GroqRuntime } from './groq-runtime';
 import { providerHash, providerSnapshot, validProvider } from '../src/domain/coherent/provider';
 import { lstat, readFile, realpath, readdir, unlink, rmdir, writeFile } from 'node:fs/promises';
@@ -102,6 +109,16 @@ export class CoherentController {
   private exportStatus: CoherentView['exportStatus'] = null;
   private currentId: string | null = null;
   private stopUnconfirmed = false;
+  private claudeCheckEpoch = 0;
+  private claudeCheck: {
+    state: 'unchecked' | 'checking' | 'ready' | 'failed';
+    model: string;
+    version: string;
+  } = {
+    state: 'unchecked',
+    model: '',
+    version: '',
+  };
   constructor(
     readonly store: CoherentStore,
     private services: DesktopServices,
@@ -109,11 +126,113 @@ export class CoherentController {
     readonly runtime = new OwnedOllama(),
     readonly remote = new GroqRuntime(),
     readonly claude = new ClaudeRuntime(store.directory, () => store.state.claudeExecutable),
+    private telemetry: Observer = noop,
   ) {
     this.lifecycle('launch', 0, '');
   }
+  private async observe<T>(meta: TraceMeta, fn: (trace: Trace) => T | Promise<T>): Promise<T> {
+    let pending: Promise<T> | undefined;
+    let markStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+    const once = (trace: Trace) =>
+      (pending ??= Promise.resolve().then(() => {
+        const safe: Trace = {
+          tokens: (input, output) => {
+            try {
+              trace.tokens(input, output);
+            } catch {
+              /* Optional. */
+            }
+          },
+          httpStatus: (status) => {
+            try {
+              trace.httpStatus(status);
+            } catch {
+              /* Optional. */
+            }
+          },
+          reportedModel: (model) => {
+            try {
+              trace.reportedModel(model);
+            } catch {
+              /* Optional. */
+            }
+          },
+          outcome: (result) => {
+            try {
+              trace.outcome(result);
+            } catch {
+              /* Optional. */
+            }
+          },
+          validate: (validate) => {
+            let called = false;
+            const once = () => {
+              if (called) return;
+              called = true;
+              return validate();
+            };
+            try {
+              trace.validate(once);
+            } catch {
+              /* Parser outcome is retained by its caller. */
+            }
+            if (!called)
+              try {
+                once();
+              } catch {
+                /* Same parser error handling. */
+              }
+          },
+        };
+        markStarted();
+        return fn(safe);
+      }));
+    try {
+      // Do not await the monitoring promise: it may fail or never settle.
+      void this.telemetry.run(meta, once).catch(() => {});
+    } catch {
+      // Preserve the single business result/error even if instrumentation fails.
+    }
+    if (!pending) {
+      await Promise.race([started, new Promise<void>((resolve) => setImmediate(resolve))]);
+    }
+    return pending ?? once(noopTrace);
+  }
+  private resetClaudeCheck() {
+    this.claudeCheckEpoch++;
+    this.claudeCheck = { state: 'unchecked', model: '', version: '' };
+  }
+  private traceMeta(
+    operation: string,
+    phase: string,
+    type: TraceMeta['type'] = 'control',
+    job?: Job,
+  ): TraceMeta {
+    let provider: ReturnType<typeof providerSnapshot>;
+    try {
+      provider =
+        job?.provider ??
+        providerSnapshot(this.store.state.provider, this.store.state.runtime.model);
+    } catch {
+      return { model: 'other', operation, phase, type };
+    }
+    return {
+      model: job?.model ?? provider.requestedModel,
+      system:
+        provider.kind === 'claude' ? 'anthropic' : provider.kind === 'groq' ? 'groq' : 'ollama',
+      operation,
+      phase,
+      type,
+      contract: job?.promptVersion ?? 'provider-1',
+    };
+  }
   private async releaseResources() {
-    await Promise.all([this.runtime.release(), this.claude.release()]);
+    await this.observe(this.traceMeta('release', 'release'), () =>
+      Promise.all([this.runtime.release(), this.claude.release()]),
+    );
   }
   subscribe(fn: () => void) {
     this.listeners.add(fn);
@@ -163,6 +282,8 @@ export class CoherentController {
     const pending = this.pendingRemote;
     const pendingJob = pending?.workspace.jobs.find((j) => j.id === pending.job);
     return {
+      telemetry: { enabled: this.telemetry.enabled },
+      claudeConnection: { ...this.claudeCheck },
       claudeToken: {
         available: this.claude.tokenStore?.available() ?? false,
         present: this.claude.tokenStore?.has() ?? false,
@@ -388,6 +509,70 @@ export class CoherentController {
     operatorConfirmed = false,
     previewOnly = false,
   ): Promise<CoherentView> {
+    const op = input && typeof input === 'object' ? (input as CoherentCommand).op : '';
+    if (
+      previewOnly ||
+      ![
+        'configureProvider',
+        'configureClaude',
+        'configureClaudeModel',
+        'checkClaude',
+        'setClaudeToken',
+        'removeClaudeToken',
+        'setGroqCredential',
+        'removeGroqCredential',
+        'confirmRemote',
+        'cancelRemote',
+        'pause',
+        'resume',
+      ].includes(op)
+    )
+      return this.executeCommand(input, operatorConfirmed, previewOnly);
+    const phase =
+      op === 'checkClaude'
+        ? 'authentication'
+        : op === 'configureClaudeModel'
+          ? 'model_selection'
+          : ['confirmRemote', 'cancelRemote'].includes(op)
+            ? 'consent'
+            : 'configuration';
+    const meta = this.traceMeta(op, phase);
+    const c = input as CoherentCommand;
+    if (
+      [
+        'configureClaude',
+        'configureClaudeModel',
+        'checkClaude',
+        'setClaudeToken',
+        'removeClaudeToken',
+      ].includes(op)
+    ) {
+      meta.system = 'anthropic';
+      if (this.store.state.provider?.kind !== 'claude')
+        meta.model = op === 'checkClaude' ? 'sonnet' : 'other';
+    }
+    if (['setGroqCredential', 'removeGroqCredential'].includes(op)) {
+      meta.system = 'groq';
+      meta.model = providerSnapshot({ kind: 'groq', revision: 1 }, '').requestedModel;
+    }
+    if (op === 'configureClaudeModel' && CLAUDE_MODELS.some((m) => m.id === c.model))
+      meta.model = c.model as string;
+    if (op === 'configureProvider' && ['local', 'claude', 'groq'].includes(c.kind as string)) {
+      const provider = providerSnapshot(
+        { kind: c.kind as 'local' | 'claude' | 'groq', revision: 1 },
+        this.store.state.runtime.model,
+      );
+      meta.system =
+        provider.kind === 'claude' ? 'anthropic' : provider.kind === 'groq' ? 'groq' : 'ollama';
+      meta.model = provider.requestedModel;
+    }
+    return this.observe(meta, () => this.executeCommand(input, operatorConfirmed, previewOnly));
+  }
+  private async executeCommand(
+    input: unknown,
+    operatorConfirmed = false,
+    previewOnly = false,
+  ): Promise<CoherentView> {
     if (
       !input ||
       typeof input !== 'object' ||
@@ -430,6 +615,7 @@ export class CoherentController {
           throw new Error('Unsupported provider.');
         await this.pause();
         this.pendingRemote = null;
+        this.resetClaudeCheck();
         this.change((w) => {
           w.provider = {
             kind: c.kind as 'local' | 'groq' | 'claude',
@@ -438,10 +624,47 @@ export class CoherentController {
         });
         break;
       }
-      case 'checkClaude':
+      case 'checkClaude': {
         if (this.active || this.pausing) throw new Error('Wait for active work.');
-        await this.claude.start();
+        if (this.claudeCheck.state === 'checking')
+          throw new Error('Проверка входа уже выполняется.');
+        const model =
+          this.store.state.provider?.kind === 'claude'
+            ? providerSnapshot(this.store.state.provider, this.store.state.runtime.model)
+                .requestedModel
+            : 'sonnet';
+        const epoch = ++this.claudeCheckEpoch;
+        this.claudeCheck = { state: 'checking', model, version: '' };
+        this.emit();
+        try {
+          await this.claude.start(model);
+          if (epoch === this.claudeCheckEpoch)
+            this.claudeCheck = { state: 'ready', model, version: this.claude.version };
+        } catch (e) {
+          if (epoch === this.claudeCheckEpoch)
+            this.claudeCheck = { state: 'failed', model, version: this.claude.version };
+          this.emit();
+          throw e;
+        }
         break;
+      }
+      case 'configureClaudeModel': {
+        if (this.store.state.provider?.kind !== 'claude')
+          throw new Error('Сначала выберите подключение Claude.');
+        const model = text(c.model, 80);
+        assertClaudeModel(model);
+        await this.pause();
+        this.pendingRemote = null;
+        this.resetClaudeCheck();
+        this.change((w) => {
+          w.provider = {
+            kind: 'claude',
+            revision: (w.provider?.revision ?? 0) + 1,
+            model,
+          };
+        });
+        break;
+      }
       case 'configureClaude': {
         const executable = text(c.executable, 32768);
         if (!path.isAbsolute(executable) || path.extname(executable).toLowerCase() !== '.exe')
@@ -455,6 +678,7 @@ export class CoherentController {
           throw new Error('Выберите обычный локальный файл.');
         await this.pause();
         this.pendingRemote = null;
+        this.resetClaudeCheck();
         this.change((w) => {
           w.claudeExecutable = executable;
           if (w.provider) w.provider.revision++;
@@ -464,12 +688,14 @@ export class CoherentController {
       case 'setClaudeToken':
         await this.pause();
         this.pendingRemote = null;
+        this.resetClaudeCheck();
         if (!this.claude.tokenStore) throw new Error('Защищённое хранилище токена недоступно.');
         await this.claude.tokenStore.set(text(c.token, 4096));
         break;
       case 'removeClaudeToken':
         await this.pause();
         this.pendingRemote = null;
+        this.resetClaudeCheck();
         if (!this.claude.tokenStore) throw new Error('Защищённое хранилище токена недоступно.');
         await this.claude.tokenStore.remove();
         break;
@@ -501,7 +727,8 @@ export class CoherentController {
           throw new Error('Подтвердите передачу выбранного контекста провайдеру.');
         if (this.active || this.pausing || this.error || this.store.state.revision !== p.revision)
           throw new Error('Состояние изменилось. Просмотрите новый состав контекста.');
-        if (p.workspace.provider?.kind === 'claude') await this.claude.start();
+        if (p.workspace.provider?.kind === 'claude')
+          await this.claude.start(p.workspace.jobs.find((j) => j.id === p.job)!.model);
         else await this.remote.credentials.get();
         if ((this.store.state.requests ?? []).some((r) => r.id === 'remote:' + token)) break;
         this.change((w) => {
@@ -1601,6 +1828,19 @@ export class CoherentController {
     signal: AbortSignal,
     repair = '',
   ): Promise<string> {
+    const j = this.job(id);
+    return this.observe(
+      this.traceMeta(j.operation, s + (repair ? '-repair' : ''), 'inference', j),
+      (trace) => this.callTransport(id, s, signal, repair, trace),
+    );
+  }
+  private async callTransport(
+    id: string,
+    s: 'generating' | 'screening',
+    signal: AbortSignal,
+    repair: string,
+    trace: Trace,
+  ): Promise<string> {
     const j = this.job(id),
       special = j.operation === 'dna' || j.operation === 'preferences';
     const prompt =
@@ -1703,6 +1943,7 @@ export class CoherentController {
                 d.doneReason = response!.done_reason ?? null;
               }
             });
+          if (response) trace.tokens(response.prompt_eval_count, response.eval_count);
         },
         () => {
           if (signal.aborted || this.pausing || this.stopUnconfirmed)
@@ -1748,21 +1989,26 @@ export class CoherentController {
           });
           this.emit();
         },
-        { tokens, timeout: STAGE_TIMEOUT_MS },
+        { tokens, timeout: STAGE_TIMEOUT_MS, requestedModel: j.model },
         ...(isRemote(j.provider)
           ? [
-              (o: import('./groq-runtime').RemoteObservation) =>
+              (o: import('./groq-runtime').RemoteObservation) => {
+                trace.tokens(o.promptTokens, o.outputTokens);
+                trace.httpStatus(o.httpStatus);
+                trace.reportedModel(o.reportedModel);
                 this.change((w) => {
                   const d = w.jobs.find((j) => j.id === id)!.dispatches!.at(-1)!;
                   d.remote = o;
                   d.promptTokensObserved = o.promptTokens;
                   d.outputTokensObserved = o.outputTokens;
                   d.doneReason = o.finishReason;
-                }),
+                });
+              },
             ]
           : []),
       );
     } catch (e) {
+      trace.outcome(signal.aborted ? 'cancelled' : 'transport_error');
       callError = message(e);
       throw e;
     } finally {
@@ -1791,8 +2037,31 @@ export class CoherentController {
     parse: (raw: string, j: Job) => T,
   ): Promise<T> {
     let raw = await this.call(id, s, signal);
+    const validate = (value: string) =>
+      this.observe(
+        this.traceMeta(this.job(id).operation, s + '-validation', 'validation', this.job(id)),
+        (trace) => {
+          let result: T | undefined,
+            invalid: unknown,
+            failed = false;
+          trace.validate(() => {
+            try {
+              result = parse(value, this.job(id));
+            } catch (e) {
+              failed = true;
+              invalid = e;
+              throw e;
+            }
+          });
+          if (failed) {
+            trace.outcome('invalid');
+            throw invalid;
+          }
+          return result as T;
+        },
+      );
     try {
-      return parse(raw, this.job(id));
+      return await validate(raw);
     } catch (e) {
       const primary = message(e);
       this.change((w) => {
@@ -1809,7 +2078,7 @@ export class CoherentController {
       }
       try {
         raw = await this.call(id, s, signal, this.job(id).admission?.repairInstruction ?? primary);
-        return parse(raw, this.job(id));
+        return await validate(raw);
       } catch (repairError) {
         this.change((w) => {
           w.jobs.find((j) => j.id === id)!.repairRefusal = message(repairError);
@@ -1826,7 +2095,7 @@ export class CoherentController {
         throw new Error('Remote job needs fresh session consent.');
       const model = remote
         ? this.job(id).provider?.kind === 'claude'
-          ? await this.claude.start()
+          ? await this.claude.start(this.job(id).model)
           : await this.remote.start()
         : await this.runtime.start(this.store.state.runtime);
       if (signal.aborted) throw new Error('Cancelled during model startup.');
@@ -2103,6 +2372,19 @@ export class CoherentController {
       if (this.store.emergency.length)
         throw new Error('Shutdown preparation could not be persisted.');
       this.store.close();
+      let flushTimer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          this.telemetry.flush().catch(() => false),
+          new Promise((resolve) => {
+            flushTimer = setTimeout(resolve, 2000);
+          }),
+        ]);
+      } catch {
+        /* Optional monitoring never blocks a safe shutdown. */
+      } finally {
+        if (flushTimer) clearTimeout(flushTimer);
+      }
     } catch (e) {
       this.lifecycle('shutdown failed', Date.now() - start, message(e));
       throw e;

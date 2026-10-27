@@ -1,4 +1,5 @@
-import { isRemote } from '../domain/coherent/provider';
+import { CLAUDE_MODELS, isRemote } from '../domain/coherent/provider';
+import { version } from '../../package.json';
 import { createRoot } from 'react-dom/client';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { CoherentAPI, CoherentCommand, CoherentView } from '../../desktop/coherent-types';
@@ -515,7 +516,7 @@ function App() {
         </nav>
         <div className="sidebar-end">
           <p>
-            v0.2 · экспериментальный профиль
+            v{version} · экспериментальный профиль
             <br />
             Локальное хранение · внешняя обработка по выбору
           </p>
@@ -1304,20 +1305,52 @@ function App() {
                 onChange={(e) => void send({ op: 'configureProvider', kind: e.target.value })}
               >
                 <option value="local">Локально · установленная Ollama</option>
-                <option value="claude">Claude Code · ваша подписка · Sonnet</option>
+                <option value="claude">Claude Code · ваша подписка</option>
                 <option value="groq">Groq API · необязательный отдельный сервис</option>
               </select>
             </label>
             <p>
               Выбрано:{' '}
               {view.provider?.kind === 'claude'
-                ? 'Claude Code · подписка · Sonnet · только вручную'
+                ? 'Claude · ' + view.provider.requestedModel + ' · только вручную'
                 : view.provider?.kind === 'groq'
                   ? 'Groq · openai/gpt-oss-20b · только вручную'
                   : 'локальная модель'}
               . Квоты и условия внешнего сервиса зависят от вашего аккаунта; платный тариф не
               подключается.
             </p>
+            {view.provider?.kind === 'claude' && (
+              <>
+                <label>
+                  Модель Claude
+                  <select
+                    aria-label="Модель Claude"
+                    value={view.provider.requestedModel}
+                    disabled={view.busy}
+                    onChange={(e) =>
+                      void send({ op: 'configureClaudeModel', model: e.target.value })
+                    }
+                  >
+                    {!CLAUDE_MODELS.some((m) => m.id === view.provider!.requestedModel) && (
+                      <option value={view.provider.requestedModel}>
+                        {view.provider.requestedModel} · прежний алиас
+                      </option>
+                    )}
+                    {CLAUDE_MODELS.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label} · {m.purpose}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p>
+                  Запрос: {view.provider.requestedModel}. Модель закрепляется для всего задания,
+                  включая проверку и исправление формата. Смена модели отменяет прежнее
+                  подтверждение отправки. Версию определяет установленный Claude Code; фактически
+                  ответившая модель сохраняется отдельно. Доступ зависит от вашего аккаунта.
+                </p>
+              </>
+            )}
             <h3>Claude через вашу подписку</h3>
             <p>
               Если setup-token уже готов, вставьте его здесь. Он сохраняется отдельно от идей,
@@ -1358,9 +1391,27 @@ function App() {
             >
               Удалить setup-token
             </button>
-            <button disabled={view.busy} onClick={() => void send({ op: 'checkClaude' })}>
-              Проверить вход Claude без генерации
+            <button
+              disabled={view.busy || view.claudeConnection?.state === 'checking'}
+              onClick={() => void send({ op: 'checkClaude' })}
+            >
+              {view.claudeConnection?.state === 'checking'
+                ? 'Проверяем вход Claude…'
+                : 'Проверить вход Claude без генерации'}
             </button>
+            <p role="status">
+              {view.claudeConnection?.state === 'ready'
+                ? `Вход Claude подтверждён · ${view.claudeConnection.model} · Claude Code ${view.claudeConnection.version}. Генерация не запускалась.`
+                : view.claudeConnection?.state === 'checking'
+                  ? 'Проверяем установленный Claude Code и авторизацию…'
+                  : view.claudeConnection?.state === 'failed'
+                    ? 'Проверка входа не прошла. Причина указана в сообщении об ошибке.'
+                    : 'Вход в этом сеансе ещё не проверен.'}
+            </p>
+            <p>
+              Телеметрия: {view.telemetry?.enabled ? 'включена оператором' : 'выключена'}.
+              Технические метаданные провайдера, модели, этапов, времени, расхода токенов и ошибок.
+            </p>
             <Form
               submit={(f) =>
                 void send({ op: 'configureClaude', executable: val(f, 'claudeExecutable') })

@@ -1,4 +1,4 @@
-# Manual providers · 0.2.0-rc.4 candidate
+# Manual providers · 0.2.0-rc.5 candidate
 
 This patch implements #91 with the owner's 27 October clarification: **Claude through the owner's subscription is the primary external connection**. Groq is an optional separate API service. The updater, arbitrary endpoints, remote scheduling and mixed-provider stages remain separate work. The preview launch repair is tracked in #93.
 
@@ -14,17 +14,25 @@ Chromium's cache holds temporary interface/graphics files, separately from ideas
 
 ## Claude subscription setup
 
+Owner clarification, 28 October: the installed official Claude Code is the chosen connection. A subscription setup-token is not presented as a general third-party HTTP API key. No API billing path is silently substituted. The explicit model picker offers Haiku, Sonnet and Opus; their official CLI aliases resolve according to the installed client/provider. A requested alias stays fixed across generation, screening and repair, while each actually reported model version is recorded separately. Choosing another model cancels the earlier context confirmation. No automatic client update or model fallback occurs.
+
 1. Install official Claude Code yourself, or use the existing installation. Compost Club never bundles, patches or downloads it. The Windows adapter requires the official `claude.exe`, version 2.1.259 or later.
 2. If you already created a setup-token, enter it in **Settings → Claude subscription → Claude setup-token → Save setup-token securely**. It is stored separately from ideas using operating-system encryption. Do not paste it into a chat, source file or `.env`. Ordinary `claude auth login` is an alternative; a new login is not required merely because you already have a setup-token. The adapter does not activate API billing.
 3. Open desktop **Settings → Generation connection → Claude Code**. The normal npm installation is detected; another official native installation can be selected by its absolute executable path.
-4. Choose **Check Claude login without generation**. This checks CLI version/authentication and makes no creative model call. A missing login is an actionable refusal, not a successful inference receipt.
+4. Select **Model Claude → Haiku / Sonnet / Opus**, then choose **Check Claude login without generation**. The UI shows checking, a real success including the observed CLI version, or failure. Token/path/provider/model changes and restart invalidate the successful state; a late response cannot certify changed settings. This makes no creative model call and does not prove access to every model or creative usefulness.
 5. Add/select fictional test sources, then use Eureka, manual pairing, development or recheck. Read the complete context preview, including donor material and any retained draft. Authorize this one task explicitly.
 
 For an operator-owned script environment, official `claude setup-token` may provide `CLAUDE_CODE_OAUTH_TOKEN` to the application process. The optional UI field stores it in a separate OS-encrypted credential file; environment-based usage remains available. Neither path copies it into the idea database, command arguments, backups or exports. The adapter accepts subscription authentication, not an implicit switch to a paid API key. Account and organization policies still apply.
 
 Claude Code runs as published by Anthropic. Each stage receives text through stdin in an isolated application directory. The invocation disables tools, MCP servers, skills, customizations, hooks, session persistence, auto-updates, telemetry, API retries and agent continuation; it limits the CLI to one turn. No project folder, extra directories, resume ID, fallback model or executable idea content is supplied. An unexpected turn count is a failure. Known managed-policy files require a separate review because application flags cannot override administrator policy. This is a bounded CLI configuration, not an OS security sandbox.
 
-The requested model alias is `sonnet`; the actually reported model is retained separately when present. No weight digest is invented. The application counts each dispatched CLI stage conservatively even if cancellation leaves remote usage uncertain.
+The requested model alias is explicitly selected; historical jobs with `sonnet` remain unchanged. No weight digest is invented. The application counts each dispatched CLI stage conservatively even if cancellation leaves remote usage uncertain. One complete outer JSON/unlabelled Markdown fence can be removed from the parser view only when its whole interior is one JSON object. Transport/stdout and original result text remain exact, with `single-json-markdown-fence` disclosed. Explanatory prose, multiple blocks, arrays, malformed JSON and schema violations are not repaired silently.
+
+## Desktop metadata tracing
+
+The existing optional Sentry adapter now covers provider/model configuration, authentication, consent/cancellation, release, generation/screening and structural validation. It records known model names/aliases, phases, timing, reported usage and safe status categories. No source text, prompt, draft, output, raw error, account identifier, request content or credential is attached. A syntax pass and a model self-check still do not certify semantic quality.
+
+Monitoring stays OFF without operator opt-in. In a private data profile, an operator may create `operator-telemetry.private.json` with `format: "compost-operator-telemetry-1"`, `enabled: true` and that Compost Club project's `dsn`. This file is never included in idea backups, reading exports, source archives or portable contents. Startup environment `COMPOST_SENTRY_ENABLED=1`/`SENTRY_DSN` is also supported. Profile opt-out/invalid configuration fails to monitoring-OFF without blocking the application; restart after changing configuration. Settings discloses whether monitoring is enabled. Throws, broken setters, omitted callbacks and indefinitely pending instrumentation cannot repeat or gate business operations. See [removal and privacy boundaries](OPTIONAL_SERVICES.md).
 
 ## Optional Groq setup
 
@@ -50,6 +58,8 @@ The application neither creates a provider account nor pays for usage. Keys can 
 - Restore retains the installation's provider settings, CLI/runtime paths and charged calls. Historical jobs retain their original contracts and judgments. New provider metadata does not retroactively verify imported claims.
 
 ## Acceptance boundaries
+
+RC5's new three-model protocol is `fixtures/public/claude-model-acceptance.json`, with the opt-in `scripts/run-claude-model-evaluation.mjs` helper. Its initial six calls plus one corrective two-call Haiku regression used eight of the nine-call ceiling. Sonnet/Opus produced screened proposals; Haiku still violated length bounds. These attempts are complete and retained, not a protocol to rerun until success. A further model variant requires its own recorded inputs/budget. The initial crypto bootstrap failure and both Haiku failures remain preserved. The separate older 36-call matrix below has not been run.
 
 Automated diagnostics use explicitly fictional sources, sentinel credentials and fake transports/processes. They test Unicode schema/parser consistency, repeated echo failures, preview/consent races, cancellation, errors, debt, provenance and backup/export boundaries. They never count as genuine Claude/Groq results.
 
