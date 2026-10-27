@@ -43,6 +43,8 @@ await mkdir(app, { recursive: true });
 await cp('dist-desktop', path.join(app, 'dist-desktop'), { recursive: true });
 await cp('dist-desktop-ui', path.join(app, 'dist-desktop-ui'), { recursive: true });
 await cp('scripts/desktop-operator.mjs', path.join(directory, 'operator.mjs'));
+await cp('scripts/start-desktop.ps1', path.join(directory, 'Start-CompostClub.ps1'));
+await cp('scripts/create-desktop-shortcut.ps1', path.join(directory, 'Create-Shortcut.ps1'));
 for (const file of ['LICENSE', 'THIRD_PARTY_NOTICES.md']) await cp(file, path.join(app, file));
 await mkdir(path.join(app, 'licenses'), { recursive: true });
 for (const file of ['GolosText-OFL.txt', 'Literata-OFL.txt'])
@@ -62,7 +64,7 @@ await writeFile(
   path.join(directory, 'START-HERE.txt'),
   'Compost Club ' +
     pkg.version +
-    ' — experimental local Windows application\n\nCreative usefulness is not certified; inspect filtered drafts and make your own review decisions.\nStart CompostClub.exe. No terminal or Node installation is needed for this portable application.\nThe first launch is paused. Select your installed Ollama executable, model directory and an empty export folder in Settings. No model is downloaded.\nKeep a closed-app copy of your previous data directory and executable before upgrading. Schema 3 needs this new executable; use the preserved old copy for rollback.\nClose the window to keep an enabled experiment in the tray; use Pause before gaming, and Exit to stop the application.\nYour data is in the operating-system application-data directory, outside this package. Full private backups are separate from Codex exports. Font licences are in resources/app/licenses.\n',
+    ' — experimental Windows application\n\nCreative usefulness is not certified; inspect filtered drafts and make your own review decisions.\nStart CompostClub.exe. No terminal or Node installation is needed for this portable application.\nThe first launch is paused. Choose local Ollama or an explicitly authorized manual provider in Settings. No model is downloaded. For an existing Claude setup-token, select Claude Code and save it in the protected setup-token field.\nStart-CompostClub.ps1 can restore an existing window through the authenticated local pipe and checks rendered window readiness. Create-Shortcut.ps1 creates a normal Windows shortcut for a chosen separate data profile. Startup diagnostics are retained in that profile under launch-logs.\nKeep a closed-app copy of your previous data directory and executable before upgrading. Schema 3 needs this new executable; use the preserved old copy for rollback.\nClose the window to keep an enabled experiment in the tray; use Pause before gaming, and Exit to stop the application.\nYour data is in the operating-system application-data directory, outside this package. Full private backups are separate from Codex exports. Font licences are in resources/app/licenses.\n',
 );
 const files = {};
 async function walk(dir, relative = '') {

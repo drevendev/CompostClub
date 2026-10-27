@@ -2,6 +2,13 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
+## 0.2.0-rc.4 — 2026-10-28
+
+- Add explicit manual Claude subscription generation through official Claude Code, protected setup-token entry, optional Groq BYOK, selected-context consent and requested/reported provider provenance. Remote scheduling and fallback remain disabled.
+- Preserve failed raw evidence, uncertain call debt and atomic card/pair/credit commits; align Unicode validation, reject fresh instruction echoes and retain honest empty limitations.
+- Add a PowerShell-compatible preview launcher and Windows shortcut with authenticated existing-window reuse, explicit restore and rendered readiness checks. Preserve startup diagnostics and existing caches/data.
+- Keep genuine provider/semantic acceptance open; exact-package synthetic credential/UI and window-launch diagnostics do not certify creative usefulness. See the [provider acceptance record](docs/PROVIDER_PATCH_ACCEPTANCE.md).
+
 ## 0.2.0-rc.1 — 2026-10-25
 
 - Add schema-3 named desktop gardens, complete source/file originals and revision history, reproducible selected context, scoped aliases, approved DNA/preferences and explicit supported reference facts.

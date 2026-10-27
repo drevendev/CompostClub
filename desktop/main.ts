@@ -43,10 +43,16 @@ if (!single) {
     controller: DesktopController | undefined,
     operator: OperatorHandle | undefined,
     tray: Tray | undefined,
-    closing = false;
+    closing = false,
+    requestedShow = false;
   const show = () => {
     if (closing) return;
+    if (!app.isReady() || !controller) {
+      requestedShow = true;
+      return;
+    }
     if (!window || window.isDestroyed()) createWindow();
+    if (window!.isMinimized()) window!.restore();
     window!.show();
     window!.focus();
   };
@@ -254,6 +260,7 @@ if (!single) {
         ),
       );
       createWindow();
+      if (requestedShow) show();
       const bitmap = Buffer.alloc(20 * 20 * 4);
       for (let y = 0; y < 20; y++)
         for (let x = 0; x < 20; x++)
@@ -327,6 +334,22 @@ if (!single) {
           return controller!.command(command, confirmed);
         },
         () => app.quit(),
+        async () => {
+          show();
+          const current = window;
+          if (!current || current.isDestroyed()) throw new Error('Window is unavailable.');
+          return {
+            pid: process.pid,
+            visible: current.isVisible(),
+            minimized: current.isMinimized(),
+            focused: current.isFocused(),
+            ready:
+              !current.webContents.isLoadingMainFrame() &&
+              (await current.webContents.executeJavaScript(
+                'Boolean(document.querySelector(".desktop-app"))',
+              )) === true,
+          };
+        },
       );
       tray.on('double-click', show);
       ipcMain.handle('compost:command', async (event, input: unknown) => {

@@ -57,10 +57,18 @@ const safe = new Set([
 export interface OperatorHandle {
   close(): Promise<void>;
 }
+export interface WindowReadiness {
+  pid: number;
+  visible: boolean;
+  minimized: boolean;
+  focused: boolean;
+  ready: boolean;
+}
 export async function startOperator(
   directory: string,
   execute: (command: CoherentCommand, confirmed: boolean) => Promise<CoherentView>,
   quit: () => void,
+  showWindow?: () => Promise<WindowReadiness>,
 ): Promise<OperatorHandle> {
   await mkdir(directory, { recursive: true });
   const token = randomBytes(32).toString('hex'),
@@ -119,6 +127,11 @@ export async function startOperator(
             if (c.op === 'exit') {
               reply({ ok: true, status: 'shutdown requested' });
               setTimeout(quit, 50).unref();
+              return;
+            }
+            if (c.op === 'showWindow') {
+              if (!showWindow) throw new Error('This application cannot report window readiness.');
+              reply({ ok: true, window: await showWindow() });
               return;
             }
             if (!safe.has(c.op))

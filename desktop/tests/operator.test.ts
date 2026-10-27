@@ -27,7 +27,8 @@ void test('local operator requires session capability and explicit exchange cons
     autostart: false,
   };
   const calls: { op: string; confirmed: boolean }[] = [];
-  let quit = 0;
+  let quit = 0,
+    shown = 0;
   const handle = await startOperator(
     dir,
     async (c, confirmed) => {
@@ -37,6 +38,16 @@ void test('local operator requires session capability and explicit exchange cons
     },
     () => {
       quit++;
+    },
+    () => {
+      shown++;
+      return Promise.resolve({
+        pid: 123,
+        visible: true,
+        minimized: false,
+        focused: true,
+        ready: true,
+      });
     },
   );
   const config = JSON.parse(await readFile(path.join(dir, OPERATOR_FILE), 'utf8')) as {
@@ -58,6 +69,19 @@ void test('local operator requires session capability and explicit exchange cons
     });
   try {
     assert.equal((await request({ op: 'snapshot' }, false, '0'.repeat(64))).ok, false);
+    assert.equal(calls.length, 0);
+    assert.equal((await request({ op: 'showWindow' }, false, '0'.repeat(64))).ok, false);
+    assert.equal(shown, 0);
+    const window = await request({ op: 'showWindow' });
+    assert.equal(window.ok, true);
+    assert.deepEqual(window.window, {
+      pid: 123,
+      visible: true,
+      minimized: false,
+      focused: true,
+      ready: true,
+    });
+    assert.equal(shown, 1);
     assert.equal(calls.length, 0);
     assert.equal((await request({ op: 'pickExecutable' }, true)).ok, false);
     assert.equal(calls.length, 0);

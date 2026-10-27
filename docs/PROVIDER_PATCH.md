@@ -1,8 +1,16 @@
 # Manual providers · 0.2.0-rc.4 candidate
 
-This patch implements #91 with the owner's 27 October clarification: **Claude through the owner's subscription is the primary external connection**. Groq is an optional separate API service. The launcher/updater, arbitrary endpoints, remote scheduling and mixed-provider stages remain separate work.
+This patch implements #91 with the owner's 27 October clarification: **Claude through the owner's subscription is the primary external connection**. Groq is an optional separate API service. The updater, arbitrary endpoints, remote scheduling and mixed-provider stages remain separate work. The preview launch repair is tracked in #93.
 
 This is an experimental source/PR candidate. A successful schema check or synthetic transport test is not model quality evidence. Local Gemma RU issues #82/#83 and the owner usefulness gate remain open. No existing installation or personal garden is replaced by building this candidate.
+
+## Windows preview launch
+
+Open the supplied Windows shortcut. It runs the packaged `Start-CompostClub.ps1` using the preview's explicit, separate data directory. No command needs to be pasted into a terminal. The script reuses an already-running application through its authenticated local pipe and checks that its window is visible, restored and rendered. An older running application without this protocol must be exited through its tray menu before reopening the shortcut; the launcher never kills it or starts another writer blindly.
+
+For scripting, run the `.ps1` file with PowerShell's `&` operator and its `-DataDirectory` parameter. Batch-file contents such as `@echo off` are not PowerShell commands. The package also includes `Create-Shortcut.ps1` for generating a shortcut with explicit `-PackageDirectory`, `-DataDirectory` and new `-ShortcutPath` parameters. Normal direct `CompostClub.exe` launch remains available.
+
+Chromium's cache holds temporary interface/graphics files, separately from ideas and protected provider tokens. A deliberate second direct executable launch reproduced cache access warnings from the exiting second process while the original writer stayed healthy. The shortcut avoids that redundant process. Startup stdout/stderr remains in the selected profile's `launch-logs`; no cache is deleted, access controls changed or execution policy bypassed. A process existing alone is not accepted as proof that a window opened.
 
 ## Claude subscription setup
 
