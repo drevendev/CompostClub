@@ -1,4 +1,5 @@
 import type { CredentialStore } from './credentials';
+import { reflectsCredential } from './credentials';
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
 import { lstat, mkdir, realpath } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -319,7 +320,7 @@ export class ClaudeRuntime {
       normalization,
     });
     const token = environment.CLAUDE_CODE_OAUTH_TOKEN;
-    if (token && envelope.includes(token)) {
+    if (token && (reflectsCredential(raw, token) || reflectsCredential(stderr, token))) {
       this.sensitiveEmergency.push(envelope);
       await this.saveSensitiveEmergency();
       onTransport(

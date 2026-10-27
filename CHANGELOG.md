@@ -2,6 +2,12 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
+## 0.2.0-rc.6 — 2026-10-28
+
+- Recheck the exact pending consent and its current expiry after asynchronous authentication. Cancelling, replacing or expiring a preview during Claude authentication or Groq credential access now prevents dispatch and leaves workspace/call/credit state unchanged (#100).
+- Isolate JSON-escaped and nested credential reflections in protected recovery before ordinary response retention; preserve exact originals and prevent a card/retry (#101).
+- Add six deterministic regressions for those races and a reviewed issue-closure map. Preserve the existing bounded genuine results; no additional model call is used to obtain a pass.
+
 ## 0.2.0-rc.5 — 2026-10-28
 
 - Add explicit Haiku/Sonnet/Opus selection, freeze the requested alias for every stage, invalidate old consent after selection changes and preserve reported model versions separately.

@@ -1,4 +1,4 @@
-# Manual providers · 0.2.0-rc.5 candidate
+# Manual providers · 0.2.0-rc.6 candidate
 
 This patch implements #91 with the owner's 27 October clarification: **Claude through the owner's subscription is the primary external connection**. Groq is an optional separate API service. The updater, arbitrary endpoints, remote scheduling and mixed-provider stages remain separate work. The preview launch repair is tracked in #93.
 

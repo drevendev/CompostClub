@@ -731,6 +731,15 @@ export class CoherentController {
           await this.claude.start(p.workspace.jobs.find((j) => j.id === p.job)!.model);
         else await this.remote.credentials.get();
         if ((this.store.state.requests ?? []).some((r) => r.id === 'remote:' + token)) break;
+        // Authentication can yield to cancellation, a replacement preview, or expiry.
+        // Its success does not renew the user's permission to send this context.
+        const confirmedAt = Date.now();
+        if (this.pendingRemote !== p || p.expires <= confirmedAt)
+          throw new Error(
+            'Предпросмотр отменён или истёк. Подготовьте и подтвердите новый запрос.',
+          );
+        if (this.active || this.pausing || this.error)
+          throw new Error('Состояние изменилось. Просмотрите новый состав контекста.');
         this.change((w) => {
           if (w.revision !== p.revision) throw new Error('State changed during consent.');
           Object.assign(w, structuredClone(p.workspace));
@@ -739,10 +748,10 @@ export class CoherentController {
           j.remoteConsent = {
             contextHash: j.pack.hash,
             providerHash: providerHash(j.provider!),
-            at: now,
+            at: confirmedAt,
             expires: p.expires,
           };
-          revalidate(w, j, now);
+          revalidate(w, j, confirmedAt);
           const requests = (w.requests ??= []);
           if (requests.length >= 4000) throw new Error('Request journal full.');
           requests.push({
@@ -750,7 +759,7 @@ export class CoherentController {
             fingerprint: hash(canonical(j.remoteConsent)),
             garden: j.garden,
             job: j.id,
-            at: now,
+            at: confirmedAt,
             state: 'started',
             reason: '',
           });

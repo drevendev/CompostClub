@@ -7,7 +7,7 @@ import path from 'node:path';
 import { CoherentStore } from '../coherent-store';
 import { CoherentController } from '../coherent-controller';
 import { GroqRuntime } from '../groq-runtime';
-import { EncryptedCredentialStore, type CredentialStore } from '../credentials';
+import { EncryptedCredentialStore, reflectsCredential, type CredentialStore } from '../credentials';
 import { fixture, candidate } from '../../tests/coherent-fixtures';
 import { reading } from '../coherent-export';
 import { canonical } from '../../src/domain/coherent/hash';
@@ -15,6 +15,23 @@ import { makeGarden, addSource } from '../../src/domain/coherent/workspace';
 import { GROQ_ENDPOINT } from '../../src/domain/coherent/provider';
 
 const KEY = 'gsk_DIAGNOSTIC_SENTINEL_NOT_A_REAL_KEY';
+await test('reflection inspection decodes bounded nested JSON and complete fences without changing evidence', () => {
+  const escaped = JSON.stringify({ error: KEY }).replaceAll('g', '\\u0067');
+  for (const body of [
+    escaped,
+    JSON.stringify({ result: escaped }),
+    JSON.stringify({ result: '```json\n' + escaped + '\n```' }),
+  ]) {
+    assert.equal(reflectsCredential(body, KEY), true);
+    assert.equal(reflectsCredential(body, 'different-secret'), false);
+  }
+  assert.equal(reflectsCredential('not JSON', KEY), false);
+  assert.equal(reflectsCredential(JSON.stringify({ note: 'ordinary content' }), KEY), false);
+  assert.equal(
+    reflectsCredential(JSON.stringify([...Array<string>(150000).fill(''), KEY]), KEY),
+    true,
+  );
+});
 const services = {
   pick: async () => [],
   saveBackup: async () => true,
@@ -150,6 +167,43 @@ await test('changed source after preview invalidates consent without sending; re
   assert.equal(sent.length, 0);
   await c.close();
 });
+for (const invalidation of ['cancel', 'expire', 'replace'])
+  await test(`${invalidation} during Groq credential access prevents remote dispatch`, async (t) => {
+    const { store: s, controller: c, sent, vault } = await setup();
+    const p = await preview(c),
+      before = canonical(s.state);
+    const original = vault.get.bind(vault);
+    let release!: () => void, started!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const entered = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    vault.get = async () => {
+      started();
+      await gate;
+      return original();
+    };
+    try {
+      const confirming = c.command({ op: 'confirmRemote', previewId: p.id, consent: true });
+      await entered;
+      if (invalidation === 'cancel') await c.command({ op: 'cancelRemote' });
+      else if (invalidation === 'expire') {
+        const expired = Date.now() + 300001;
+        t.mock.method(Date, 'now', () => expired);
+      } else await preview(c);
+      release();
+      await assert.rejects(confirming, /отмен|ист[её]к|changed|cancelled/i);
+      assert.equal(sent.length, 0);
+      assert.equal(canonical(s.state), before);
+    } finally {
+      t.mock.restoreAll();
+      release();
+      await c.pause();
+      await c.close();
+    }
+  });
 await test('remote scheduled tick and resume refuse; manual cancel/missing key send nothing', async () => {
   const { store: s, controller: c, sent } = await setup();
   s.change((w) => {
@@ -272,19 +326,22 @@ await test('pause while remote request is pending prevents checker and late comm
   assert.ok(s.state.lifecycle.some((e) => e.kind === 'remote wait drained'));
   await c.close();
 });
-await test('credential reflection is retained in protected recovery, never ordinary state/receipts', async () => {
-  const {
-    store: s,
-    controller: c,
-    vault,
-  } = await setup(async () => new Response(JSON.stringify({ error: KEY }), { status: 500 }));
-  await confirm(c);
-  await drain(c);
-  assert.ok(vault.sensitive[0]!.includes(KEY));
-  assert.ok(!canonical(s.envelope()).includes(KEY));
-  assert.ok(!canonical(c.view()).includes(KEY));
-  await c.close();
-});
+for (const escaped of [false, true])
+  await test(`credential reflection (${escaped ? 'JSON escaped' : 'literal'}) is retained in protected recovery, never ordinary state/receipts`, async () => {
+    const body = JSON.stringify({ error: KEY });
+    const original = escaped ? body.replaceAll('g', '\\u0067') : body;
+    const {
+      store: s,
+      controller: c,
+      vault,
+    } = await setup(async () => new Response(original, { status: 500 }));
+    await confirm(c);
+    await drain(c);
+    assert.equal(vault.sensitive[0], original);
+    assert.ok(!canonical(s.envelope()).includes(KEY));
+    assert.ok(!canonical(c.view()).includes(KEY));
+    await c.close();
+  });
 await test('cross-garden preview names donor and sends only explicit approved selected context', async () => {
   const { store: s, controller: c, sent } = await setup();
   s.change((w) => {

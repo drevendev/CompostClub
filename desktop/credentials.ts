@@ -9,6 +9,37 @@ export interface CredentialStore {
   remove(): Promise<void>;
   retainSensitive(value: string): Promise<void>;
 }
+// Inspect the supported JSON envelopes without changing the retained original.
+// Nested model JSON is bounded to four string layers; this is not a detector
+// for arbitrary encodings such as encrypted or deliberately transformed secrets.
+export function reflectsCredential(raw: string, secret: string): boolean {
+  if (!secret) return false;
+  let strings = [raw];
+  for (let layer = 0; layer < 4; layer++) {
+    const next: string[] = [];
+    for (const text of strings) {
+      if (text.includes(secret)) return true;
+      const fenced = /^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/i.exec(text.trim());
+      const input = fenced?.[1] ?? text;
+      if (!['[', '{', '"'].includes(input.trimStart()[0] ?? '')) continue;
+      try {
+        const values: unknown[] = [JSON.parse(input)];
+        while (values.length) {
+          const value = values.pop();
+          if (typeof value === 'string') {
+            if (value.includes(secret)) return true;
+            next.push(value);
+          } else if (value && typeof value === 'object')
+            for (const item of Object.values(value)) values.push(item);
+        }
+      } catch {
+        /* Malformed JSON stays intact for the normal failure path. */
+      }
+    }
+    strings = next;
+  }
+  return false;
+}
 export class EncryptedCredentialStore implements CredentialStore {
   private present = false;
   private file: string;

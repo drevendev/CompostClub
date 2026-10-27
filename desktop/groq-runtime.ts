@@ -1,4 +1,5 @@
 import type { CredentialStore } from './credentials';
+import { reflectsCredential } from './credentials';
 import { GROQ_ENDPOINT, GROQ_MODEL } from '../src/domain/coherent/provider';
 import { bytes } from '../src/domain/coherent/hash';
 
@@ -106,7 +107,7 @@ export class GroqRuntime {
     }
     const body = Buffer.concat(chunks).toString('utf8');
     // Credentials are never part of ordinary transport evidence, even if reflected by a failed server.
-    if (body.includes(key)) {
+    if (reflectsCredential(body, key)) {
       this.sensitiveEmergency.push(body);
       await this.saveSensitiveEmergency();
       onTransport(

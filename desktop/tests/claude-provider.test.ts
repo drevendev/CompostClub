@@ -27,7 +27,14 @@ const services = {
   autostart: () => {},
 };
 async function setup(
-  mode: 'success' | 'cancel' | 'turns' | 'login' | 'fenced' | 'invalid-draft' = 'success',
+  mode:
+    | 'success'
+    | 'cancel'
+    | 'turns'
+    | 'login'
+    | 'fenced'
+    | 'invalid-draft'
+    | 'reflect-token' = 'success',
   tokenStore?: CredentialStore,
   telemetry?: Observer,
 ) {
@@ -58,7 +65,15 @@ async function setup(
           : JSON.stringify({ decision: 'pass', findings: [], limitations: '' });
     const result = JSON.stringify({
       type: 'result',
-      result: mode === 'fenced' ? '```json\n' + content + '\n```' : content,
+      result:
+        mode === 'reflect-token'
+          ? JSON.stringify({ error: options.env!.CLAUDE_CODE_OAUTH_TOKEN }).replaceAll(
+              's',
+              '\\u0073',
+            )
+          : mode === 'fenced'
+            ? '```json\n' + content + '\n```'
+            : content,
       is_error: false,
       num_turns: mode === 'turns' ? 2 : 1,
       usage: { input_tokens: 70, output_tokens: 60 },
@@ -135,6 +150,35 @@ await test('Claude subscription adapter preserves the exact two-stage result, si
   assert.ok(reading(s.state, 'all')[0]!.text.includes('Observed remote inference (claude)'));
   assert.equal(c.view().model.connected, false);
   assert.ok(canonical(s.envelope()).includes('claude-cli-transport'));
+  await c.close();
+});
+await test('escaped nested CLI token reflection preserves the protected original and never ordinary receipts', async () => {
+  const token = 'sk-ant-oat01-ESCAPED_DIAGNOSTIC_NOT_A_REAL_TOKEN',
+    originals: string[] = [];
+  const vault: CredentialStore = {
+    available: () => true,
+    has: () => true,
+    get: async () => token,
+    set: async () => {},
+    remove: async () => {},
+    retainSensitive: async (raw) => {
+      originals.push(raw);
+    },
+  };
+  const { store: s, controller: c, invocations } = await setup('reflect-token', vault);
+  await confirm(c);
+  await drain(c);
+  assert.equal(invocations.length, 1);
+  assert.equal(originals.length, 1);
+  const preserved = JSON.parse(originals[0]!) as { stdout: string };
+  const content = JSON.parse((JSON.parse(preserved.stdout) as { result: string }).result) as {
+    error: string;
+  };
+  assert.equal(content.error, token);
+  assert.ok(!canonical(s.envelope()).includes(token));
+  assert.ok(!canonical(s.envelope()).includes('ESCAPED_DIAGNOSTIC'));
+  assert.equal(s.state.nodes.length, 0);
+  assert.equal(s.state.gardens[0]!.credits.balance, 3);
   await c.close();
 });
 await test('missing Claude subscription login refuses before any creative process, job charge or commit', async () => {
@@ -301,6 +345,57 @@ await test('a late connection check cannot certify changed provider/model settin
   assert.equal(c.view().claudeConnection!.state, 'unchecked');
   await c.close();
 });
+
+for (const invalidation of ['cancel', 'expire', 'replace'])
+  await test(`${invalidation} during Claude authentication prevents remote dispatch`, async (t) => {
+    const { controller: c, runtime, store: s, invocations } = await setup();
+    const v = await c.command({
+      op: 'eureka',
+      garden: s.state.gardens[0]!.id,
+      requestId: crypto.randomUUID(),
+    });
+    const original = runtime.start.bind(runtime);
+    let release!: () => void, started!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const entered = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    runtime.start = async (model) => {
+      started();
+      await gate;
+      return original(model);
+    };
+    try {
+      const confirming = c.command({
+        op: 'confirmRemote',
+        previewId: v.remotePreview!.id,
+        consent: true,
+      });
+      await entered;
+      if (invalidation === 'cancel') await c.command({ op: 'cancelRemote' });
+      else if (invalidation === 'expire') {
+        const expired = Date.now() + 300001;
+        t.mock.method(Date, 'now', () => expired);
+      } else
+        await c.command({
+          op: 'eureka',
+          garden: s.state.gardens[0]!.id,
+          requestId: crypto.randomUUID(),
+        });
+      release();
+      await assert.rejects(confirming, /отмен|ист[её]к|changed|cancelled/i);
+      assert.equal(s.state.jobs.length, 0);
+      assert.equal(s.state.calls.length, 0);
+      assert.equal(invocations.length, 0);
+    } finally {
+      t.mock.restoreAll();
+      release();
+      await c.pause();
+      await c.close();
+    }
+  });
 
 await test('broken telemetry before/after dispatch, token setters and validation cannot repeat or fail a successful model pipeline', async () => {
   for (const mode of ['before', 'after', 'hang-before', 'hang-after']) {

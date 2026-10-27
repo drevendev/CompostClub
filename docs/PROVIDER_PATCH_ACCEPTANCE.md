@@ -1,4 +1,18 @@
-# Provider patch acceptance · 0.2.0-rc.5
+# Provider patch acceptance · 0.2.0-rc.6
+
+## RC6 review verification · 28 October 2026
+
+The [PR review and issue map](PR_92_REVIEW.md) records the audited scope and remaining gates. Review reproduced #100: cancellation during authentication could still dispatch. RC6 rechecks exact pending consent identity and current expiry after authentication; six Claude/Groq cancel/expire/replace regressions pass with zero dispatch. No extra creative model call was made. Review also reproduced #101: JSON-escaped credential reflection bypassed literal detection. Both adapters now inspect bounded decoded JSON layers before ordinary retention, preserving the exact original only in protected recovery. Four focused reflection cases, including nested CLI output and large arrays, pass. This detector covers the supported JSON encodings rather than arbitrary secret transforms.
+
+Verification: 177 unit, 94 desktop/process/storage/operator, 4 bridge/privacy and 1 source-packaging tests; zero skips. TypeScript, ESLint and formatting passed. A first sandboxed HTTP bridge startup timed out before becoming ready; the full verification with loopback/child-process permissions passed. The retained initial failure is not a model result.
+
+Added real Chromium recovery coverage for missing consumed-pair records, cyclic source ancestry and nonexistent source revisions in both production and standalone. All 14 recovery scenarios passed. Both legacy Markdown export entry points now have an explicit regression verifying human-edit disclosure, omission of raw evidence and private-original retention. All 24 existing P1/workflow/layout/growth scenarios passed for this candidate.
+
+The exact RC6 portable `fe0f131ba2db6954734338d8719ffc598c0de0f53bc103e2d2aa560c73aada92` passed hidden actual Chromium/IPC/model picker/consent/OS-encryption/layout acceptance, with zero renderer HTTP/errors and no creative calls. A separate exact-package check of the validated RC6 owner profile confirmed protected token presence, authentication `ready`, selected Sonnet and installed CLI 2.1.259, with unchanged originals and zero added creative calls. The RC5 source profile was read through a consistent read-only SQLite transaction; a separate validated backup/profile and protected crypto metadata were used for RC6. Previous profiles remain intact.
+
+RC5 genuine results below remain unchanged: Sonnet/Opus have limited successful evidence; Haiku #99 and broad quality/API gates remain open. The PR remains draft. The current delivery receipt supplies verified standalone/source/portable identities.
+
+## Historical RC5 candidate
 
 Experimental candidate verified on 28 October 2026. Installed official Claude Code is the owner-selected connection. Genuine bounded results below supersede the earlier zero-call status without replacing earlier receipts. Haiku format acceptance and owner usefulness remain open; no stable release or personal installation upgrade is claimed.
 

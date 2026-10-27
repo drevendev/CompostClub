@@ -6,6 +6,7 @@ import {
   createGarden,
   deletionSet,
   exportSproutCard,
+  exportMarkdown,
   importGarden,
   removeScrap,
   serializeGarden,
@@ -18,6 +19,7 @@ import {
   proposeGrowth,
   recordGrowth,
   stopGrowth,
+  growthMarkdown,
 } from './growth';
 import recordings from '../../fixtures/public/recordings.json';
 function seed() {
@@ -59,6 +61,33 @@ it('accepting unchanged proposal fields does not claim a human edit', () => {
     title: 'Owner revision',
   });
   expect(changed.growth![0]!.edited?.title).toBe('Owner revision');
+});
+it('both reading exports distinguish human-edited branches while private JSON keeps the proposal', () => {
+  const g = start(),
+    id = g.growth![0]!.id;
+  const proposed = proposeGrowth(recordGrowth(g, id, raw), id);
+  const edited = decideGrowth(proposed, id, true, {
+    ...parseGrowth(raw),
+    title: 'Human-reviewed title',
+    concept: 'A different human concept.',
+  });
+  for (const markdown of [growthMarkdown(edited), exportMarkdown(edited)]) {
+    expect(markdown).toContain('Human-reviewed title');
+    expect(markdown).toContain(
+      'Edited by you. Original model proposal preserved in private JSON; this outline omits raw evidence.',
+    );
+    expect(markdown).not.toContain(raw);
+  }
+  const restored = importGarden(serializeGarden(edited), 'local');
+  expect(restored.growth![0]!.output).toEqual(parseGrowth(raw));
+  expect(restored.growth![0]!.responses).toEqual([raw]);
+  expect(growthMarkdown(decideGrowth(proposed, id, true))).not.toContain('Edited by you');
+  expect(growthMarkdown(decideGrowth(proposed, id, false))).toContain('Status: rejected');
+  expect(
+    growthMarkdown(
+      stopGrowth(recordGrowth(g, id, 'invalid retained response'), id, false, 'Invalid JSON'),
+    ),
+  ).toContain('Status: failed');
 });
 it('accepts branches atomically, preserves evidence and parents through restore and cascades', () => {
   let g = start();
