@@ -12,6 +12,7 @@ void test('local operator requires session capability and explicit exchange cons
   // short even inside a deeply nested CI checkout.
   const dir = await mkdtemp(path.resolve('.local/op-'));
   const view: CoherentView = {
+    eureka: [],
     workspace: create(Date.now(), 'UTC'),
     busy: false,
     status: 'paused',

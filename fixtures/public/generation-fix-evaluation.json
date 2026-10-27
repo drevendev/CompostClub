@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "frozenBeforeContractChange": "2026-10-25",
+  "purpose": "Ten newly authored fictional cases. Expected compatibility is a rubric, never a required model answer. One initial response per case/variant; at most two variants, three calls per job, sixty calls total. Seen cases become development regressions.",
+  "rubric": [
+    "recognizable contribution from each parent",
+    "one interacting mechanism",
+    "action, choice and consequence",
+    "coherent constraints",
+    "evidence-supported reference claims",
+    "requested language",
+    "owner usefulness unknown"
+  ],
+  "cases": [
+    {
+      "id": "ru-lantern",
+      "language": "ru",
+      "compatible": true,
+      "a": "Игрок переносит фонарь между мостками. Свет открывает путь, но на каждом шаге расходуется масло.",
+      "b": "Игрок ставит заслонки, направляя ветер. Открытая заслонка ускоряет движение и гасит незащищённый огонь."
+    },
+    {
+      "id": "ru-archive",
+      "language": "ru",
+      "compatible": true,
+      "a": "В архиве игрок выдаёт книги по заявкам. На тележке только два места, дальний проход закрывается вечером.",
+      "b": "Игрок тратит жетон, чтобы отложить одну заявку. Отложенная заявка занимает место завтрашней очереди."
+    },
+    {
+      "id": "ru-orbit",
+      "language": "ru",
+      "compatible": true,
+      "a": "Игрок поворачивает зеркало на станции. Один поворот освещает отсек и оставляет соседний без энергии.",
+      "b": "Робот чинит приборы только в освещённых отсеках. Незавершённый ремонт теряет один шаг при отключении света."
+    },
+    {
+      "id": "ru-dye",
+      "language": "ru",
+      "compatible": true,
+      "a": "Игрок смешивает краску для заказов. Каждый новый цвет занимает одну из трёх открытых банок.",
+      "b": "Игрок может отложить сушку изделия на ход. Влажное изделие можно перекрасить, но оно занимает рабочий стол."
+    },
+    {
+      "id": "en-locks",
+      "language": "en",
+      "compatible": true,
+      "a": "A player routes cargo carts through locks. Opening a lock drains one water unit from the upper track.",
+      "b": "A player stores rain in two tanks. Releasing a tank restores water but closes the repair lane for a turn."
+    },
+    {
+      "id": "en-courier",
+      "language": "en",
+      "compatible": true,
+      "a": "A courier carries two parcels on a bicycle. Taking a hill shortcut saves time but spends one brake pad.",
+      "b": "A player books repair stalls a turn ahead. A reserved stall blocks another delivery stop until used."
+    },
+    {
+      "id": "en-seed",
+      "language": "en",
+      "compatible": true,
+      "a": "A player plants seeds in three trays. Moving a tray into sunlight grows it and dries its soil.",
+      "b": "A player lends a water pump to a neighbour for a seed token. The pump returns two turns later."
+    },
+    {
+      "id": "en-bell",
+      "language": "en",
+      "compatible": true,
+      "a": "A player rings harbour bells to guide boats. Each bell can signal only once before being rewound.",
+      "b": "A player allocates two workers between a winding room and a dock. Reassignment takes a full turn."
+    },
+    {
+      "id": "ru-incomplete",
+      "language": "ru",
+      "compatible": false,
+      "a": "Нечто про хороший вторник. Что делает человек и к чему стремится, ещё не определено.",
+      "b": "Пока только настроение и цвет. Нет действия, правил или ограничений."
+    },
+    {
+      "id": "en-incompatible",
+      "language": "en",
+      "compatible": false,
+      "a": "A fixed design requires every action to be public immediately. Concealed actions are forbidden and this constraint cannot change.",
+      "b": "A fixed design requires every action to remain permanently secret, including from other players. Public actions are forbidden and this constraint cannot change."
+    }
+  ]
+}

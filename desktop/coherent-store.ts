@@ -221,6 +221,9 @@ export class CoherentStore {
       old = this.state,
       next = restored.workspace;
     next.runtime = structuredClone(old.runtime);
+    if (old.claudeExecutable) next.claudeExecutable = old.claudeExecutable;
+    else delete next.claudeExecutable;
+    next.provider = structuredClone(old.provider ?? { kind: 'local', revision: 1 });
     next.exportDirectory = old.exportDirectory;
     next.settings.timezone = old.settings.timezone;
     const callMap = new Map(old.calls.map((c) => [c.id, c]));
@@ -231,6 +234,20 @@ export class CoherentStore {
       if (!previous) callMap.set(call.id, call);
     }
     next.calls = [...callMap.values()];
+    const requests = new Map((old.requests ?? []).map((r) => [r.id, r]));
+    for (const r of next.requests ?? []) {
+      const existing = requests.get(r.id);
+      if (existing && existing.fingerprint !== r.fingerprint)
+        throw new Error('Conflicting request identity; restore refused.');
+      if (!existing) requests.set(r.id, r);
+    }
+    // Tombstones survive an older snapshot even if its job is absent. A restore
+    // never turns a previously dispatched request into a fresh authorization.
+    next.requests = [...requests.values()].map((r) => ({
+      ...r,
+      job: next.jobs.some((j) => j.id === r.job) ? r.job : null,
+      state: r.state === 'started' ? 'uncertain' : r.state,
+    }));
     for (const [day, value] of Object.entries(old.daily)) {
       const other = next.daily[day] ?? { attempts: [], candidates: [] };
       next.daily[day] = {

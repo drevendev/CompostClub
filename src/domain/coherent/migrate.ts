@@ -9,8 +9,11 @@ import type { Candidate, Identity, Node, Workspace } from './types';
 export function migrate(value: unknown, now: number): Workspace {
   const input = value as { schemaVersion?: number; version?: number };
   if (input.schemaVersion === 3) {
-    validate(input as Workspace);
-    return structuredClone(input as Workspace);
+    const migrated = structuredClone(input as Workspace);
+    migrated.requests ??= [];
+    // Missing admission means historical contract, never retroactive screening.
+    validate(migrated);
+    return migrated;
   }
   let legacy: Legacy;
   if (input.schemaVersion === 2) {

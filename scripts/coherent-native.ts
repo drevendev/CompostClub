@@ -98,6 +98,9 @@ try {
     if (/^https?:/.test(req.url())) network.push(req.url());
   });
   await page.waitForSelector('.coherent-app');
+  assert.equal(await page.locator('.global-toolbar button').count(), 2);
+  assert.equal(await page.getByRole('button', { name: 'Продолжить', exact: true }).count(), 1);
+  assert.equal(await page.getByRole('button', { name: 'Эврика', exact: true }).count(), 1);
   console.log(JSON.stringify({ phase: 'renderer ready' }));
   await app.evaluate(({ BrowserWindow }) => {
     const window = BrowserWindow.getAllWindows()[0]!;
@@ -139,10 +142,16 @@ try {
     .getByRole('button', { name: 'Читать оригинал и контекст', exact: true })
     .first()
     .click();
+  await page
+    .getByRole('dialog')
+    .getByText(original, { exact: true })
+    .first()
+    .waitFor({ state: 'visible' });
   assert.ok(
     await page.getByRole('dialog').getByText(original, { exact: true }).first().isVisible(),
   );
   await page.keyboard.press('Escape');
+  await page.getByRole('dialog').waitFor({ state: 'hidden' });
   assert.equal(await page.getByRole('dialog').count(), 0);
   assert.equal(
     await page.evaluate(() => document.activeElement?.textContent),
@@ -198,6 +207,19 @@ try {
     true,
   );
   await page.screenshot({ path: path.join(output, 'native-430.png'), fullPage: true });
+  const toolbar = await page.locator('.global-toolbar').boundingBox();
+  assert.ok(toolbar && toolbar.y >= 0 && toolbar.y + toolbar.height <= 900);
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: 'Эврика', exact: true }).focus();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(
+    await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle),
+    'solid',
+  );
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Эврика');
+  await page.screenshot({ path: path.join(output, 'native-forced-colors.png'), fullPage: true });
+  await page.emulateMedia({ forcedColors: 'none', reducedMotion: 'reduce' });
   await app.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows()[0]!.setSize(1200, 1000);
     BrowserWindow.getAllWindows()[0]!.webContents.setZoomFactor(2);
@@ -213,6 +235,29 @@ try {
   );
   await page.getByRole('button', { name: 'Исходные идеи', exact: true }).click();
   await page.screenshot({ path: path.join(output, 'native-gardens.png'), fullPage: true });
+  // A real no-dispatch preflight must reach both operator state and the visible
+  // toolbar immediately, even if the next scheduled interval is still ahead.
+  await invoke({
+    op: 'gardenSettings',
+    id: receiver,
+    profile: 'game',
+    objective: 'Ю'.repeat(1000),
+    interval: 15,
+  });
+  await invoke({ op: 'background', id: receiver, enabled: true });
+  state = await invoke({ op: 'eureka', garden: receiver, requestId: 'native-oversized-context' });
+  assert.equal(state.workspace.calls.length, 0);
+  assert.match(state.workspace.gardens.find((g) => g.id === receiver)!.plan!.reason, /admission:/);
+  state = await invoke({ op: 'resume' });
+  assert.match(state.reason, /admission:/);
+  await page.waitForFunction(() =>
+    document
+      .querySelector('.global-toolbar [role="status"]')
+      ?.textContent?.includes('Не удалось подготовить запрос'),
+  );
+  await page.screenshot({ path: path.join(output, 'native-admission-reason.png'), fullPage: true });
+  state = await invoke({ op: 'pause' });
+  assert.equal(state.workspace.calls.length, 0);
   result = {
     nativeUi: 'passed',
     live: 'separate genuine evaluation/lifecycle/background suites',
@@ -228,6 +273,10 @@ try {
     migration: 'v2 to v3, original and participation retained',
     width430: true,
     text200percent: true,
+    twoGlobalCommands: true,
+    blockedAdmissionReasonVisible: true,
+    forcedColors: true,
+    tabShiftTabVisibleFocus: true,
     focusEscape: true,
     duplicateTitles: true,
     consent10percent: true,

@@ -224,11 +224,12 @@ export class OwnedOllama {
     // Kill only its owned tree, never a system-wide image or shared Ollama service.
     if (child.pid && child.exitCode === null) {
       if (process.platform === 'win32')
-        await run('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true }).catch(
-          (e: unknown) => {
-            if (child.exitCode === null) throw e;
-          },
-        );
+        await run('taskkill', ['/PID', String(child.pid), '/T', '/F'], {
+          windowsHide: true,
+          timeout: 5000,
+        }).catch((e: unknown) => {
+          if (child.exitCode === null) throw e;
+        });
       else child.kill('SIGTERM');
       for (let i = 0; i < 50 && child.exitCode === null; i++) await delay(100);
       if (child.exitCode === null)

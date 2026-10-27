@@ -1,9 +1,12 @@
+import { isRemote } from './provider';
+import { providerSnapshot, validProvider, providerHash } from './provider';
 import { assertWorkspace as assertLegacy } from '../experiment';
 import { importGarden, DESKTOP_LIMITS } from '../garden';
 import { bytes, canonical, hash } from './hash';
 import { key, pairKey, safeUrl } from './prepare';
 import { active, INTERVALS, sizeGuard, underlyingOperation } from './workspace';
 import { parseDraft } from './contract';
+import { assertAdmission } from './admission';
 import type { Identity, Workspace } from './types';
 
 function ensure(value: unknown, message: string): asserts value {
@@ -16,6 +19,7 @@ export function validate(w: Workspace): void {
     'Unsupported workspace version/revision.',
   );
   sizeGuard(w);
+  providerSnapshot(w.provider, w.runtime.model);
   for (const [v, max] of [
     [w.gardens, 4],
     [w.sources, 800],
@@ -122,6 +126,7 @@ export function validate(w: Workspace): void {
           'imported assertion',
           'deterministic extraction',
           'local-model proposal',
+          'remote-model proposal',
         ].includes(s.origin) &&
         Array.isArray(s.tags) &&
         s.tags.length <= 8 &&
@@ -177,6 +182,7 @@ export function validate(w: Workspace): void {
               'imported assertion',
               'deterministic extraction',
               'local-model proposal',
+              'remote-model proposal',
             ].includes(f.origin),
           'Invalid facet provenance.',
         );
@@ -300,6 +306,7 @@ export function validate(w: Workspace): void {
   );
   ensure(w.jobs.filter(active).length <= 1, 'Only one active local job is allowed.');
   for (const j of w.jobs) {
+    assertAdmission(j);
     underlyingOperation(w, j);
     ensure(
       ['blend', 'growth', 'check', 'dna', 'preferences', 'revise'].includes(j.operation) &&
@@ -330,7 +337,7 @@ export function validate(w: Workspace): void {
         j.pack.version === 'context-1' &&
         j.pack.counting === 'utf8-byte-upper-bound' &&
         j.pack.inputUpperBound === bytes(j.pack.payload) &&
-        j.pack.inputUpperBound + 900 + 512 <= 4096,
+        j.pack.inputUpperBound + 900 + 512 <= (isRemote(j.provider) ? 7000 : 4096),
       'Forged or oversized context pack.',
     );
     const manifest = JSON.parse(j.pack.payload) as { evidence: unknown };
@@ -357,11 +364,30 @@ export function validate(w: Workspace): void {
       ensure(
         j.calls.includes(d.id) &&
           d.schemaHash === hash(d.schema) &&
-          d.inputByteUpperBound === bytes(d.prompt) + 64 &&
-          [480, 900].includes(d.outputTokens) &&
+          d.inputByteUpperBound ===
+            bytes(d.prompt) +
+              (d.framingReserve ?? 64) +
+              (isRemote(j.provider) ? bytes(d.schema) + 128 : 0) &&
+          (j.admission
+            ? d.outputTokens ===
+              (d.stage.startsWith('screening')
+                ? j.admission.screeningTokens
+                : j.admission.generationTokens)
+            : [480, 900].includes(d.outputTokens)) &&
           d.timeoutMs === 180000 &&
-          d.inputByteUpperBound + d.outputTokens <= 4096,
+          d.inputByteUpperBound + d.outputTokens <= (j.provider?.contextLimit ?? 4096),
         'Invalid dispatch identity, prompt or context allowance.',
+      );
+    if (j.provider) validProvider(j.provider);
+    if (j.remoteConsent)
+      ensure(
+        isRemote(j.provider) &&
+          j.remoteConsent.contextHash === j.pack.hash &&
+          j.remoteConsent.providerHash === providerHash(j.provider!) &&
+          Number.isSafeInteger(j.remoteConsent.at) &&
+          Number.isSafeInteger(j.remoteConsent.expires) &&
+          j.remoteConsent.expires >= j.remoteConsent.at,
+        'Invalid remote consent record.',
       );
     if (j.draft) parseDraft(JSON.stringify(j.draft), j);
     ensure(
@@ -385,6 +411,20 @@ export function validate(w: Workspace): void {
           ['pass', 'needs_revision', 'needs_context'].includes(j.assessment.decision) &&
           j.assessment.findings.every((f) => f.evidence.every((id) => evidenceIds.includes(id))),
         'Forged assessment hashes.',
+      );
+  }
+  if (w.requests) {
+    ensure(w.requests.length <= 4000, 'Request journal is full.');
+    unique(w.requests);
+    for (const r of w.requests)
+      ensure(
+        /^[a-f0-9]{64}$/.test(r.fingerprint) &&
+          bounded(r.garden, 128) &&
+          Number.isFinite(r.at) &&
+          ['blocked', 'started', 'settled', 'uncertain'].includes(r.state) &&
+          bounded(r.reason, 8192) &&
+          (r.job === null || w.jobs.some((j) => j.id === r.job && j.garden === r.garden)),
+        'Invalid durable request identity.',
       );
   }
   const nodeMap = new Map(w.nodes.map((n) => [n.id, n]));

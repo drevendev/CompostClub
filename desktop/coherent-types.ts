@@ -1,3 +1,4 @@
+import type { ProviderSnapshot } from '../src/domain/coherent/provider';
 import type { Workspace } from '../src/domain/coherent/types';
 export interface CoherentCommand {
   op: string;
@@ -17,6 +18,22 @@ export interface ImportPreview {
   }[];
 }
 export interface CoherentView {
+  claudeToken?: { available: boolean; present: boolean };
+  provider?: ProviderSnapshot & { credentialAvailable: boolean; credentialPresent: boolean };
+  remotePreview?: {
+    id: string;
+    expires: number;
+    garden: string;
+    provider: ProviderSnapshot;
+    context: string;
+    sections: { title: string; text: string }[];
+    objective: string;
+    draft: import('../src/domain/coherent/types').Draft | null;
+    prompt: string;
+    calls: number;
+    donorGardens: string[];
+  } | null;
+  eureka: { garden: string; reason: string }[];
   workspace: Workspace;
   busy: boolean;
   status: 'paused' | 'pausing' | 'running' | 'waiting' | 'attention';

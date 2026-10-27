@@ -1,5 +1,7 @@
 # v0.2 — Coherent Gardens: next full local release
 
+> Current provider patch: [manual Claude subscription and optional Groq setup/status](PROVIDER_PATCH.md). The owner authorized implementation on 27 October 2026 and clarified Claude subscription as the first connection. Historical local-only acceptance below remains provider-specific; it is not satisfied by remote or synthetic output.
+
 Status: finalized planning contract, reviewed 24 October 2026; implementation and release acceptance remain pending. **No feature in this document is implemented by the planning PR.** Baseline reviewed: `2afeb18de9f8c72e9938ca9eb973ed2e43e622de`. [Roadmap](ROADMAP.md), [ordered delivery tasks](NEXT_RELEASE_TASKS.md), canonical tracker [#29](https://github.com/drevendev/CompostClub/issues/29).
 
 Implementation status, 25 October 2026: [local experimental RC and remaining acceptance gates](COHERENT_GARDENS_ACCEPTANCE.md). This specification remains the promotion contract; a local RC does not mark owner usefulness or R8 complete.

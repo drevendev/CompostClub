@@ -26,6 +26,12 @@ _Actual Chromium capture of the compact sample workspace. The sample pairs six f
 
 The [published DEV article](https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o) follows real local Gemma results from public project summaries. The [49.93-second English video](https://drevendev.github.io/CompostClub/?v=07c202852017) shows Echo Cartography and recomposting. Newer idea branches and optional Sentry tracing are illustrated separately in the article. [Publication materials, captions and credits](docs/DEV_PUBLICATION.md).
 
+## Manual external generation preview
+
+The 0.2.0-rc.4 candidate adds an explicitly selected manual connection to **official Claude Code using your own Claude subscription**, plus optional Groq BYOK. Choose a provider in desktop Settings, preview the exact selected context and authorize one bounded job. There is no remote background generation or automatic fallback. Local storage, local Ollama and the recorded sample remain available independently. No account, model or CLI is installed for you.
+
+[Setup, privacy, subscription login, optional Groq key and acceptance status](docs/PROVIDER_PATCH.md). This is an experimental source/PR candidate, not a stable quality claim or an installed owner upgrade. Local Gemma RU issues remain open.
+
 ## Use the local desktop candidate
 
 The experimental **0.2.0-rc.1 Coherent Gardens** Windows candidate adds named gardens, preserved full originals and source preparation, explicit references, rich generation with a fallible semantic checker, approved feedback preferences, deliberate growth and opt-in cross-garden exchange. An application window and tray control a local SQLite workspace and an explicitly selected installed Ollama/model. It starts paused; manual jobs have separate explicit authorization. Pause drains owned work and releases its model process before reporting success.
@@ -77,7 +83,7 @@ For live generation, start with the [Ollama setup](docs/RUNNING.md#run-live-loca
 
 ## Data stays with the garden
 
-Scraps and results live in browser IndexedDB, the desktop's local SQLite workspace or explicit exports. There are no end-user accounts, telemetry by default, cloud generation, external fonts or paid APIs. Optional operator-only Sentry metadata tracing is off by default; see [setup and removal](docs/OPTIONAL_SERVICES.md). Render and Entire were declined and are not used. Model output and user input render as text.
+Scraps and results live in browser IndexedDB, the desktop's local SQLite workspace or explicit exports. There are no Compost Club end-user accounts, telemetry by default or external fonts. Optional manual external generation uses the owner’s separately authenticated provider after context consent; no paid plan is activated by the application. Optional operator-only Sentry metadata tracing is off by default; see [setup and removal](docs/OPTIONAL_SERVICES.md). Render and Entire were declined and are not used. Model output and user input render as text.
 
 Ollama mode uses a server bound to `127.0.0.1`, forwarding to a fixed loopback Ollama address. Browser AI contacts the disclosed Hugging Face/CDN endpoints only after download consent; ideas are processed on the device. Model weights carry separate terms and are excluded from Git. The [architecture](docs/ARCHITECTURE.md) describes the boundaries and current limitations.
 

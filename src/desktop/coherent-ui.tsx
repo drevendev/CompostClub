@@ -1,8 +1,10 @@
+import { isRemote } from '../domain/coherent/provider';
 import { createRoot } from 'react-dom/client';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { CoherentAPI, CoherentCommand, CoherentView } from '../../desktop/coherent-types';
-import { counts, credit, INTERVALS } from '../domain/coherent/workspace';
+import { backgroundReason, counts, credit, INTERVALS } from '../domain/coherent/workspace';
 import { current, identity, prepare } from '../domain/coherent/prepare';
+import { explain, funnel, jobTitle, label, modelReason } from '../domain/coherent/presentation';
 import {
   DIRECTIONS,
   type Candidate,
@@ -47,8 +49,10 @@ function evidenceMode(w: Workspace, n: Node) {
     : r.origin === 'imported assertion' || (!r.job && n.imported) || j?.observed === false
       ? 'Импортированное; происхождение не подтверждено новым локальным запуском'
       : j?.observed
-        ? 'Наблюдавшийся локальный ответ модели'
-        : 'Прежний контракт — не проверен текущим скринингом';
+        ? isRemote(j.provider)
+          ? 'Удалённая генерация · ' + j.provider!.kind + ' · ' + j.model
+          : 'Сгенерировано на этом компьютере'
+        : 'Прежняя карточка · новая проверка ещё не проводилась';
 }
 function Form({ children, submit }: { children: ReactNode; submit: (f: FormData) => void }) {
   return (
@@ -154,6 +158,8 @@ function App() {
   const [drafts, setDrafts] = useState<
     Record<string, { title: string; text: string; tags: string }>
   >({});
+  const eurekaPending = useRef(false);
+  const [sendingEureka, setSendingEureka] = useState(false);
   const send = useCallback(async (c: CoherentCommand) => {
     setError('');
     try {
@@ -176,6 +182,28 @@ function App() {
     window.addEventListener('compost:add-idea', add);
     return () => window.removeEventListener('compost:add-idea', add);
   }, []);
+  useEffect(() => {
+    for (const r of view?.workspace.requests ?? []) {
+      const storageKey = 'compost-eureka-' + r.garden;
+      if (
+        ['blocked', 'settled', 'uncertain'].includes(r.state) &&
+        localStorage.getItem(storageKey) === r.id
+      )
+        localStorage.removeItem(storageKey);
+    }
+  }, [view]);
+  useEffect(() => {
+    const toolbar = document.querySelector('.global-toolbar');
+    if (!toolbar) return;
+    const observer = new ResizeObserver(() =>
+      document.documentElement.style.setProperty(
+        '--toolbar-height',
+        toolbar.getBoundingClientRect().height + 'px',
+      ),
+    );
+    observer.observe(toolbar);
+    return () => observer.disconnect();
+  }, [!!view]);
   if (!view)
     return (
       <main>
@@ -188,7 +216,59 @@ function App() {
     sources = w.sources.filter((s) => s.garden === g.id),
     nodes = w.nodes.filter((n) => n.garden === g.id),
     jobs = w.jobs.filter((j) => j.garden === g.id),
-    draft = drafts[g.id] ?? { title: '', text: '', tags: '' };
+    draft = drafts[g.id] ?? { title: '', text: '', tags: '' },
+    flow = funnel(w, g.id),
+    eurekaReason = explain(view.eureka.find((e) => e.garden === g.id)?.reason ?? ''),
+    activeJob = w.jobs.find((j) => j.id === view.activeJob),
+    activeGarden = w.gardens.find((g) => g.id === activeJob?.garden),
+    stopping = view.status === 'pausing',
+    canPause = view.busy || !w.paused,
+    resumeBlocked =
+      !canPause &&
+      (isRemote(w.provider) || view.status === 'attention' || !w.gardens.some((g) => g.background)),
+    statusText = stopping
+      ? isRemote(w.provider)
+        ? 'Останавливаем ожидание и следующие вызовы…'
+        : 'Останавливаем работу и освобождаем модель…'
+      : view.status === 'attention'
+        ? explain(view.reason)
+        : activeJob
+          ? `${label(activeJob.stage)} для сада «${activeGarden?.name}»`
+          : w.paused
+            ? 'Автозапуск на паузе'
+            : g.background
+              ? explain(backgroundReason(w, g.id, Date.now()))
+              : `Сад «${g.name}» не включён в расписание`;
+  const eureka = async () => {
+    if (isRemote(w.provider)) {
+      await send({ op: 'eureka', garden: g.id, requestId: crypto.randomUUID() });
+      return;
+    }
+    if (eurekaPending.current) return;
+    eurekaPending.current = true;
+    setSendingEureka(true);
+    const storageKey = 'compost-eureka-' + g.id;
+    const pendingId = localStorage.getItem(storageKey);
+    const requestId = pendingId ?? crypto.randomUUID();
+    if (!pendingId) localStorage.setItem(storageKey, requestId);
+    try {
+      const result = await window.compost.invoke(
+        pendingId ? { op: 'requestState', requestId } : { op: 'eureka', garden: g.id, requestId },
+      );
+      setView(result);
+      if (result.error) setError(result.error);
+      const r = result.workspace.requests?.find((r) => r.id === requestId);
+      if (r?.reason) setError(r.reason);
+    } catch (e) {
+      setError(
+        'Ответ на команду не получен. Повторное нажатие проверит состояние того же запроса. ' +
+          String(e),
+      );
+    } finally {
+      eurekaPending.current = false;
+      setSendingEureka(false);
+    }
+  };
   const update = (field: 'title' | 'text' | 'tags', v: string) =>
     setDrafts((d) => ({ ...d, [g.id]: { ...draft, [field]: v } }));
   const dialog = (title: string, body: ReactNode) =>
@@ -294,6 +374,56 @@ function App() {
   };
   return (
     <div className="desktop-app coherent-app">
+      <div className="global-toolbar" aria-label="Управление приложением">
+        <div className="toolbar-state">
+          <strong>Выбран сад: {g.name}</strong>
+          <small>
+            {activeJob?.provider?.requestedModel ??
+              view.provider?.requestedModel ??
+              w.runtime.model}{' '}
+            · {activeJob?.provider?.kind ?? view.provider?.kind ?? 'local'}
+            {isRemote(w.provider) ? ' · ручная внешняя отправка' : ''}
+          </small>
+          <p role="status" aria-live="polite">
+            {statusText}
+          </p>
+          {w.paused && activeJob && <small>Автозапуск на паузе · выполняется разовая работа</small>}
+        </div>
+        <div className="toolbar-commands">
+          <button
+            aria-describedby="global-command-hint"
+            disabled={stopping || resumeBlocked}
+            onClick={() => void send({ op: canPause ? 'pause' : 'resume' })}
+          >
+            {stopping ? 'Останавливаем…' : canPause ? 'Пауза' : 'Продолжить'}
+          </button>
+          <button
+            className="primary"
+            aria-describedby="eureka-hint"
+            disabled={!!eurekaReason || sendingEureka}
+            onClick={() => void eureka()}
+          >
+            Эврика
+          </button>
+        </div>
+        <div className="toolbar-hints">
+          <small id="global-command-hint">
+            {isRemote(w.provider)
+              ? 'Внешняя обработка только вручную. Отмена не гарантирует остановку сервера или возврат квоты.'
+              : resumeBlocked
+                ? view.status === 'attention'
+                  ? 'Устраните причину в настройках перед продолжением.'
+                  : 'Выберите сады для расписания в настройках сада.'
+                : canPause
+                  ? 'Остановить работу во всех садах и освободить модель.'
+                  : 'Продолжить расписание ранее включённых садов.'}
+          </small>
+          <small id="eureka-hint">
+            {eurekaReason ||
+              `Одна попытка прямо сейчас для сада «${g.name}». Автозапуск не включается.`}
+          </small>
+        </div>
+      </div>
       <aside className="desktop-sidebar">
         <div className="desktop-brand">
           <img src="./garden-icon.svg" width="42" height="42" alt="" />
@@ -335,32 +465,32 @@ function App() {
                     setModal(null);
                   }}
                 >
-                  <Field label="Имя сада" name="name" />
+                  <Field label="Название сада" name="name" />
                   <ProfileSelect v="unknown" />
                   <button>Создать сад</button>
                 </Form>,
               )
             }
           >
-            ＋ Сад
+            Создать сад
           </button>
           <button
             onClick={() =>
               dialog(
-                'Имя сада',
+                'Название сада',
                 <Form
                   submit={(f) => {
                     void send({ op: 'renameGarden', id: g.id, name: val(f, 'name') });
                     setModal(null);
                   }}
                 >
-                  <Field label="Имя сада" name="name" v={g.name} />
+                  <Field label="Название сада" name="name" v={g.name} />
                   <button>Переименовать</button>
                 </Form>,
               )
             }
           >
-            Имя
+            Переименовать сад
           </button>
         </div>
         <nav aria-label="Разделы сада">
@@ -387,18 +517,81 @@ function App() {
           <p>
             v0.2 · экспериментальный профиль
             <br />
-            Локально · без аккаунтов
+            Локальное хранение · внешняя обработка по выбору
           </p>
           <button onClick={() => void send({ op: 'backup' })}>Полная приватная копия</button>
           <button onClick={() => void send({ op: 'restore' })}>Восстановить с просмотром</button>
         </div>
       </aside>
       <main className="desktop-main">
+        {view.remotePreview && (
+          <Modal
+            title={
+              'Передача контекста ' +
+              (view.remotePreview.provider.kind === 'claude' ? 'Claude' : 'Groq')
+            }
+            onClose={() => void send({ op: 'cancelRemote' })}
+          >
+            <p>
+              Получатель: {view.remotePreview.provider.endpoint}. Модель:{' '}
+              {view.remotePreview.provider.requestedModel}.
+            </p>
+            <p>
+              Одно задание: генерация и проверка нового черновика, максимум{' '}
+              {view.remotePreview.calls} вызова, включая единственный общий ремонт формата. Будущий
+              черновик будет отправлен тому же провайдеру для проверки. Нет автоматического повтора
+              или переключения.
+            </p>
+            <p>
+              Донорские сады:{' '}
+              {view.remotePreview.donorGardens
+                .map((id) => w.gardens.find((g) => g.id === id)?.name ?? id)
+                .join(', ') || 'нет'}
+              . Согласие на локальное донорство отдельно от разрешения этой отправки.
+            </p>
+            <h3>Выбранные тексты</h3>
+            {view.remotePreview.objective && <p>Цель: {view.remotePreview.objective}</p>}
+            {view.remotePreview.sections.map((section, index) => (
+              <section key={index}>
+                <h4>{section.title}</h4>
+                <p style={{ whiteSpace: 'pre-wrap' }}>{section.text}</p>
+              </section>
+            ))}
+            <details>
+              <summary>Точный сериализованный контекст</summary>
+              <pre>{view.remotePreview.context}</pre>
+            </details>
+            {view.remotePreview.draft && (
+              <details open>
+                <summary>Точный сохранённый черновик для проверки</summary>
+                <pre>{JSON.stringify(view.remotePreview.draft, null, 2)}</pre>
+              </details>
+            )}
+            <details>
+              <summary>Инструкция модели</summary>
+              <pre>{view.remotePreview.prompt}</pre>
+            </details>
+            <p>
+              Контекст обрабатывает внешний сервис по своим условиям хранения. Отмена прекращает
+              ожидание и следующие вызовы; уже отправленные данные и расход квоты нельзя
+              гарантированно отозвать.
+            </p>
+            <button
+              className="primary"
+              onClick={() =>
+                void send({ op: 'confirmRemote', previewId: view.remotePreview!.id, consent: true })
+              }
+            >
+              Разрешить эту отправку и начать
+            </button>
+            <button onClick={() => void send({ op: 'cancelRemote' })}>Отмена</button>
+          </Modal>
+        )}
         <header className="garden-header">
           <div>
             <p className="eyebrow">ВАШ ЛОКАЛЬНЫЙ САД</p>
             <h1>{g.name}</h1>
-            <p>{profiles[g.profile]} · автоматический профиль экспериментальный</p>
+            <p>{profiles[g.profile]} · соберите исходные идеи и выберите, что развивать</p>
           </div>
           <div className="actions">
             <button onClick={gardenSettings}>Настроить сад</button>
@@ -406,16 +599,16 @@ function App() {
           </div>
         </header>
         <section className="rhythm" aria-label="Ритм сада">
-          <strong>
-            {view.status === 'running'
-              ? 'Локальное задание выполняется'
-              : view.status === 'attention'
-                ? 'Нужно внимание'
-                : w.paused
-                  ? 'Фон на паузе'
-                  : 'Фон разрешён'}
-          </strong>
-          <p role="status">{view.reason}</p>
+          <strong>Ритм сада «{g.name}»</strong>
+          <p>
+            {g.background
+              ? `В расписании · интервал ${g.interval} минут`
+              : 'Только разовые попытки. Участие в расписании можно включить ниже.'}
+          </p>
+          <details>
+            <summary>Технические подробности состояния</summary>
+            <pre>{view.reason}</pre>
+          </details>
           {view.activeJob && (
             <p>
               Задание относится к саду{' '}
@@ -434,7 +627,7 @@ function App() {
               Попыток {count.attempts}/{w.settings.attempts}
             </span>
             <span>
-              Кандидатов {count.candidates}/{w.settings.candidates}
+              Новых карточек {count.candidates}/{w.settings.candidates}
             </span>
             <span>
               Вызовов {count.calls}/{w.settings.calls}, резерв {count.held}
@@ -455,17 +648,16 @@ function App() {
             . Следующий срок: {when(g.nextAt)}.
           </p>
           <div className="actions">
-            <button className="primary" onClick={() => void send({ op: 'pause' })}>
-              Пауза и освобождение модели
-            </button>
-            <button disabled={view.busy} onClick={() => void send({ op: 'resume' })}>
-              Разрешить фон
-            </button>
-            <button
-              onClick={() => void send({ op: 'background', id: g.id, enabled: !g.background })}
-            >
-              {g.background ? 'Выключить фон сада' : 'Включить фон сада'}
-            </button>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={g.background}
+                onChange={(e) =>
+                  void send({ op: 'background', id: g.id, enabled: e.target.checked })
+                }
+              />
+              Включать этот сад в расписание
+            </label>
             <button onClick={() => setTab('settings')}>Лимиты за день</button>
             {view.status === 'attention' && (
               <button onClick={() => void send({ op: 'clearAttention' })}>
@@ -475,7 +667,7 @@ function App() {
           </div>
           {g.plan && (
             <p>
-              Маршрут {g.plan.route}: {g.plan.reason}{' '}
+              Маршрут: {label(g.plan.route)}. {explain(g.plan.reason)}{' '}
               <button onClick={() => void send({ op: 'localOverride', id: g.id })}>
                 Отменить маршрут и выбрать локальную пару
               </button>
@@ -484,7 +676,11 @@ function App() {
         </section>
         {error && (
           <div role="alert" className="error">
-            {error}
+            <p>{explain(error)}</p>
+            <details>
+              <summary>Точная причина</summary>
+              <pre>{error}</pre>
+            </details>
             <button onClick={() => setError('')}>Закрыть сообщение</button>
           </div>
         )}
@@ -557,9 +753,6 @@ function App() {
                 <h2>Исходные идеи · {sources.length}/200</h2>
                 <button disabled={picked.length !== 2 || view.busy} onClick={pair}>
                   Контекст выбранной пары
-                </button>
-                <button disabled={view.busy} onClick={() => void send({ op: 'run', garden: g.id })}>
-                  Одна новая попытка
                 </button>
                 <button
                   onClick={() =>
@@ -731,7 +924,7 @@ function App() {
                     })
                   }
                 >
-                  <Area label={p.origin + ' · v' + p.revision} name="text" v={p.text} />
+                  <Area label={label(p.origin) + ' · v' + p.revision} name="text" v={p.text} />
                   <Check label="Одобрено" name="approved" on={p.approved} />
                   <Check label="Включено" name="enabled" on={p.enabled} />
                   <button>Сохранить ревизию правила</button>
@@ -783,7 +976,27 @@ function App() {
                 </select>
               </label>
             </div>
-            <p>Корректный JSON и пройденный скрининг не доказывают полезность.</p>
+            <p>
+              Прочитайте идею и её исходники, затем решите: сохранить, отложить или отклонить.
+              Проверка модели помогает заметить проблемы; полезность оцениваете вы.
+            </p>
+            {!nodes.some(
+              (n) =>
+                filter === 'all' ||
+                (filter === 'kept'
+                  ? n.accepted
+                  : ['new', 'later'].includes(n.decisions.at(-1)?.state ?? 'new')),
+            ) && (
+              <div className="empty-state">
+                <h3>Здесь пока нет идей для выбранного списка</h3>
+                <p>
+                  В этом саду: {flow.attempts} новых попыток, {flow.drafts} сохранённых черновиков,{' '}
+                  {flow.dispatched} отправленных проверок.{' '}
+                  {w.paused ? 'Автозапуск на паузе.' : `Следующая попытка: ${when(g.nextAt)}.`}
+                </p>
+                <button onClick={() => setTab('filtered')}>Посмотреть черновики и причины</button>
+              </div>
+            )}
             <div className="card-grid">
               {nodes
                 .filter(
@@ -798,7 +1011,7 @@ function App() {
                     <small>
                       {evidenceMode(w, n)} ·{' '}
                       {n.revisions.at(-1)!.origin === 'user-authored' ? 'изменено человеком' : ''} ·{' '}
-                      {n.accepted ? 'сохранено' : n.decisions.at(-1)?.state}
+                      {label(n.decisions.at(-1)?.state)}
                     </small>
                     <h3>{n.revisions.at(-1)!.content.title}</h3>
                     <p className="preview">{n.revisions.at(-1)!.content.summary}</p>
@@ -812,8 +1025,9 @@ function App() {
           <section className="panel">
             <h2>Черновики и остановки</h2>
             <p>
-              Фильтрация не считается полезной идеей. Потраченные вызовы сохраняются. Неуспех не
-              расходует слот и успешную пару.
+              Здесь остаются черновики с замечаниями, отрицательные ответы и прерванные попытки.
+              Откройте текст или проверьте его заново. За неудачную попытку слот не списывается;
+              выполненные вызовы модели учтены.
             </p>
             {jobs
               .filter((j) =>
@@ -827,8 +1041,23 @@ function App() {
                 ].includes(j.stage),
               )
               .map((j) => (
-                <JobCard key={j.id} j={j} send={send} />
+                <JobCard key={j.id} j={j} send={send} busy={view.busy} />
               ))}
+            {!jobs.some((j) =>
+              [
+                'needs_revision',
+                'needs_context',
+                'failed',
+                'interrupted',
+                'negative',
+                'cancelled',
+              ].includes(j.stage),
+            ) && (
+              <p className="empty-state">
+                Остановленных черновиков пока нет. «Эврика» начнёт одну попытку для этого сада,
+                когда исходные идеи будут подготовлены.
+              </p>
+            )}
           </section>
         )}
         {tab === 'growth' && (
@@ -850,11 +1079,11 @@ function App() {
                     ? 'принято'
                     : n.creditHeld
                       ? 'предложение, слот удерживается'
-                      : n.decisions.at(-1)?.state}
+                      : label(n.decisions.at(-1)?.state)}
                   <p>
                     Родители:{' '}
                     {n.parents
-                      .map((p) => p.kind + ' ' + p.id.slice(0, 8) + ' v' + p.revision)
+                      .map((p) => label(p.kind) + ' ' + p.id.slice(0, 8) + ' v' + p.revision)
                       .join(', ')}
                   </p>
                   {n.accepted && (
@@ -880,7 +1109,19 @@ function App() {
         )}
         {tab === 'journal' && (
           <section className="panel">
-            <h2>Журнал с явными знаменателями</h2>
+            <h2>От попытки до новой идеи</h2>
+            <p>
+              Сад «{g.name}», только наблюдавшиеся задания нового контракта за всё время. Проверки
+              прежних черновиков входят в этап проверки; импортированные и старые карточки
+              учитываются отдельно.
+            </p>
+            <ol className="funnel" aria-label="Этапы создания идей">
+              <li>{flow.attempts} попыток с отправкой генерации</li>
+              <li>{flow.drafts} сохранённых черновиков</li>
+              <li>{flow.dispatched} заданий с отправленной проверкой</li>
+              <li>{flow.assessed} результатов проверки</li>
+              <li>{flow.cards} новых карточек без человеческого обхода проверки</li>
+            </ol>
             <p>
               Сегодня: {count.attempts} попыток, {count.candidates} показанных кандидатов и
               предложений, {count.calls} вызовов. Всего: {w.jobs.length} заданий,{' '}
@@ -899,9 +1140,10 @@ function App() {
               .map((j) => (
                 <details key={j.id}>
                   <summary>
-                    {when(j.entry.at)} · {j.operation} · {j.stage} · {j.calls.length} вызовов
+                    {when(j.entry.at)} · {label(j.operation)} · {jobTitle(j)} · {j.calls.length}{' '}
+                    вызовов
                   </summary>
-                  <JobCard j={j} send={send} />
+                  <JobCard j={j} send={send} busy={view.busy} />
                 </details>
               ))}
             <details>
@@ -939,7 +1181,7 @@ function App() {
               <summary>Резервные копии · {view.backups.length}</summary>
               {view.backups.map((b) => (
                 <p key={b.id}>
-                  {when(b.at)} · {b.reason} · {b.bytes} байт{' '}
+                  {when(b.at)} · Полная копия · {b.bytes} байт{' '}
                   <button onClick={() => void send({ op: 'purgeBackup', id: b.id, sha: b.sha })}>
                     Предпросмотр удаления копии
                   </button>
@@ -950,7 +1192,7 @@ function App() {
               <details>
                 <summary>Сохранённая исходная рабочая область v2</summary>
                 <p>
-                  Прежние записи не объявляются новым скринингом. Эта копия остаётся в полной
+                  Прежние записи ещё не проходили новую проверку. Эта копия остаётся в полной
                   приватной копии и может содержать ранее удалённые данные.
                 </p>
                 <button onClick={() => void send({ op: 'purgeLegacy' })}>
@@ -999,7 +1241,7 @@ function App() {
                   v={w.settings.attempts}
                 />
                 <Field
-                  label="Кандидатов в день, 1–48"
+                  label="Новых карточек в день, 1–48"
                   name="candidates"
                   type="number"
                   v={w.settings.candidates}
@@ -1041,14 +1283,144 @@ function App() {
               </div>
               <p>
                 Часовой пояс: {w.settings.timezone}. Два вызова на обычную попытку, третий возможен
-                для ремонта. Изменение вычислений ставит фон на паузу.
+                для исправления формата. Слоты сада расходуются только при сохранении результата;
+                дневные вызовы и очередь просмотра ограничиваются отдельно. Изменение лимитов ставит
+                автозапуск на паузу.
               </p>
               <button className="primary">Сохранить границы</button>
             </Form>
+            <h3>Способ генерации</h3>
+            <p>
+              Хранение остаётся локальным. Внешняя обработка отправляет выбранный контекст
+              провайдеру только после отдельного подтверждения каждого задания. Фоновая отправка
+              выключена.
+            </p>
+            <label>
+              Подключение
+              <select
+                aria-label="Способ генерации"
+                value={w.provider?.kind ?? 'local'}
+                disabled={view.busy}
+                onChange={(e) => void send({ op: 'configureProvider', kind: e.target.value })}
+              >
+                <option value="local">Локально · установленная Ollama</option>
+                <option value="claude">Claude Code · ваша подписка · Sonnet</option>
+                <option value="groq">Groq API · необязательный отдельный сервис</option>
+              </select>
+            </label>
+            <p>
+              Выбрано:{' '}
+              {view.provider?.kind === 'claude'
+                ? 'Claude Code · подписка · Sonnet · только вручную'
+                : view.provider?.kind === 'groq'
+                  ? 'Groq · openai/gpt-oss-20b · только вручную'
+                  : 'локальная модель'}
+              . Квоты и условия внешнего сервиса зависят от вашего аккаунта; платный тариф не
+              подключается.
+            </p>
+            <h3>Claude через вашу подписку</h3>
+            <p>
+              Если setup-token уже готов, вставьте его здесь. Он сохраняется отдельно от идей,
+              шифруется средствами ОС и передаётся только официальному Claude Code. Обычный вход
+              Claude также поддерживается; API billing автоматически не включается.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.currentTarget,
+                  token = val(new FormData(form), 'claudeToken');
+                form.reset();
+                void send({ op: 'setClaudeToken', token });
+              }}
+            >
+              <label>
+                Claude setup-token
+                <input
+                  aria-label="Claude setup-token"
+                  name="claudeToken"
+                  type="password"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </label>
+              <button disabled={view.busy || !view.claudeToken?.available}>
+                Сохранить setup-token защищённо
+              </button>
+            </form>
+            <p>
+              {view.claudeToken?.present
+                ? 'Setup-token сохранён в защищённом хранилище.'
+                : 'Setup-token не сохранён. Можно использовать обычный вход Claude.'}
+            </p>
+            <button
+              disabled={view.busy || !view.claudeToken?.present}
+              onClick={() => void send({ op: 'removeClaudeToken' })}
+            >
+              Удалить setup-token
+            </button>
+            <button disabled={view.busy} onClick={() => void send({ op: 'checkClaude' })}>
+              Проверить вход Claude без генерации
+            </button>
+            <Form
+              submit={(f) =>
+                void send({ op: 'configureClaude', executable: val(f, 'claudeExecutable') })
+              }
+            >
+              <Field
+                label="Путь к официальному claude.exe (необязательно при npm-установке)"
+                name="claudeExecutable"
+                v={w.claudeExecutable ?? ''}
+              />
+              <button disabled={view.busy}>Выбрать этот Claude Code</button>
+            </Form>
+            {view.provider?.kind === 'groq' && (
+              <>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const f = e.currentTarget,
+                      key = val(new FormData(f), 'groqKey');
+                    f.reset();
+                    void send({ op: 'setGroqCredential', key });
+                  }}
+                >
+                  <label>
+                    Ключ Groq
+                    <input
+                      aria-label="Ключ Groq"
+                      type="password"
+                      name="groqKey"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </label>
+                  <button disabled={view.busy || !view.provider?.credentialAvailable}>
+                    Сохранить ключ в защищённом хранилище ОС
+                  </button>
+                </form>
+                <p>
+                  {view.provider?.credentialPresent
+                    ? 'Ключ сохранён. Он не включается в резервные копии идей и экспорты.'
+                    : 'Ключ не настроен.'}{' '}
+                  {!view.provider?.credentialAvailable
+                    ? 'Защищённое хранилище ОС недоступно. Открытый текст не используется.'
+                    : ''}
+                </p>
+                <button
+                  disabled={view.busy || !view.provider?.credentialPresent}
+                  onClick={() => void send({ op: 'removeGroqCredential' })}
+                >
+                  Удалить ключ
+                </button>
+                <button onClick={() => void send({ op: 'saveSensitiveEmergency' })}>
+                  Сохранить защищённый recovery удержанного ответа
+                </button>
+              </>
+            )}
             <h3>Локальная модель</h3>
             <p>
-              Runtime, модель и tokenizer не скачиваются. Выбираются только явно установленные
-              файлы.
+              Выберите уже установленную программу Ollama и папку весов модели. Приложение ничего не
+              скачивает.
             </p>
             <div className="actions">
               {[
@@ -1149,14 +1521,16 @@ function App() {
             }}
           >
             <p>
-              Один ручной запрос не включает фон. Предложение проходит отдельный скрининг и ждёт
-              вашего решения. Язык: {w.settings.language}.
+              Один ручной запрос не включает автозапуск. Предложение проходит отдельную проверку и
+              ждёт вашего решения. Язык: {w.settings.language === 'ru' ? 'русский' : 'английский'}.
             </p>
             <label>
               Направление
               <select name="direction">
                 {DIRECTIONS.map((d) => (
-                  <option key={d}>{d}</option>
+                  <option key={d} value={d}>
+                    {label(d)}
+                  </option>
                 ))}
               </select>
             </label>
@@ -1183,7 +1557,7 @@ function App() {
             {view.preview.items.map((item, i) => (
               <article key={i}>
                 <h3>{item.title}</h3>
-                <p>Сигнал дубликата: {item.duplicate}; одно имя не объединяет разные тексты.</p>
+                <p>{label(item.duplicate)}. Совпадение названия не объединяет разные тексты.</p>
                 <details>
                   <summary>Полный оригинал</summary>
                   <pre>{item.text}</pre>
@@ -1227,8 +1601,8 @@ function SourceReader({
   return (
     <Modal title={r.title || 'Исходная идея'} onClose={close} className="wide-reader">
       <p>
-        v{r.revision} · {s.origin} · ввод {when(r.entry.at)}. Время замысла и исторический язык
-        неизвестны.
+        v{r.revision} · {label(s.origin)} · ввод {when(r.entry.at)}. Время замысла и исторический
+        язык неизвестны.
       </p>
       <h3>Полный оригинал</h3>
       <pre>{r.text}</pre>
@@ -1304,7 +1678,7 @@ function SourceReader({
         <summary>Точный контекст, фрагменты и пропуски</summary>
         <Context w={w} g={s.garden} parents={[identity(s)]} />
       </details>
-      <h3>ДНК / поля</h3>
+      <h3>Свойства исходной идеи (ДНК)</h3>
       {p.facets.map((f) => (
         <Form
           key={f.id + String(f.approved)}
@@ -1320,7 +1694,7 @@ function SourceReader({
             })
           }
         >
-          <Field label={'Поле · ' + f.origin} name="field" v={f.field} />
+          <Field label={'Свойство · ' + label(f.origin)} name="field" v={f.field} />
           <Field label="Значение; пусто = неизвестно" name="value" v={f.value ?? ''} />
           <Check label="Одобрено" name="approved" on={f.approved} />
           <p>Основание: {f.spans.join(', ') || 'ручное ограничение'}</p>
@@ -1348,7 +1722,7 @@ function SourceReader({
         <button>Добавить поле</button>
       </Form>
       <button onClick={() => void send({ op: 'decode', garden: s.garden, parents: [identity(s)] })}>
-        Decode DNA · один локальный вызов
+        Предложить свойства по тексту · один вызов модели
       </button>
       <h3>Термины без переписывания оригинала</h3>
       {p.aliases.map((a) => (
@@ -1409,7 +1783,7 @@ function SourceReader({
         .map((ref) => (
           <article key={ref.id}>
             <h4>
-              {ref.name} · v{ref.revision} · {ref.status}
+              {ref.name} · v{ref.revision} · {label(ref.status)}
             </h4>
             <p>Заимствовать: {ref.property}</p>
             <p>Отличаться: {ref.differ}</p>
@@ -1444,7 +1818,7 @@ function SourceReader({
                       })
                     }
                   >
-                    <Field label="Имя референса" name="name" v={ref.name} />
+                    <Field label="Название референса" name="name" v={ref.name} />
                     <Field label="Ссылка без загрузки" name="url" v={ref.url} />
                     <Area label="Что заимствовать" name="property" v={ref.property} />
                     <Area label="Что должно отличаться" name="differ" v={ref.differ} />
@@ -1457,7 +1831,9 @@ function SourceReader({
                           'user-confirmed property',
                           'source-supported property',
                         ].map((s) => (
-                          <option key={s}>{s}</option>
+                          <option key={s} value={s}>
+                            {label(s)}
+                          </option>
                         ))}
                       </select>
                     </label>
@@ -1485,7 +1861,7 @@ function SourceReader({
           })
         }
       >
-        <Field label="Имя референса" name="name" />
+        <Field label="Название референса" name="name" />
         <Field label="Предоставленная HTTP(S) ссылка — не загружается" name="url" />
         <Area label="Что заимствовать — свойство / выдержка" name="property" />
         <Area label="Что должно отличаться" name="differ" />
@@ -1498,7 +1874,9 @@ function SourceReader({
               'user-confirmed property',
               'source-supported property',
             ].map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>
+                {label(s)}
+              </option>
             ))}
           </select>
         </label>
@@ -1560,7 +1938,7 @@ function NodeReader({
   return (
     <Modal title={c.title} onClose={close} className="wide-reader">
       <p>
-        {evidenceMode(w, n)} · v{r.revision} · {r.origin}
+        {evidenceMode(w, n)} · v{r.revision} · {label(r.origin)}
       </p>
       <p>{c.summary}</p>
       {Object.entries({
@@ -1593,13 +1971,13 @@ function NodeReader({
           <li key={i}>{u}</li>
         ))}
       </ul>
-      <h3>Скрининг точной ревизии</h3>
+      <h3>Проверка этой версии идеи</h3>
       <button onClick={() => void send({ op: 'checkNode', id: n.id })}>
         Проверить эту ревизию отдельно
       </button>
       <p>
-        {r.assessment?.decision ?? 'Нет скрининга этой ревизии'}. Это ошибающийся локальный
-        помощник, не доказательство полезности или истинности.
+        {r.assessment ? label(r.assessment.decision) : 'Эта версия ещё не проверена'}. Это
+        ошибающийся локальный помощник, не доказательство полезности или истинности.
       </p>
       {r.assessment?.findings.map((f, i) => (
         <p key={i}>
@@ -1607,12 +1985,12 @@ function NodeReader({
         </p>
       ))}
       <p>{r.assessment?.limitations}</p>
-      {d?.override && <p>Принято вопреки скринингу — явное решение человека.</p>}
+      {d?.override && <p>Принято вопреки проверке — явное решение человека.</p>}
       <h3>Родители — точные ревизии</h3>
       {n.parents.map((p) => (
         <details key={p.id}>
           <summary>
-            {w.gardens.find((g) => g.id === p.garden)?.name} · {p.kind} · {p.id} v{p.revision}
+            {w.gardens.find((g) => g.id === p.garden)?.name} · {label(p.kind)} · v{p.revision}
           </summary>
           <pre>
             {p.kind === 'source'
@@ -1643,7 +2021,7 @@ function NodeReader({
         <summary>Выбранные исходные сведения о референсах</summary>
         {(r.references ?? n.references).map((ref) => (
           <p key={ref.id}>
-            {ref.name} · {ref.status} · {ref.property} · требуемое отличие: {ref.differ}
+            {ref.name} · {label(ref.status)} · {ref.property} · требуемое отличие: {ref.differ}
           </p>
         ))}
       </details>
@@ -1787,52 +2165,86 @@ function NodeReader({
     </Modal>
   );
 }
-function JobCard({ j, send }: { j: Job; send: Send }) {
+function JobCard({ j, send, busy }: { j: Job; send: Send; busy: boolean }) {
   return (
     <article className="source-card">
-      <h3>
-        {j.draft?.outcome === 'candidate' ? j.draft.title : j.operation} · {j.stage}
-      </h3>
+      <h3>{jobTitle(j)}</h3>
       <p>
-        Вызовов {j.calls.length} · ремонт {j.repairUsed ? 'использован один' : 'не использован'} ·{' '}
-        {j.observed ? 'локальное наблюдение' : 'импортированное утверждение'}
+        {when(j.entry.at)} ·{' '}
+        {j.observed
+          ? isRemote(j.provider)
+            ? 'Удалённая генерация · ' + j.provider!.kind
+            : 'Создано на этом компьютере'
+          : 'Импортировано'}{' '}
+        · {j.calls.length} вызовов модели
       </p>
       {j.draft?.outcome === 'candidate' ? (
         <>
+          <h4>{j.draft.title}</h4>
           <p>{j.draft.summary}</p>
           <details>
-            <summary>Полный черновик</summary>
-            <pre>{JSON.stringify(j.draft, null, 2)}</pre>
+            <summary>Посмотреть черновик</summary>
+            <p>{j.draft.experience}</p>
+            <p>{j.draft.core}</p>
+            <p>{j.draft.example}</p>
+            <h4>Вклад исходных идей</h4>
+            {j.draft.contributions.map((c, i) => (
+              <p key={i}>{c.text}</p>
+            ))}
+            <p>{j.draft.interaction}</p>
+            <h4>Ограничения и вопросы</h4>
+            {j.draft.unknowns.map((u, i) => (
+              <p key={i}>{u}</p>
+            ))}
+            <p>{j.draft.nextQuestion}</p>
+            <p>{j.draft.preservedCore}</p>
+            <p>{j.draft.delta}</p>
+            <p>{j.draft.changedAssumption}</p>
+            <p>{j.draft.test}</p>
+            {j.draft.references.map((r, i) => (
+              <p key={i}>
+                {r.property} · {r.difference}
+              </p>
+            ))}
           </details>
         </>
       ) : (
-        j.draft && (
-          <p>
-            {j.draft.outcome}: {j.draft.reason}
-          </p>
-        )
+        j.draft && <p>{modelReason(j.draft.reason)}</p>
       )}
-      <p>{j.primaryFailure}</p>
-      {j.repairRefusal && <p>Отдельная причина недоступности ремонта: {j.repairRefusal}</p>}
+      {j.draft &&
+        j.draft.outcome !== 'candidate' &&
+        j.draft.missing.map((m, i) => <p key={i}>Нужно уточнить: {m}</p>)}
+      {j.primaryFailure && <p>{explain(j.primaryFailure)}</p>}
+      {j.repairRefusal && (
+        <p>Исправить формат в этой попытке не удалось. Исходный ответ сохранён.</p>
+      )}
       {j.assessment && (
         <>
           <p>
-            Скрининг: {j.assessment.decision}. {j.assessment.limitations}
+            {label(j.assessment.decision)}. {j.assessment.limitations}
           </p>
           {j.assessment.findings.map((f, i) => (
             <p key={i}>
-              {f.field}: {f.issue} · {f.evidence.join(', ')} · {f.missing}
+              {f.issue} {f.missing && `Нужно уточнить: ${f.missing}`}
             </p>
           ))}
         </>
       )}
       {j.draft?.outcome === 'candidate' && (
         <div className="actions">
-          <button onClick={() => void send({ op: 'check', id: j.id })}>
+          <button
+            disabled={busy}
+            title={
+              busy
+                ? 'Модель занята. Дождитесь завершения или нажмите «Пауза».'
+                : 'Проверить сохранённый точный текст; новый вызов учитывается отдельно.'
+            }
+            onClick={() => void send({ op: 'check', id: j.id })}
+          >
             Проверить этот черновик
           </button>
-          <button onClick={() => void send({ op: 'override', id: j.id })}>
-            Принять вопреки скринингу
+          <button disabled={busy} onClick={() => void send({ op: 'override', id: j.id })}>
+            Принять вопреки проверке
           </button>
         </div>
       )}
@@ -1848,11 +2260,29 @@ function JobCard({ j, send }: { j: Job; send: Send }) {
         }
       >
         <Area label="Целевой вопрос для новой ревизии / явной повторной попытки" name="question" />
-        <button>Одна новая попытка с теми же родителями</button>
+        <button disabled={busy}>Создать новую версию по этим исходникам</button>
       </Form>
       <details>
-        <summary>Оригинальные ответы, этапы и контекст</summary>
-        <pre>{JSON.stringify({ history: j.history, raw: j.raw, pack: j.pack }, null, 2)}</pre>
+        <summary>Технические подробности и оригинальные ответы</summary>
+        <pre>
+          {JSON.stringify(
+            {
+              operation: j.operation,
+              stage: j.stage,
+              primaryFailure: j.primaryFailure,
+              repairRefusal: j.repairRefusal,
+              admission: j.admission ?? 'Исторический контракт',
+              dispatches: j.dispatches,
+              history: j.history,
+              raw: j.raw,
+              draft: j.draft,
+              assessment: j.assessment,
+              pack: j.pack,
+            },
+            null,
+            2,
+          )}
+        </pre>
       </details>
       <button onClick={() => void send({ op: 'purgeJob', id: j.id })}>
         Предпросмотр удаления доказательств задания

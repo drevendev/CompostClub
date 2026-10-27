@@ -1,5 +1,7 @@
 # Coherent Gardens — 0.2.0-rc.1
 
+> Current provider patch: [manual Claude subscription and optional Groq setup/status](PROVIDER_PATCH.md). The owner authorized implementation on 27 October 2026 and clarified Claude subscription as the first connection. Historical local-only acceptance below remains provider-specific; it is not satisfied by remote or synthetic output.
+
 This is an experimental Windows release candidate implementing the [v0.2 contract](NEXT_RELEASE_SPEC.md). It is available for local owner trials. **Creative usefulness has not passed the promotion gate.** A draft PR or portable package does not imply a GitHub Release, deployment or competition submission. See the [acceptance record](COHERENT_GARDENS_ACCEPTANCE.md) for the negative model result and remaining human decisions.
 
 ![Actual Windows Chromium capture using independently fictional sources](images/coherent-gardens-rc.png)

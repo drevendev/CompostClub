@@ -1,4 +1,8 @@
-import { lstat, readFile, realpath, readdir, unlink, rmdir } from 'node:fs/promises';
+import { ClaudeRuntime } from './claude-runtime';
+import { isRemote } from '../src/domain/coherent/provider';
+import { GroqRuntime } from './groq-runtime';
+import { providerHash, providerSnapshot, validProvider } from '../src/domain/coherent/provider';
+import { lstat, readFile, realpath, readdir, unlink, rmdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CoherentStore } from './coherent-store';
 import { OwnedOllama } from './runtime';
@@ -8,7 +12,7 @@ import { exportCoherent } from './coherent-export';
 import { initializeExport, safeDirectory } from './export';
 import { bytes, canonical, hash } from '../src/domain/coherent/hash';
 import {
-  assessmentSchema,
+  schemaForAssessment,
   schemaForJob,
   dnaSchema,
   preferenceSchema,
@@ -20,7 +24,15 @@ import {
 } from '../src/domain/coherent/contract';
 import { current, identity, safeUrl, validPack } from '../src/domain/coherent/prepare';
 import {
+  STAGE_TIMEOUT_MS,
+  STOP_TIMEOUT_MS,
+  TEMPLATE_RESERVE,
+  compactContext,
+} from '../src/domain/coherent/admission';
+import {
   active,
+  admissionConditions,
+  backgroundReason,
   addSource,
   commit,
   decide,
@@ -69,6 +81,15 @@ const strings = (v: unknown, max = 200) => {
   return v.map((v) => text(v, 128));
 };
 export class CoherentController {
+  private previewState: Workspace | undefined;
+  private pendingRemote: {
+    id: string;
+    expires: number;
+    revision: number;
+    workspace: Workspace;
+    job: string;
+  } | null = null;
+  private authorizedRemote = new Set<string>();
   private active: Promise<void> | undefined;
   private abort: AbortController | undefined;
   private pausing = false;
@@ -80,22 +101,33 @@ export class CoherentController {
   private publishing = Promise.resolve();
   private exportStatus: CoherentView['exportStatus'] = null;
   private currentId: string | null = null;
+  private stopUnconfirmed = false;
   constructor(
     readonly store: CoherentStore,
     private services: DesktopServices,
     private forbidden: string[],
     readonly runtime = new OwnedOllama(),
+    readonly remote = new GroqRuntime(),
+    readonly claude = new ClaudeRuntime(store.directory, () => store.state.claudeExecutable),
   ) {
     this.lifecycle('launch', 0, '');
+  }
+  private async releaseResources() {
+    await Promise.all([this.runtime.release(), this.claude.release()]);
   }
   subscribe(fn: () => void) {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
   }
   private emit() {
+    if (this.previewState) return;
     for (const fn of this.listeners) fn();
   }
   private change(fn: (w: Workspace) => void) {
+    if (this.previewState) {
+      fn(this.previewState);
+      return this.previewState;
+    }
     return this.store.change(fn);
   }
   private lifecycle(kind: Lifecycle['kind'], elapsed: number, error: string) {
@@ -127,10 +159,62 @@ export class CoherentController {
     const w = this.store.state;
     const reasons = w.gardens
       .filter((g) => g.background)
-      .map((g) => g.name + ': ' + wait(w, g.id, Date.now()));
+      .map((g) => g.name + ': ' + backgroundReason(w, g.id, Date.now()));
+    const pending = this.pendingRemote;
+    const pendingJob = pending?.workspace.jobs.find((j) => j.id === pending.job);
     return {
+      claudeToken: {
+        available: this.claude.tokenStore?.available() ?? false,
+        present: this.claude.tokenStore?.has() ?? false,
+      },
+      provider: {
+        ...providerSnapshot(w.provider, w.runtime.model),
+        credentialAvailable:
+          w.provider?.kind === 'claude'
+            ? this.claude.available()
+            : this.remote.credentials.available(),
+        credentialPresent:
+          w.provider?.kind === 'claude'
+            ? this.claude.tokenStore?.has() ||
+              ['claude.ai', 'oauth_token'].includes(this.claude.authMethod)
+            : this.remote.credentials.has(),
+      },
+      remotePreview:
+        pending && pendingJob
+          ? {
+              id: pending.id,
+              expires: pending.expires,
+              garden: pendingJob.garden,
+              provider: pendingJob.provider!,
+              context: compactContext(pendingJob),
+              sections: pendingJob.pack.evidence.map((e, i) => ({
+                title: e.parent
+                  ? 'Источник ' +
+                    (pendingJob.parents.findIndex((p) => p.id === e.parent!.id) + 1) +
+                    ' · ' +
+                    (w.gardens.find((g) => g.id === e.parent!.garden)?.name ?? 'сад')
+                  : 'Дополнительный выбранный контекст ' + (i + 1),
+                text: e.text,
+              })),
+              objective: (JSON.parse(pendingJob.pack.payload) as { objective: string }).objective,
+              draft: pendingJob.draft,
+              prompt:
+                pendingJob.operation === 'check'
+                  ? screeningPrompt(pendingJob)
+                  : generationPrompt(pendingJob),
+              calls: pendingJob.heldCalls,
+              donorGardens: [
+                ...new Set(
+                  pendingJob.parents
+                    .filter((p) => p.garden !== pendingJob.garden)
+                    .map((p) => p.garden),
+                ),
+              ],
+            }
+          : null,
+      eureka: w.gardens.map((g) => ({ garden: g.id, reason: this.eurekaReason(g.id) })),
       workspace: w,
-      busy: !!this.active,
+      busy: !!this.active || this.pausing,
       status: this.pausing
         ? 'pausing'
         : this.error || w.attention
@@ -162,10 +246,51 @@ export class CoherentController {
       autostart: this.services.autostartEnabled?.() ?? false,
     };
   }
+  private eurekaSeed(g: string) {
+    return parseInt(
+      hash(canonical([g, this.store.state.jobs.length, 'eureka-draw-1'])).slice(0, 8),
+      16,
+    );
+  }
+  private eurekaReason(g: string) {
+    if (this.pausing) return 'Останавливаем работу и освобождаем модель. Дождитесь подтверждения.';
+    if (this.stopUnconfirmed)
+      return 'Не удалось подтвердить остановку. Сохраните копию и завершите приложение.';
+    if (this.active) {
+      const j = this.store.state.jobs.find((j) => j.id === this.currentId);
+      return `Модель занята садом «${this.store.state.gardens.find((g) => g.id === j?.garden)?.name ?? 'другой сад'}». Дождитесь результата или нажмите «Пауза».`;
+    }
+    if (this.error || this.store.state.attention) return this.error || this.store.state.attention;
+    try {
+      this.store.requireReceiptHeadroom();
+      prepareJob(structuredClone(this.store.state), g, 'blend', Date.now(), {
+        manual: true,
+        probabilistic: true,
+        seed: this.eurekaSeed(g),
+      });
+      return '';
+    } catch (e) {
+      return message(e);
+    }
+  }
   async pause(reason = 'Paused by you. Model resources released.') {
     if (this.pausing) {
-      await this.active;
-      await this.runtime.release();
+      if (this.active)
+        await Promise.race([
+          this.active,
+          new Promise<void>((_, reject) =>
+            setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    'Не удалось подтвердить остановку. Сохраните копию и завершите приложение.',
+                  ),
+                ),
+              STOP_TIMEOUT_MS,
+            ).unref(),
+          ),
+        ]);
+      await this.releaseResources();
       return;
     }
     this.pausing = true;
@@ -180,16 +305,40 @@ export class CoherentController {
     }
     this.emit();
     try {
-      await this.active;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          Promise.all([this.active, this.releaseResources()]),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    'Не удалось подтвердить остановку. Новый запуск запрещён; сохраните копию и завершите приложение.',
+                  ),
+                ),
+              STOP_TIMEOUT_MS,
+            );
+          }),
+        ]);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
       this.lifecycle('stage drained', Date.now() - started, '');
-      await this.runtime.release();
-      this.lifecycle('release confirmed', Date.now() - started, '');
+      this.lifecycle(
+        isRemote(this.store.state.provider) ? 'remote wait drained' : 'release confirmed',
+        Date.now() - started,
+        '',
+      );
       if (saveError) throw saveError;
       this.error = this.store.emergency.length
         ? 'Original responses need a full recovery backup before exit.'
-        : this.exportError;
+        : this.exportError ||
+          (/Persistence|Lifecycle|evidence gap/.test(this.error) ? this.error : '');
+      this.stopUnconfirmed = false;
       if (!this.error && reason) this.error = '';
     } catch (e) {
+      this.stopUnconfirmed = true;
       this.error = message(e);
       this.lifecycle('release failed', Date.now() - started, this.error);
       throw e;
@@ -234,7 +383,11 @@ export class CoherentController {
     // newly retained response with a renderer's earlier workspace snapshot.
     this.change(fn);
   }
-  async command(input: unknown, operatorConfirmed = false): Promise<CoherentView> {
+  async command(
+    input: unknown,
+    operatorConfirmed = false,
+    previewOnly = false,
+  ): Promise<CoherentView> {
     if (
       !input ||
       typeof input !== 'object' ||
@@ -246,27 +399,173 @@ export class CoherentController {
     const c = input as CoherentCommand,
       now = Date.now(),
       id = () => text(c.id, 128);
+    if (
+      !previewOnly &&
+      isRemote(this.store.state.provider) &&
+      [
+        'run',
+        'eureka',
+        'tend',
+        'revise',
+        'check',
+        'checkNode',
+        'decode',
+        'proposePreferences',
+      ].includes(c.op)
+    ) {
+      if (this.active || this.pausing || this.error)
+        throw new Error('Дождитесь завершения работы или устраните причину остановки.');
+      this.previewState = structuredClone(this.store.state);
+      try {
+        await this.command(c, operatorConfirmed, true);
+      } finally {
+        this.previewState = undefined;
+      }
+      this.emit();
+      return this.view();
+    }
     switch (c.op) {
+      case 'configureProvider': {
+        if (c.kind !== 'local' && c.kind !== 'groq' && c.kind !== 'claude')
+          throw new Error('Unsupported provider.');
+        await this.pause();
+        this.pendingRemote = null;
+        this.change((w) => {
+          w.provider = {
+            kind: c.kind as 'local' | 'groq' | 'claude',
+            revision: (w.provider?.revision ?? 0) + 1,
+          };
+        });
+        break;
+      }
+      case 'checkClaude':
+        if (this.active || this.pausing) throw new Error('Wait for active work.');
+        await this.claude.start();
+        break;
+      case 'configureClaude': {
+        const executable = text(c.executable, 32768);
+        if (!path.isAbsolute(executable) || path.extname(executable).toLowerCase() !== '.exe')
+          throw new Error('Укажите абсолютный путь к официальному claude.exe.');
+        const info = await lstat(executable);
+        if (
+          !info.isFile() ||
+          info.isSymbolicLink() ||
+          (await realpath(executable)).toLowerCase() !== path.resolve(executable).toLowerCase()
+        )
+          throw new Error('Выберите обычный локальный файл.');
+        await this.pause();
+        this.pendingRemote = null;
+        this.change((w) => {
+          w.claudeExecutable = executable;
+          if (w.provider) w.provider.revision++;
+        });
+        break;
+      }
+      case 'setClaudeToken':
+        await this.pause();
+        this.pendingRemote = null;
+        if (!this.claude.tokenStore) throw new Error('Защищённое хранилище токена недоступно.');
+        await this.claude.tokenStore.set(text(c.token, 4096));
+        break;
+      case 'removeClaudeToken':
+        await this.pause();
+        this.pendingRemote = null;
+        if (!this.claude.tokenStore) throw new Error('Защищённое хранилище токена недоступно.');
+        await this.claude.tokenStore.remove();
+        break;
+      case 'setGroqCredential':
+        await this.pause();
+        this.pendingRemote = null;
+        await this.remote.credentials.set(text(c.key, 204, true));
+        break;
+      case 'saveSensitiveEmergency':
+        await this.remote.saveSensitiveEmergency();
+        await this.claude.saveSensitiveEmergency();
+        break;
+      case 'removeGroqCredential':
+        await this.pause();
+        this.pendingRemote = null;
+        await this.remote.credentials.remove();
+        break;
+      case 'cancelRemote':
+        this.pendingRemote = null;
+        break;
+      case 'confirmRemote': {
+        const token = text(c.previewId, 128),
+          tombstone = (this.store.state.requests ?? []).find((r) => r.id === 'remote:' + token);
+        if (tombstone) break;
+        const p = this.pendingRemote;
+        if (!p || p.id !== token || p.expires < now)
+          throw new Error('Предпросмотр истёк. Подготовьте и подтвердите новый запрос.');
+        if (c.consent !== true)
+          throw new Error('Подтвердите передачу выбранного контекста провайдеру.');
+        if (this.active || this.pausing || this.error || this.store.state.revision !== p.revision)
+          throw new Error('Состояние изменилось. Просмотрите новый состав контекста.');
+        if (p.workspace.provider?.kind === 'claude') await this.claude.start();
+        else await this.remote.credentials.get();
+        if ((this.store.state.requests ?? []).some((r) => r.id === 'remote:' + token)) break;
+        this.change((w) => {
+          if (w.revision !== p.revision) throw new Error('State changed during consent.');
+          Object.assign(w, structuredClone(p.workspace));
+          const j = w.jobs.find((j) => j.id === p.job)!;
+          validProvider(j.provider!);
+          j.remoteConsent = {
+            contextHash: j.pack.hash,
+            providerHash: providerHash(j.provider!),
+            at: now,
+            expires: p.expires,
+          };
+          revalidate(w, j, now);
+          const requests = (w.requests ??= []);
+          if (requests.length >= 4000) throw new Error('Request journal full.');
+          requests.push({
+            id: 'remote:' + token,
+            fingerprint: hash(canonical(j.remoteConsent)),
+            garden: j.garden,
+            job: j.id,
+            at: now,
+            state: 'started',
+            reason: '',
+          });
+        });
+        this.authorizedRemote.add(p.job);
+        this.pendingRemote = null;
+        this.launch(p.job);
+        break;
+      }
       case 'snapshot':
         break;
       case 'pause':
         await this.pause();
         break;
       case 'resume':
+        if (isRemote(this.store.state.provider))
+          throw new Error(
+            'Удалённое расписание выключено. Используйте ручную отправку с предпросмотром.',
+          );
         if (this.active || this.pausing) throw new Error('Wait for active work to drain.');
+        if (this.remote.emergencyPending || this.claude.emergencyPending)
+          throw new Error(
+            'Секретный исходный ответ удерживается в памяти. Восстановите защищённое хранилище и сохраните recovery до выхода.',
+          );
         if (this.store.emergency.length)
           throw new Error('Save emergency evidence before resuming.');
-        this.error = '';
+        if (this.stopUnconfirmed || this.error || this.exportError || this.store.state.attention)
+          throw new Error(
+            'Продолжение недоступно: сначала устраните причину в настройках и проверьте сохранность ответов.',
+          );
+        if (!this.store.state.gardens.some((g) => g.background))
+          throw new Error(
+            'В расписание не включён ни один сад. В настройках сада включите «Включать этот сад в расписание».',
+          );
         this.change((w) => {
-          w.attention = '';
-          w.failures = 0;
           w.paused = false;
           for (const g of w.gardens)
             if (g.background) g.nextAt = Math.max(g.nextAt, now + g.interval * 60000);
         });
         break;
       case 'clearAttention':
-        if (this.active || this.store.emergency.length)
+        if (this.active || this.pausing || this.stopUnconfirmed || this.store.emergency.length)
           throw new Error('Drain work and save emergency evidence first.');
         this.error = '';
         this.change((w) => {
@@ -274,6 +573,65 @@ export class CoherentController {
           w.failures = 0;
         });
         break;
+      case 'requestState': {
+        const rid = text(c.requestId, 128);
+        if (!(this.store.state.requests ?? []).some((r) => r.id === rid))
+          throw new Error(
+            'Запрос с таким ID не найден. Автоматический повтор с новым ID не выполняется.',
+          );
+        break;
+      }
+      case 'eureka': {
+        const rid = text(c.requestId, 128),
+          gid = text(c.garden, 128),
+          fingerprint = hash(canonical(c));
+        const prior = (this.store.state.requests ?? []).find((r) => r.id === rid);
+        if (prior) {
+          if (prior.fingerprint !== fingerprint || prior.garden !== gid)
+            throw new Error(
+              'Конфликт request ID: этот запрос уже связан с другим садом или параметрами.',
+            );
+          break;
+        }
+        if (this.active || this.pausing || this.stopUnconfirmed || this.error)
+          throw new Error(this.eurekaReason(gid));
+        let jid = '';
+        this.change((w) => {
+          const requests = (w.requests ??= []);
+          if (requests.length >= 4000)
+            throw new Error('Журнал запросов заполнен. Сохраните полную копию.');
+          const p = plan(w, gid, this.eurekaSeed(gid), false);
+          selection(w, p);
+          let reason = '';
+          try {
+            this.store.requireReceiptHeadroom();
+            const j = prepareJob(w, gid, 'blend', now, {
+              manual: true,
+              probabilistic: true,
+              seed: p.seed,
+            });
+            j.trigger = 'eureka';
+            j.requestId = rid;
+            jid = j.id;
+          } catch (e) {
+            reason = message(e);
+            p.reason = reason;
+            if (reason.startsWith('admission:'))
+              p.blocked = { fingerprint: admissionConditions(w, gid), reason };
+          }
+          requests.push({
+            id: rid,
+            fingerprint,
+            garden: gid,
+            job: jid || null,
+            at: now,
+            state: jid ? 'started' : 'blocked',
+            reason,
+          });
+        });
+        if (jid) this.launch(jid);
+        break;
+      }
       case 'createGarden':
         this.change((w) => {
           if (w.gardens.length >= 4) throw new Error('Four gardens maximum.');
@@ -352,7 +710,7 @@ export class CoherentController {
           (probability > 0 || donate) &&
           !operatorConfirmed &&
           !(await this.services.confirm(
-            `Allow this garden's selected sources to participate in local cross-garden jobs? Receiver probability ${probability}%; donor permission ${donate}. One selected source may be sent to a receiving garden. Existing snapshots remain after revocation.`,
+            `Разрешить обмен выбранными исходными идеями между садами? Вероятность получения идеи от донора: ${probability}%. Этот сад ${donate ? 'разрешает' : 'не разрешает'} донорство. В попытке используется одна идея донора. При отмене разрешения прежние сохранённые снимки остаются.`,
           ))
         )
           break;
@@ -555,9 +913,49 @@ export class CoherentController {
         try {
           await this.runtime.start(this.store.state.runtime);
         } finally {
-          await this.runtime.release();
+          await this.releaseResources();
         }
         break;
+      case 'configureRuntime': {
+        const executable = text(c.executable, 32768),
+          models = text(c.models, 32768);
+        if (!path.isAbsolute(executable) || path.extname(executable).toLowerCase() !== '.exe')
+          throw new Error('Укажите абсолютный путь к установленной ollama.exe.');
+        const info = await lstat(executable);
+        if (
+          !info.isFile() ||
+          info.isSymbolicLink() ||
+          (await realpath(executable)).toLowerCase() !== path.resolve(executable).toLowerCase()
+        )
+          throw new Error('Выберите обычный локальный файл Ollama.');
+        await safeDirectory(models);
+        await this.pause();
+        this.change((w) => {
+          w.runtime.executable = executable;
+          w.runtime.models = models;
+        });
+        break;
+      }
+      case 'configureExport': {
+        const directory = text(c.directory, 32768);
+        await initializeExport(directory, this.forbidden);
+        this.change((w) => {
+          w.exportDirectory = directory;
+        });
+        await this.publish();
+        break;
+      }
+      case 'backupTo': {
+        const file = text(c.path, 32768);
+        if (!path.isAbsolute(file)) throw new Error('Для приватной копии нужен абсолютный путь.');
+        await safeDirectory(path.dirname(file));
+        const raw = JSON.stringify(this.store.envelope());
+        CoherentStore.parseBackup(raw);
+        await writeFile(file, raw, { flag: 'wx', mode: 0o600 });
+        if (hash(await readFile(file)) !== hash(raw))
+          throw new Error('Проверка сохранённой копии не прошла. Прежние данные сохранены.');
+        break;
+      }
       case 'run':
       case 'tend':
       case 'decode':
@@ -712,6 +1110,7 @@ export class CoherentController {
             previousJob: r.job ?? n.job,
             existingNode: true,
             targetRevision: { garden: n.garden, kind: n.kind, id: n.id, revision: r.revision },
+            exactDraft: r.content,
           });
           j.draft = structuredClone(n.revisions.at(-1)!.content);
           jid = j.id;
@@ -726,11 +1125,51 @@ export class CoherentController {
         this.change((w) => {
           const old = w.jobs.find((j) => j.id === id());
           if (old?.draft?.outcome !== 'candidate') throw new Error('Choose a retained draft.');
+          const draftHash = hash(canonical(old.draft));
+          const existing = w.nodes.find(
+            (n) =>
+              n.garden === old.garden &&
+              n.revisions.some((r) => r.hash === draftHash && (r.job ?? n.job) === old.id),
+          );
+          const exactRevision = existing?.revisions.find((r) => r.hash === draftHash);
           const j = prepareJob(w, old.garden, 'check', now, {
             parents: old.parents,
-            question: 'Explicit recheck of draft ' + old.id,
+            question: old.question,
             previousJob: old.id,
+            exactDraft: old.draft,
+            existingNode: !!existing,
+            ...(existing && exactRevision
+              ? {
+                  targetRevision: {
+                    garden: existing.garden,
+                    kind: existing.kind,
+                    id: existing.id,
+                    revision: exactRevision.revision,
+                  },
+                }
+              : {}),
           });
+          // Preserve exact evidence/preference/profile provenance. A newer
+          // source or approval is never silently substituted into an old draft.
+          const before = JSON.parse(old.pack.payload) as {
+            target: string;
+            objective: string;
+            request: string;
+          };
+          const after = JSON.parse(j.pack.payload) as {
+            target: string;
+            objective: string;
+            request: string;
+          };
+          if (
+            canonical(j.pack.evidence) !== canonical(old.pack.evidence) ||
+            before.target !== after.target ||
+            before.objective !== after.objective ||
+            before.request !== after.request
+          )
+            throw new Error(
+              'Прежние доказательства изменились или недоступны. Начните явную новую попытку; прежний черновик сохранён.',
+            );
           j.draft = structuredClone(old.draft);
           j.heldCalls = Math.min(2, j.heldCalls);
           jid = j.id;
@@ -743,7 +1182,7 @@ export class CoherentController {
           throw new Error('Wait for the active job before committing an override.');
         if (
           await this.services.confirm(
-            'Keep this draft despite fallible or interrupted screening? Original findings remain. This uses one valid receiver credit and consumes this pair; no model call is implied.',
+            'Сохранить черновик вопреки замечаниям или незавершённой проверке? Это будет явно отмеченное решение человека. Замечания остаются. Сохранение расходует один свободный слот сада и закрепляет эту пару; вызова модели не будет.',
           )
         )
           this.change((w) => commit(w, id(), now, true));
@@ -846,7 +1285,7 @@ export class CoherentController {
             preview = CoherentStore.parseBackup(raw);
           if (
             await this.services.confirm(
-              `Restore ${preview.workspace.gardens.length} gardens, ${preview.workspace.sources.length} sources and ${preview.workspace.nodes.length} candidates/branches? Donor dependencies are included. A validated rollback copy stays; calls and installation paths are preserved. Everything starts paused, exchange off.`,
+              `Восстановить сады: ${preview.workspace.gardens.length}, исходные идеи: ${preview.workspace.sources.length}, карточки и ветви: ${preview.workspace.nodes.length}? Зависимости доноров включены. Проверенная копия для отката останется; расходы вызовов и пути установки сохранятся. После восстановления автозапуск на паузе, обмен выключен.`,
             )
           ) {
             this.store.restore(raw);
@@ -862,7 +1301,7 @@ export class CoherentController {
             p = deletionPreview(this.store.state, gid, sid);
           if (
             await this.services.confirm(
-              `Cascade preview: ${p.sources.length} sources, ${p.nodes.length} candidates/branches, ${p.jobs.length} linked jobs, ${p.documents.length} retained originals. ${p.retained}`,
+              `Будут удалены исходные идеи: ${p.sources.length}, карточки и ветви: ${p.nodes.length}, связанные задания: ${p.jobs.length}. Сохранённых документов в связях: ${p.documents.length}. Исторические снимки заданий, оригиналы файлов, резервные копии и экспорты остаются до отдельного удаления. Проверьте связи перед подтверждением.`,
             )
           ) {
             await this.pause();
@@ -877,7 +1316,7 @@ export class CoherentController {
             sha = text(c.sha, 64);
           if (
             await this.services.confirm(
-              'Permanently purge this retained private backup? Other backups and exports remain.',
+              'Безвозвратно удалить эту приватную резервную копию? Другие копии и экспорты останутся.',
             )
           )
             this.store.purgeBackup(bid, sha);
@@ -886,7 +1325,7 @@ export class CoherentController {
       case 'purgeOriginal':
         if (
           await this.services.confirm(
-            'Purge this retained original? Source revisions and backup/export copies remain.',
+            'Удалить сохранённый документ? Версии исходных идей и копии в резервных файлах и экспортах останутся.',
           )
         )
           this.change((w) => {
@@ -901,7 +1340,7 @@ export class CoherentController {
       case 'purgeLegacy':
         if (
           await this.services.confirm(
-            'Purge the retained legacy workspace/journal copy? Converted active records and separately retained rollback backups remain. This deliberately removes unavailable historical legacy evidence from the current full backup.',
+            'Удалить сохранённую прежнюю рабочую область и её журнал? Перенесённые записи и отдельные копии для отката останутся. Старая история исчезнет из новых полных резервных копий.',
           )
         )
           this.change((w) => {
@@ -914,7 +1353,7 @@ export class CoherentController {
         const count = this.store.state.lifecycle.length;
         if (
           !(await this.services.confirm(
-            `Save a full private evidence backup, then purge ${count} lifecycle metadata events? Model outputs and human decisions remain. Older backups retain their copies.`,
+            `Сохранить полную приватную копию, затем очистить ${count} записей о запуске и остановке? Ответы модели и ваши решения останутся. Прежние резервные копии сохраняют историю.`,
           ))
         )
           break;
@@ -945,12 +1384,17 @@ export class CoherentController {
           );
         if (
           await this.services.confirm(
-            `Permanently purge this job, ${j.raw.length} original responses, context, assessments and ${this.store.receipts().filter((r) => r.jobId === jid).length} raw receipts? Spent call/attempt accounting, unrelated work, existing backups and reading exports remain.`,
+            `Удалить это задание, его ответы (${j.raw.length}), контекст, оценки и сырые квитанции (${this.store.receipts().filter((r) => r.jobId === jid).length})? Расходы вызовов и попыток, остальные записи, резервные копии и экспорты останутся. Повторный ID запроса не запустит работу заново.`,
           )
         )
           this.store.change(
             (w) => {
               w.jobs = w.jobs.filter((j) => j.id !== jid);
+              for (const r of w.requests ?? [])
+                if (r.job === jid) {
+                  r.job = null;
+                  r.state = 'settled';
+                }
             },
             true,
             [jid],
@@ -1089,6 +1533,16 @@ export class CoherentController {
     this.preview = null;
   }
   private launch(id: string) {
+    if (this.previewState) {
+      this.pendingRemote = {
+        id: uuid(),
+        expires: Date.now() + 300000,
+        revision: this.store.state.revision,
+        workspace: structuredClone(this.previewState),
+        job: id,
+      };
+      return;
+    }
     this.currentId = id;
     this.abort = new AbortController();
     const signal = AbortSignal.any([this.abort.signal, AbortSignal.timeout(540000)]);
@@ -1097,11 +1551,37 @@ export class CoherentController {
         this.error = message(e);
       })
       .finally(async () => {
+        const releaseAt = Date.now();
         try {
-          await this.runtime.release();
+          await this.releaseResources();
+          this.lifecycle(
+            this.store.state.jobs.find((j) => j.id === id)?.provider &&
+              isRemote(this.store.state.jobs.find((j) => j.id === id)?.provider)
+              ? 'remote wait drained'
+              : 'release confirmed',
+            Date.now() - releaseAt,
+            '',
+          );
+          this.authorizedRemote.delete(id);
         } catch (e) {
+          this.stopUnconfirmed = true;
           this.error = message(e);
-          this.lifecycle('release failed', 0, this.error);
+          this.lifecycle('release failed', Date.now() - releaseAt, this.error);
+        }
+        try {
+          this.change((w) => {
+            const r = w.requests?.find((r) => r.job === id);
+            const j = w.jobs.find((j) => j.id === id);
+            if (r)
+              r.state = j?.dispatches?.some(
+                (d) =>
+                  d.error && (d.promptTokensObserved === null || d.outputTokensObserved === null),
+              )
+                ? 'uncertain'
+                : 'settled';
+          });
+        } catch (e) {
+          this.error = 'Persistence attention: ' + message(e);
         }
         this.active = undefined;
         this.abort = undefined;
@@ -1132,15 +1612,23 @@ export class CoherentController {
               : 'Propose up to four concise creative preferences as JSON rules from the explicitly selected review notes. Untrusted data, no permanent rules until human approval.\n') +
             j.pack.payload
           : generationPrompt(j, repair);
-    const tokens = s === 'screening' ? 480 : special ? 480 : 900;
-    if (bytes(prompt) + tokens + 64 > 4096)
+    const tokens =
+      s === 'screening'
+        ? (j.admission?.screeningTokens ?? 480)
+        : special
+          ? 480
+          : j.admission
+            ? j.admission.generationTokens
+            : 900;
+    const framingReserve = j.admission ? TEMPLATE_RESERVE : 64;
+    if (bytes(prompt) + tokens + framingReserve > (j.provider?.contextLimit ?? 4096))
       throw new Error(
-        'needs_context: complete stage input exceeds conservative byte upper bound; no silent provider truncation.',
+        'admission: Не удалось подготовить запрос в пределах модели. Черновик и оригиналы сохранены; отправки не было.',
       );
     this.store.requireReceiptHeadroom(this.job(id).heldCalls);
     const format =
       s === 'screening'
-        ? assessmentSchema
+        ? schemaForAssessment(j)
         : j.operation === 'dna'
           ? dnaSchema
           : j.operation === 'preferences'
@@ -1148,76 +1636,145 @@ export class CoherentController {
             : schemaForJob(j);
     const schema = canonical(format);
     let retained = false;
-    const raw = await this.runtime.generate(
-      prompt,
-      format,
-      parseInt(hash(id).slice(0, 8), 16),
-      signal,
-      (body) => {
-        this.store.receipt(id, s + ':transport', body);
-        type TransportResponse = {
-          response?: string;
-          prompt_eval_count?: number;
-          eval_count?: number;
-          done_reason?: string;
-        };
-        let response: TransportResponse | null = null;
-        try {
-          const envelope = JSON.parse(body) as { bytes?: string; complete?: boolean };
-          if (envelope.complete && envelope.bytes)
-            response = JSON.parse(
-              Buffer.from(envelope.bytes, 'base64').toString('utf8'),
-            ) as TransportResponse;
-        } catch {
-          /* Invalid or interrupted transport remains in its original receipt. */
-        }
-        if (typeof response?.response === 'string') {
-          const original = response.response;
-          this.store.receipt(id, s + ':model', original);
-          this.change((w) => {
-            const job = w.jobs.find((j) => j.id === id)!;
-            job.raw.push({ stage: s + (repair ? ':repair' : ''), raw: original, at: Date.now() });
-          });
-          retained = true;
-        }
-        if (response)
-          this.change((w) => {
-            const d = w.jobs.find((j) => j.id === id)!.dispatches?.at(-1);
-            if (d) {
-              d.promptTokensObserved = Number.isSafeInteger(response!.prompt_eval_count)
-                ? response!.prompt_eval_count!
-                : null;
-              d.outputTokensObserved = Number.isSafeInteger(response!.eval_count)
-                ? response!.eval_count!
-                : null;
-              d.doneReason = response!.done_reason ?? null;
+    const started = Date.now();
+    let raw = '';
+    let callError = '';
+    try {
+      const transport =
+        j.provider?.kind === 'claude'
+          ? this.claude
+          : isRemote(j.provider)
+            ? this.remote
+            : this.runtime;
+      raw = await transport.generate(
+        prompt,
+        format,
+        parseInt(hash(id).slice(0, 8), 16),
+        signal,
+        (body) => {
+          this.store.receipt(id, s + ':transport', body);
+          type TransportResponse = {
+            response?: string;
+            choices?: { message?: { content?: string } }[];
+            prompt_eval_count?: number;
+            eval_count?: number;
+            done_reason?: string;
+          };
+          let response: TransportResponse | null = null;
+          try {
+            const envelope = JSON.parse(body) as {
+              bytes?: string;
+              complete?: boolean;
+              format?: string;
+              stdout?: string;
+            };
+            if (envelope.format === 'claude-cli-transport' && envelope.stdout) {
+              const result = JSON.parse(envelope.stdout) as { result?: string };
+              if (typeof result.result === 'string') response = { response: result.result };
             }
+            if (envelope.complete && envelope.bytes)
+              response = JSON.parse(
+                Buffer.from(envelope.bytes, 'base64').toString('utf8'),
+              ) as TransportResponse;
+          } catch {
+            /* Invalid or interrupted transport remains in its original receipt. */
+          }
+          if (isRemote(j.provider) && response?.choices?.[0]?.message?.content)
+            response.response = response.choices[0].message.content;
+          if (typeof response?.response === 'string') {
+            const original = response.response;
+            this.store.receipt(id, s + ':model', original);
+            this.change((w) => {
+              const job = w.jobs.find((j) => j.id === id)!;
+              job.raw.push({ stage: s + (repair ? ':repair' : ''), raw: original, at: Date.now() });
+            });
+            retained = true;
+          }
+          if (response)
+            this.change((w) => {
+              const d = w.jobs.find((j) => j.id === id)!.dispatches?.at(-1);
+              if (d) {
+                d.promptTokensObserved = Number.isSafeInteger(response!.prompt_eval_count)
+                  ? response!.prompt_eval_count!
+                  : null;
+                d.outputTokensObserved = Number.isSafeInteger(response!.eval_count)
+                  ? response!.eval_count!
+                  : null;
+                d.doneReason = response!.done_reason ?? null;
+              }
+            });
+        },
+        () => {
+          if (signal.aborted || this.pausing || this.stopUnconfirmed)
+            throw new Error('Cancelled before dispatch.');
+          this.change((w) => {
+            const call = dispatch(w, id, s, Date.now(), !!repair),
+              job = w.jobs.find((j) => j.id === id)!;
+            if (
+              isRemote(job.provider) &&
+              (!this.authorizedRemote.has(id) ||
+                !job.remoteConsent ||
+                job.remoteConsent.contextHash !== job.pack.hash ||
+                job.remoteConsent.providerHash !== providerHash(job.provider!))
+            )
+              throw new Error('Remote consent invalid.');
+            (job.dispatches ??= []).push({
+              id: call,
+              stage: s + (repair ? ':repair' : ''),
+              at: Date.now(),
+              prompt,
+              schema,
+              schemaHash: hash(schema),
+              outputTokens: tokens,
+              timeoutMs: 180000,
+              inputByteUpperBound:
+                bytes(prompt) +
+                framingReserve +
+                (isRemote(j.provider) ? bytes(JSON.stringify(format)) + 128 : 0),
+              framingReserve,
+              counting: 'utf8-byte-upper-bound',
+              admissionVersion: j.admission?.version ?? 'historical-stage-check',
+              promptVersion: j.promptVersion,
+              schemaVersion:
+                s === 'screening'
+                  ? ['coherent-4', 'coherent-5', 'coherent-6'].includes(j.promptVersion)
+                    ? 'assessment-2'
+                    : 'assessment-1'
+                  : j.schemaVersion,
+              promptTokensObserved: null,
+              outputTokensObserved: null,
+              doneReason: null,
+            });
           });
-      },
-      () => {
-        if (signal.aborted) throw new Error('Cancelled before dispatch.');
-        this.change((w) => {
-          const call = dispatch(w, id, s, Date.now(), !!repair),
-            job = w.jobs.find((j) => j.id === id)!;
-          (job.dispatches ??= []).push({
-            id: call,
-            stage: s + (repair ? ':repair' : ''),
-            at: Date.now(),
-            prompt,
-            schema,
-            schemaHash: hash(schema),
-            outputTokens: tokens,
-            timeoutMs: 180000,
-            inputByteUpperBound: bytes(prompt) + 64,
-            promptTokensObserved: null,
-            outputTokensObserved: null,
-            doneReason: null,
-          });
-        });
-        this.emit();
-      },
-      { tokens, timeout: 180000 },
-    );
+          this.emit();
+        },
+        { tokens, timeout: STAGE_TIMEOUT_MS },
+        ...(isRemote(j.provider)
+          ? [
+              (o: import('./groq-runtime').RemoteObservation) =>
+                this.change((w) => {
+                  const d = w.jobs.find((j) => j.id === id)!.dispatches!.at(-1)!;
+                  d.remote = o;
+                  d.promptTokensObserved = o.promptTokens;
+                  d.outputTokensObserved = o.outputTokens;
+                  d.doneReason = o.finishReason;
+                }),
+            ]
+          : []),
+      );
+    } catch (e) {
+      callError = message(e);
+      throw e;
+    } finally {
+      this.change((w) => {
+        const d = w.jobs.find((j) => j.id === id)?.dispatches?.at(-1);
+        if (d && !d.completedAt) {
+          d.completedAt = Date.now();
+          d.durationMs = Date.now() - started;
+          d.error = callError;
+        }
+      });
+    }
     if (!retained) {
       this.store.receipt(id, s + ':model', raw);
       this.change((w) => {
@@ -1251,7 +1808,7 @@ export class CoherentController {
         throw new Error(primary, { cause: e });
       }
       try {
-        raw = await this.call(id, s, signal, primary);
+        raw = await this.call(id, s, signal, this.job(id).admission?.repairInstruction ?? primary);
         return parse(raw, this.job(id));
       } catch (repairError) {
         this.change((w) => {
@@ -1264,7 +1821,14 @@ export class CoherentController {
   private async pipeline(id: string, signal: AbortSignal) {
     const started = Date.now();
     try {
-      const model = await this.runtime.start(this.store.state.runtime);
+      const remote = isRemote(this.job(id).provider);
+      if (remote && !this.authorizedRemote.has(id))
+        throw new Error('Remote job needs fresh session consent.');
+      const model = remote
+        ? this.job(id).provider?.kind === 'claude'
+          ? await this.claude.start()
+          : await this.remote.start()
+        : await this.runtime.start(this.store.state.runtime);
       if (signal.aborted) throw new Error('Cancelled during model startup.');
       this.change((w) => {
         const j = w.jobs.find((j) => j.id === id)!;
@@ -1336,7 +1900,9 @@ export class CoherentController {
         return;
       }
       if (operation !== 'check') {
-        const draft = await this.formatted(id, 'generating', signal, parseDraft);
+        const draft = await this.formatted(id, 'generating', signal, (raw, job) =>
+          parseDraft(raw, job, 'generated'),
+        );
         this.change((w) => {
           const j = w.jobs.find((j) => j.id === id)!;
           j.draft = draft;
@@ -1373,7 +1939,23 @@ export class CoherentController {
         revalidate(w, j, Date.now());
         j.assessment = assessment;
         if (assessment.decision === 'pass') commit(w, id, Date.now());
-        else finish(w, j, assessment.decision, Date.now());
+        else {
+          if (j.operation === 'check' && j.targetRevision) {
+            const node = w.nodes.find((n) => n.id === j.targetRevision!.id);
+            const revision = node?.revisions.find((r) => r.revision === j.targetRevision!.revision);
+            if (revision) {
+              revision.assessments ??= [];
+              if (
+                revision.assessment &&
+                !revision.assessments.some((a) => canonical(a) === canonical(revision.assessment))
+              )
+                revision.assessments.push(structuredClone(revision.assessment));
+              revision.assessments.push(structuredClone(assessment));
+              revision.assessment = structuredClone(assessment);
+            }
+          }
+          finish(w, j, assessment.decision, Date.now());
+        }
       });
       await this.publish();
     } catch (e) {
@@ -1402,6 +1984,9 @@ export class CoherentController {
       } catch (saveError) {
         this.error = 'Persistence attention: ' + message(saveError);
       }
+      if (this.remote.emergencyPending || this.claude.emergencyPending)
+        this.error =
+          'Секретный исходный ответ удерживается в памяти. Восстановите защищённое хранилище и сохраните recovery до выхода.';
       if (this.store.emergency.length)
         this.error = 'Original responses retained in memory; export a full backup.';
     } finally {
@@ -1412,6 +1997,7 @@ export class CoherentController {
     }
   }
   tick(now = Date.now()) {
+    if (isRemote(this.store.state.provider)) return;
     if (this.active || this.pausing || this.error || this.store.state.paused) return;
     if (now < this.store.state.lastObservedAt - 1000) {
       void this.pause('Clock moved backwards.');
@@ -1419,23 +2005,39 @@ export class CoherentController {
     }
     for (const g of due(this.store.state, now)) {
       if (wait(this.store.state, g.id, now)) continue;
+      if (g.plan?.blocked?.fingerprint === admissionConditions(this.store.state, g.id)) continue;
       try {
         let id = '';
         this.change((w) => {
           const p = plan(w, g.id, crypto.getRandomValues(new Uint32Array(1))[0]!, false);
           if (!selection(w, p).length) return;
-          id = prepareJob(w, g.id, 'blend', now, { manual: false, seed: p.seed }).id;
+        });
+        if (!garden(this.store.state, g.id).plan?.parents.length) {
+          this.emit();
+          continue;
+        }
+        this.change((w) => {
+          id = prepareJob(w, g.id, 'blend', now, {
+            manual: false,
+            seed: garden(w, g.id).plan!.seed,
+          }).id;
         });
         if (id) {
           this.launch(id);
           return;
         }
       } catch (e) {
-        if (/^needs_context:|Selection consent|Selection policy/.test(message(e))) {
+        if (/^admission:|^needs_context:|Selection consent|Selection policy/.test(message(e))) {
           this.change((w) => {
             const target = garden(w, g.id);
             if (target.plan) target.plan.reason = message(e);
+            if (target.plan && message(e).startsWith('admission:'))
+              target.plan.blocked = {
+                fingerprint: admissionConditions(w, g.id),
+                reason: message(e),
+              };
           });
+          this.emit();
           continue;
         }
         this.error = message(e);
@@ -1458,7 +2060,7 @@ export class CoherentController {
     );
     if (
       !(await this.services.confirm(
-        `Purge ${old.length} old managed snapshots? Current snapshot and analysis notes remain.`,
+        `Удалить ${old.length} прежних снимков папки для чтения? Текущий снимок и ваши заметки анализа останутся.`,
       ))
     )
       return;
@@ -1487,9 +2089,17 @@ export class CoherentController {
     try {
       await this.pause('Exit requested.');
       await this.publishing;
+      if (this.remote.emergencyPending || this.claude.emergencyPending)
+        throw new Error(
+          'Секретный исходный ответ удерживается в памяти. Восстановите защищённое хранилище и сохраните recovery до выхода.',
+        );
       if (this.store.emergency.length) throw new Error('Save emergency responses before exit.');
       if (this.error) throw new Error(this.error);
       this.lifecycle('shutdown prepared', Date.now() - start, '');
+      if (this.remote.emergencyPending || this.claude.emergencyPending)
+        throw new Error(
+          'Секретный исходный ответ удерживается в памяти. Восстановите защищённое хранилище и сохраните recovery до выхода.',
+        );
       if (this.store.emergency.length)
         throw new Error('Shutdown preparation could not be persisted.');
       this.store.close();

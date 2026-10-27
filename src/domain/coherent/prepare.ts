@@ -1,3 +1,4 @@
+import { isRemote } from './provider';
 import { bytes, canonical, hash, controls } from './hash';
 import type {
   ContextPack,
@@ -292,9 +293,9 @@ export function prepare(
     evidence,
   });
   const inputUpperBound = bytes(payload);
-  if (inputUpperBound + 900 + 512 > 4096)
+  if (inputUpperBound + 900 + 512 > (isRemote(w.provider) ? 7000 : 4096))
     throw new Error(
-      'needs_context: complete selected context exceeds the conservative 4096-token budget. Select fewer nonessential complete sections; originals are preserved.',
+      'admission: Не удалось подготовить запрос в пределах модели. Выберите меньше необязательных полных разделов; оригиналы сохранены.',
     );
   return {
     version: 'context-1',
@@ -305,7 +306,7 @@ export function prepare(
     fingerprints,
     counting: 'utf8-byte-upper-bound',
     inputUpperBound,
-    contextLimit: 4096,
+    contextLimit: isRemote(w.provider) ? 7000 : 4096,
     outputReserve: 900,
     framingReserve: 512,
   };

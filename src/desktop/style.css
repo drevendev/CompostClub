@@ -779,6 +779,202 @@
 
 /* Schema-3 working screens: all content participates in ordinary document flow. */
 .coherent-app {
+  grid-template-rows: auto 1fr;
+  align-items: start;
+}
+.coherent-app .global-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 20px;
+  padding: 12px 24px;
+  background: #edf1e2;
+  border-bottom: 1px solid #a7b39a;
+  box-shadow: 0 3px 12px #263e3012;
+}
+.coherent-app .toolbar-state p {
+  margin: 2px 0;
+  overflow-wrap: anywhere;
+}
+.coherent-app .toolbar-commands {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+}
+.coherent-app .toolbar-commands button {
+  min-width: 8em;
+}
+.coherent-app .toolbar-hints {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+.coherent-app .desktop-sidebar {
+  position: sticky;
+  inset: auto;
+  top: 9rem;
+  grid-row: 2;
+  height: calc(100dvh - 9rem);
+}
+html:has(.coherent-app) {
+  scroll-padding-top: calc(var(--toolbar-height, 9rem) + 12px);
+}
+.coherent-app .desktop-sidebar {
+  top: var(--toolbar-height, 9rem);
+  height: calc(100dvh - var(--toolbar-height, 9rem));
+}
+.coherent-app .desktop-main {
+  grid-row: 2;
+}
+.coherent-app button {
+  min-height: 42px;
+  border-color: #9aaa89;
+  transition:
+    background-color 120ms,
+    border-color 120ms;
+}
+.coherent-app button:active:not(:disabled) {
+  background: #d4dfc6;
+  transform: translateY(1px);
+}
+.coherent-app button.primary:active:not(:disabled) {
+  background: #294c32;
+}
+.coherent-app button:disabled {
+  opacity: 1;
+  color: #677460;
+  background: #e6e9de;
+  border-color: #bdc5b3;
+  cursor: not-allowed;
+}
+.coherent-app button.danger {
+  color: #873f32;
+  border-color: #aa6a5e;
+}
+.coherent-app button.danger:hover {
+  background: #f9e9df;
+}
+.coherent-app input:hover,
+.coherent-app select:hover,
+.coherent-app textarea:hover {
+  border-color: #5f7952;
+}
+.coherent-app input:disabled,
+.coherent-app select:disabled,
+.coherent-app textarea:disabled {
+  background: #e6e9de;
+  color: #677460;
+}
+.coherent-app [aria-invalid='true'] {
+  border: 2px solid #a04435;
+}
+.coherent-app select {
+  appearance: none;
+  padding-right: 2.3em;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='12' viewBox='0 0 16 12'%3E%3Cpath d='m3 4 5 5 5-5' fill='none' stroke='%2334503c' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8em center;
+}
+.coherent-app input[type='checkbox'] {
+  appearance: auto;
+  accent-color: #466a46;
+  width: 1.15em;
+  height: 1.15em;
+  min-width: 1.15em;
+  cursor: pointer;
+}
+.coherent-app summary {
+  border-radius: 6px;
+  padding: 8px;
+}
+.coherent-app summary:hover {
+  background: #eaf0df;
+}
+.coherent-app *,
+html:has(.coherent-app) {
+  scrollbar-width: auto;
+  scrollbar-color: #8a9e76 #edf0e3;
+}
+.coherent-app ::-webkit-scrollbar,
+html:has(.coherent-app)::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.coherent-app ::-webkit-scrollbar-track,
+html:has(.coherent-app)::-webkit-scrollbar-track {
+  background: #edf0e3;
+}
+.coherent-app ::-webkit-scrollbar-thumb,
+html:has(.coherent-app)::-webkit-scrollbar-thumb {
+  background: #8a9e76;
+  border: 3px solid #edf0e3;
+  border-radius: 12px;
+}
+.coherent-app ::-webkit-scrollbar-thumb:hover,
+html:has(.coherent-app)::-webkit-scrollbar-thumb:hover {
+  background: #5f7952;
+}
+.coherent-app .empty-state {
+  border-left: 3px solid #8a9e76;
+  padding: 12px 18px;
+  background: #f1f3e7;
+  margin: 16px 0;
+}
+.coherent-app .funnel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 32px;
+  padding-left: 24px;
+}
+@media (max-width: 850px) {
+  .coherent-app .global-toolbar {
+    padding: 10px 12px;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .coherent-app .toolbar-commands {
+    grid-row: 1;
+  }
+  .coherent-app .toolbar-commands button {
+    flex: 1;
+    min-width: 0;
+  }
+  .coherent-app .toolbar-hints {
+    display: block;
+  }
+  .coherent-app .desktop-sidebar {
+    position: static;
+    height: auto;
+  }
+}
+@media (forced-colors: active) {
+  .coherent-app .global-toolbar,
+  .coherent-app .empty-state {
+    border: 1px solid CanvasText;
+  }
+  .coherent-app button,
+  .coherent-app input,
+  .coherent-app textarea,
+  .coherent-app select {
+    border: 1px solid ButtonText;
+  }
+  .coherent-app select {
+    appearance: auto;
+    background-image: none;
+  }
+  .coherent-app button:disabled {
+    color: GrayText;
+    border-color: GrayText;
+  }
+  .coherent-app :focus-visible {
+    outline-color: Highlight;
+  }
+}
+.coherent-app {
   font-family: Golos, system-ui, sans-serif;
   background: #f7f5ec;
   color: #263e30;

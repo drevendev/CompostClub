@@ -1,3 +1,5 @@
+import { isRemote } from './provider';
+import { providerSnapshot, providerHash } from './provider';
 import { canonical, hash, bytes } from './hash';
 import {
   current,
@@ -10,6 +12,7 @@ import {
   fingerprint,
 } from './prepare';
 import { text } from './contract';
+import { planAdmission } from './admission';
 import type {
   Candidate,
   Garden,
@@ -26,6 +29,28 @@ export const INTERVALS = [15, 30, 60, 120, 240];
 export const active = (j: Job) =>
   ['prepared', 'generating', 'draft retained', 'screening'].includes(j.stage);
 export const uuid = () => crypto.randomUUID();
+export function admissionConditions(w: Workspace, id: string) {
+  const g = garden(w, id);
+  const ids = new Set(g.plan?.parents.map((p) => p.id) ?? []);
+  const selectedGardens = new Set([id, ...(g.plan?.parents.map((p) => p.garden) ?? [])]);
+  return hash(
+    canonical({
+      contract: 'coherent-6/job-admission-4/provider-1',
+      provider: providerSnapshot(w.provider, w.runtime.model),
+      profile: g.profile,
+      objective: g.objective,
+      policy: g.policy,
+      // A p0 signature never dereferences donor contents.
+      sources: w.sources
+        .filter((s) => ids.has(s.id) || s.garden === id)
+        .map((s) => [s.id, s.participating, s.revisions]),
+      references: w.references.filter((r) => selectedGardens.has(r.garden)),
+      preferences: w.preferences.filter((p) => p.garden === null || p.garden === id),
+      model: w.runtime.model,
+      language: w.settings.language,
+    }),
+  );
+}
 export function underlyingOperation(
   w: Workspace,
   j: Pick<Job, 'operation' | 'previousJob'>,
@@ -74,6 +99,7 @@ export function create(
     references: [],
     preferences: [],
     jobs: [],
+    requests: [],
     nodes: [],
     consumed: [],
     calls: [],
@@ -221,6 +247,14 @@ export function random(seed: number): number {
   n ^= n << 5;
   return (n >>> 0) / 4294967296;
 }
+export function backgroundReason(w: Workspace, id: string, now: number): string {
+  if (isRemote(w.provider))
+    return 'Внешняя обработка только вручную, с предпросмотром и согласием. Расписание не отправляет данные.';
+  const g = garden(w, id);
+  if (g.plan?.blocked?.fingerprint === admissionConditions(w, id)) return g.plan.blocked.reason;
+  if (g.plan?.reason.startsWith('Waiting:')) return g.plan.reason;
+  return wait(w, id, now) || 'Готовим следующую автоматическую попытку.';
+}
 export function plan(
   w: Workspace,
   id: string,
@@ -229,7 +263,11 @@ export function plan(
   parents: Identity[] | null = null,
 ): SelectionPlan {
   const g = garden(w, id);
-  if (g.plan && !manual && g.plan.policyRevision === g.policy.revision) return g.plan;
+  if (g.plan && !manual) {
+    if (g.plan.policyRevision !== g.policy.revision)
+      throw new Error('Selection policy changed; explicitly cancel the frozen route.');
+    return g.plan;
+  }
   const draw = random(seed),
     route = parents
       ? parents.some((p) => p.garden !== id)
@@ -335,8 +373,16 @@ export function prepareJob(
     manual?: boolean;
     existingNode?: boolean;
     targetRevision?: Identity;
+    probabilistic?: boolean;
+    exactDraft?: Candidate;
   } = {},
 ): Job {
+  if (isRemote(w.provider) && !(options.manual ?? true))
+    throw new Error('Удалённое расписание выключено. Подтвердите одну ручную отправку контекста.');
+  if (isRemote(w.provider) && ['dna', 'preferences'].includes(operation))
+    throw new Error(
+      'API-версия поддерживает идеи и их проверку; переключитесь явно на локальную модель для DNA/предпочтений.',
+    );
   const manual = options.manual ?? true,
     reason = wait(
       w,
@@ -347,16 +393,31 @@ export function prepareJob(
       !['dna', 'preferences'].includes(operation) && !options.existingNode,
     );
   if (reason) throw new Error(reason);
+  const blocked = garden(w, g).plan?.blocked;
+  if (
+    operation === 'blend' &&
+    !options.parents &&
+    blocked &&
+    blocked.fingerprint === admissionConditions(w, g)
+  )
+    throw new Error(blocked.reason);
   if (w.jobs.length >= 1000)
     throw new Error('Job history is full; preview cleanup before continuing.');
   const target = garden(w, g);
-  if (manual && operation === 'blend' && !options.parents && target.plan && !target.plan.manual)
+  if (
+    manual &&
+    !options.probabilistic &&
+    operation === 'blend' &&
+    !options.parents &&
+    target.plan &&
+    !target.plan.manual
+  )
     throw new Error(
       'A frozen selection plan is waiting. Explicitly cancel it and choose a local override, or inspect a manual pair.',
     );
   const seed = options.seed ?? Math.floor(now % 4294967296);
   let p: SelectionPlan = ['blend', 'revise'].includes(operation)
-    ? plan(w, g, seed, manual, options.parents ?? null)
+    ? plan(w, g, seed, options.probabilistic ? false : manual, options.parents ?? null)
     : {
         id: uuid(),
         garden: g,
@@ -469,22 +530,33 @@ export function prepareJob(
     candidateCharged: false,
     manualPermit: manual,
     epoch: w.epoch,
-    model: w.runtime.model,
+    provider: providerSnapshot(w.provider, w.runtime.model),
+    model: providerSnapshot(w.provider, w.runtime.model).requestedModel,
     modelDigest: '',
-    promptVersion: 'coherent-2',
-    schemaVersion: 'candidate-1',
+    promptVersion: isRemote(w.provider) ? 'provider-1' : 'coherent-6',
+    schemaVersion: isRemote(w.provider) ? 'candidate-4' : 'candidate-3',
     language: w.settings.language,
     direction: options.direction ?? null,
     question: request,
     previousJob: options.previousJob ?? null,
     ...(options.targetRevision ? { targetRevision: structuredClone(options.targetRevision) } : {}),
-    draft: null,
+    draft: options.exactDraft ? structuredClone(options.exactDraft) : null,
     assessment: null,
     raw: [],
     primaryFailure: '',
     repairRefusal: '',
     observed: true,
   };
+  if (!['dna', 'preferences'].includes(operation))
+    j.admission = planAdmission(j, options.exactDraft);
+  if (
+    operation === 'check' &&
+    !options.existingNode &&
+    underlyingOperation(w, j) !== 'growth' &&
+    w.consumed.some((c) => c.key === pairKey(j.parents))
+  )
+    throw new Error('This pair is already committed. Check the existing card instead.');
+  j.trigger = manual ? 'manual' : 'scheduled';
   w.jobs.push(j);
   return j;
 }
@@ -493,6 +565,11 @@ export function stage(j: Job, s: Job['stage'], now: number) {
   j.history.push({ stage: s, at: now });
 }
 export function revalidate(w: Workspace, j: Job, now: number) {
+  if (
+    j.provider &&
+    providerHash(j.provider) !== providerHash(providerSnapshot(w.provider, w.runtime.model))
+  )
+    throw new Error('Provider configuration changed; prepare a new explicit request.');
   if (!active(j) || j.epoch !== w.epoch || (!j.manualPermit && w.paused) || w.attention)
     throw new Error('Job cancelled or paused.');
   if (date(w, now) !== j.date || j.date < w.latestDate || now < w.lastObservedAt - 1000)
@@ -509,6 +586,13 @@ export function revalidate(w: Workspace, j: Job, now: number) {
       garden(w, j.garden).policy.revision !== j.plan.policyRevision)
   )
     throw new Error('Consent, participation or policy revoked.');
+  if (
+    j.operation === 'check' &&
+    !j.targetRevision &&
+    underlyingOperation(w, j) !== 'growth' &&
+    w.consumed.some((c) => c.key === pairKey(j.parents))
+  )
+    throw new Error('Pair was already committed; inspect its existing card.');
 }
 export function dispatch(
   w: Workspace,
@@ -605,7 +689,8 @@ export function commit(w: Workspace, id: string, now: number, override = false):
       ? w.nodes.find((n) =>
           j.targetRevision
             ? n.id === j.targetRevision.id && n.garden === j.targetRevision.garden
-            : n.job === j.previousJob,
+            : pairKey(n.parents) === pairKey(j.parents) &&
+              n.revisions.some((r) => r.hash === hash(canonical(j.draft))),
         )
       : undefined;
   if (prior) {
@@ -637,7 +722,7 @@ export function commit(w: Workspace, id: string, now: number, override = false):
       revision: revised.revisions.at(-1)!.revision + 1,
       content: structuredClone(j.draft),
       hash: hash(canonical(j.draft)),
-      origin: 'local-model proposal',
+      origin: isRemote(j.provider) ? 'remote-model proposal' : 'local-model proposal',
       references: w.references
         .filter((r) => j.pack.fingerprints.some((f) => f.key === canonical(['reference', r.id])))
         .map((r) => structuredClone(r)),
@@ -665,7 +750,8 @@ export function commit(w: Workspace, id: string, now: number, override = false):
     throw new Error('Candidate/growth capacity reached.');
   if (
     w.nodes.some((n) => n.job === id) ||
-    (['blend', 'revise'].includes(j.operation) &&
+    (['blend', 'revise', 'check'].includes(j.operation) &&
+      !isGrowth &&
       w.consumed.some((c) => c.key === pairKey(j.parents)))
   )
     throw new Error('Candidate or pair already committed.');
@@ -683,7 +769,7 @@ export function commit(w: Workspace, id: string, now: number, override = false):
         revision: 1,
         content: structuredClone(j.draft),
         hash: hash(canonical(j.draft)),
-        origin: 'local-model proposal',
+        origin: isRemote(j.provider) ? 'remote-model proposal' : 'local-model proposal',
         job: j.id,
         entry: {
           at: now,
@@ -810,6 +896,10 @@ export function recover(w: Workspace, now: number) {
     finish(w, j, 'interrupted', now);
   }
   for (const g of w.gardens) g.nextAt = Math.max(g.nextAt, now + g.interval * 60000);
+  for (const r of w.requests ?? []) {
+    const j = w.jobs.find((j) => j.id === r.job);
+    if (r.state === 'started') r.state = j?.stage === 'interrupted' ? 'uncertain' : 'settled';
+  }
 }
 export function deletionPreview(w: Workspace, gardenId: string | null, sourceId: string | null) {
   const sources = new Set(

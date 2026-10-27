@@ -1,9 +1,15 @@
+import type { ProviderConfig, ProviderSnapshot } from './provider';
 import type { Workspace as LegacyWorkspace } from '../experiment';
 import type { Garden as LegacyGarden } from '../garden';
+import type { Admission } from './admission';
 
 export type Profile = 'game' | 'application' | 'story' | 'custom' | 'unknown';
 export type Origin =
-  'user-authored' | 'imported assertion' | 'deterministic extraction' | 'local-model proposal';
+  | 'user-authored'
+  | 'imported assertion'
+  | 'deterministic extraction'
+  | 'local-model proposal'
+  | 'remote-model proposal';
 export interface Entry {
   at: number;
   timezone: string | null;
@@ -123,6 +129,7 @@ export interface Garden {
   legacy: LegacyGarden | null;
 }
 export interface SelectionPlan {
+  blocked?: { fingerprint: string; reason: string };
   id: string;
   garden: string;
   seed: number;
@@ -150,7 +157,7 @@ export interface ContextPack {
   fingerprints: { key: string; hash: string }[];
   counting: 'utf8-byte-upper-bound';
   inputUpperBound: number;
-  contextLimit: 4096;
+  contextLimit: number;
   outputReserve: 900;
   framingReserve: 512;
 }
@@ -221,6 +228,11 @@ export const DIRECTIONS = [
 ] as const;
 export type Direction = (typeof DIRECTIONS)[number];
 export interface Job {
+  provider?: ProviderSnapshot;
+  remoteConsent?: { contextHash: string; providerHash: string; at: number; expires: number };
+  admission?: Admission;
+  trigger?: 'scheduled' | 'eureka' | 'manual';
+  requestId?: string;
   id: string;
   operation: Operation;
   garden: string;
@@ -249,6 +261,23 @@ export interface Job {
     promptTokensObserved: number | null;
     outputTokensObserved: number | null;
     doneReason: string | null;
+    counting?: 'utf8-byte-upper-bound';
+    framingReserve?: number;
+    admissionVersion?: string;
+    promptVersion?: string;
+    schemaVersion?: string;
+    completedAt?: number;
+    durationMs?: number;
+    error?: string;
+    remote?: {
+      reportedModel: string | null;
+      requestId: string | null;
+      promptTokens: number | null;
+      outputTokens: number | null;
+      finishReason: string | null;
+      httpStatus: number;
+      retryAfter: string | null;
+    };
   }[];
   attemptCharged: boolean;
   candidateCharged: boolean;
@@ -256,8 +285,9 @@ export interface Job {
   epoch: number;
   model: string;
   modelDigest: string;
-  promptVersion: 'coherent-2';
-  schemaVersion: 'candidate-1';
+  promptVersion:
+    'provider-1' | 'coherent-2' | 'coherent-3' | 'coherent-4' | 'coherent-5' | 'coherent-6';
+  schemaVersion: 'candidate-4' | 'candidate-1' | 'candidate-2' | 'candidate-3';
   language: 'ru' | 'en';
   direction: Direction | null;
   question: string;
@@ -322,6 +352,7 @@ export interface Lifecycle {
   kind:
     | 'launch'
     | 'pause requested'
+    | 'remote wait drained'
     | 'stage drained'
     | 'release confirmed'
     | 'release failed'
@@ -333,6 +364,17 @@ export interface Lifecycle {
   error: string;
 }
 export interface Workspace {
+  provider?: ProviderConfig;
+  claudeExecutable?: string;
+  requests?: {
+    id: string;
+    fingerprint: string;
+    garden: string;
+    job: string | null;
+    at: number;
+    state: 'blocked' | 'started' | 'settled' | 'uncertain';
+    reason: string;
+  }[];
   schemaVersion: 3;
   revision: number;
   gardens: Garden[];

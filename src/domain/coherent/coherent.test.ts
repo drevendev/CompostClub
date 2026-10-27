@@ -138,7 +138,7 @@ describe('coherent gardens · synthetic diagnostics, no inference claims', () =>
       g = w.gardens[0]!;
     addSource(w, g.id, 'Long', 'First complete section.\n\n' + 'z'.repeat(9000), true, NOW);
     const s = w.sources[2]!;
-    expect(() => prepare(w, g.id, [identity(s)])).toThrow('conservative');
+    expect(() => prepare(w, g.id, [identity(s)])).toThrow('admission:');
     current(s).preparation.selected = ['s0'];
     expect(() => prepare(w, g.id, [identity(s)])).toThrow('essential');
     current(s).preparation.essential = ['s0'];

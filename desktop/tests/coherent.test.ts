@@ -159,6 +159,38 @@ await test('rechecking an unchanged restored local draft uses a fresh authorized
   assert.equal(s.state.jobs[1]!.observed, true);
   await c.close();
 });
+
+await test('a new negative assessment of an existing card is attached without replacing its original assessment or human decisions', async () => {
+  const s = await prepared(),
+    m = model(s, (j, i) =>
+      i === 0
+        ? JSON.stringify(candidate(j))
+        : i === 1
+          ? JSON.stringify({ decision: 'pass', findings: [], limitations: 'DIAGNOSTIC initial' })
+          : JSON.stringify({
+              decision: 'needs_revision',
+              findings: [
+                { field: 'core', issue: 'DIAGNOSTIC new finding', evidence: ['e0'], missing: '' },
+              ],
+              limitations: 'DIAGNOSTIC later',
+            }),
+    ),
+    c = new CoherentController(s, services, [], m.runtime);
+  await c.command({ op: 'run', garden: s.state.gardens[0]!.id });
+  await wait(c);
+  const n = s.state.nodes[0]!,
+    before = canonical(n.decisions),
+    old = canonical(n.revisions[0]!.assessment);
+  await c.command({ op: 'checkNode', id: n.id });
+  await wait(c);
+  const r = s.state.nodes[0]!.revisions[0]!;
+  assert.equal(r.assessment!.decision, 'needs_revision');
+  assert.ok(r.assessments!.some((a) => canonical(a) === old));
+  assert.equal(canonical(s.state.nodes[0]!.decisions), before);
+  assert.equal(s.state.nodes.length, 1);
+  assert.equal(m.calls(), 3);
+  await c.close();
+});
 await test('purging job evidence rolls back together with receipt deletion and never refunds calls', async () => {
   const s = await prepared(),
     m = model(s, () => JSON.stringify({ outcome: 'no_blend', reason: 'DIAGNOSTIC', missing: [] })),
@@ -261,6 +293,166 @@ async function prepared() {
   s.save(fixture(Date.now()), false);
   return s;
 }
+
+await test('Eureka is a durable one-off authorization while paused and excluded from scheduling; duplicates and restart never dispatch twice', async () => {
+  const s = await prepared(),
+    m = model(s),
+    c = new CoherentController(s, services, [], m.runtime),
+    gid = s.state.gardens[0]!.id;
+  const command = { op: 'eureka', garden: gid, requestId: 'diagnostic-durable-one-off' };
+  await Promise.all([c.command(command), c.command(command)]);
+  await wait(c);
+  assert.equal(m.calls(), 2);
+  assert.equal(s.state.paused, true);
+  assert.equal(s.state.gardens[0]!.background, false);
+  assert.equal(s.state.jobs[0]!.trigger, 'eureka');
+  assert.equal(s.state.jobs[0]!.plan.manual, false);
+  assert.equal(s.state.requests![0]!.state, 'settled');
+  assert.equal(s.state.nodes.length, 1);
+  assert.equal(s.state.gardens[0]!.credits.balance, 2);
+  await assert.rejects(c.command({ ...command, garden: 'other' }), /Конфликт/);
+  const directory = s.directory;
+  await c.close();
+  const reopened = new CoherentStore(directory),
+    nextModel = model(reopened),
+    next = new CoherentController(reopened, services, [], nextModel.runtime);
+  await next.command(command);
+  await next.command({ op: 'requestState', requestId: command.requestId });
+  assert.equal(nextModel.calls(), 0);
+  assert.equal(reopened.state.nodes.length, 1);
+  assert.equal(reopened.state.calls.length, 2);
+  await next.close();
+});
+
+await test('Eureka preflight refuses a blocked full job with no runtime start and persists the same route', async () => {
+  const s = await prepared(),
+    m = model(s),
+    c = new CoherentController(s, services, [], m.runtime),
+    gid = s.state.gardens[0]!.id;
+  s.change((w) => {
+    w.gardens[0]!.objective = 'Ю'.repeat(1000);
+  });
+  for (const requestId of ['blocked-1', 'blocked-2'])
+    await c.command({ op: 'eureka', garden: gid, requestId });
+  assert.equal(s.state.jobs.length, 0);
+  assert.equal(m.calls(), 0);
+  assert.equal(m.releases(), 0);
+  assert.equal(s.state.requests!.length, 2);
+  assert.match(s.state.requests![0]!.reason, /admission:/);
+  const planId = s.state.gardens[0]!.plan!.id;
+  s.change((w) => {
+    w.paused = false;
+    w.gardens[0]!.background = true;
+    w.gardens[0]!.nextAt = 0;
+  });
+  for (let i = 0; i < 10; i++) c.tick();
+  assert.equal(s.state.gardens[0]!.plan!.id, planId);
+  assert.equal(m.calls(), 0);
+  await c.close();
+});
+
+await test('due admission blocks are visible, do not spin, and re-evaluate the same frozen pair after a real condition change', async () => {
+  const s = await prepared(),
+    m = model(s),
+    c = new CoherentController(s, services, [], m.runtime);
+  s.change((w) => {
+    w.paused = false;
+    const g = w.gardens[0]!;
+    g.background = true;
+    g.nextAt = 0;
+    g.objective = 'Ю'.repeat(1000);
+  });
+  let updates = 0;
+  c.subscribe(() => updates++);
+  c.tick();
+  const frozen = structuredClone(s.state.gardens[0]!.plan!);
+  assert.match(c.view().reason, /admission:/);
+  assert.ok(updates > 0);
+  const revision = s.state.revision;
+  for (let i = 0; i < 5; i++) c.tick();
+  assert.equal(s.state.revision, revision);
+  assert.equal(m.calls(), 0);
+  s.change((w) => {
+    w.gardens[0]!.objective = '';
+  });
+  c.tick();
+  await wait(c);
+  assert.equal(s.state.jobs[0]!.trigger, 'scheduled');
+  assert.equal(s.state.jobs[0]!.plan.id, frozen.id);
+  assert.deepEqual(s.state.jobs[0]!.parents, frozen.parents);
+  assert.equal(m.calls(), 2);
+  await c.close();
+});
+
+await test('a historical admission fingerprint is re-evaluated without replacing its frozen route', async () => {
+  const s = await prepared(),
+    m = model(s),
+    c = new CoherentController(s, services, [], m.runtime);
+  s.change((w) => {
+    w.paused = false;
+    const g = w.gardens[0]!;
+    g.background = true;
+    g.nextAt = 0;
+    g.plan = null;
+  });
+  // A no-dispatch preflight persists a plan; emulate the old version's fingerprint only.
+  s.change((w) => {
+    const j = prepareJob(w, w.gardens[0]!.id, 'blend', Date.now(), { manual: false });
+    w.jobs.pop();
+    w.gardens[0]!.plan = {
+      ...j.plan,
+      blocked: { fingerprint: 'previous-admission-contract', reason: 'admission: old budget' },
+    };
+  });
+  const frozen = structuredClone(s.state.gardens[0]!.plan!);
+  c.tick();
+  await wait(c);
+  assert.equal(s.state.jobs.at(-1)!.plan.id, frozen.id);
+  assert.deepEqual(s.state.jobs.at(-1)!.parents, frozen.parents);
+  assert.equal(m.calls(), 2);
+  await c.close();
+});
+
+await test('checking the original committed job targets its exact existing revision without another credit or duplicate card', async () => {
+  const s = await prepared(),
+    m = model(s),
+    c = new CoherentController(s, services, [], m.runtime);
+  await c.command({ op: 'run', garden: s.state.gardens[0]!.id });
+  await wait(c);
+  const original = s.state.jobs[0]!,
+    node = s.state.nodes[0]!,
+    credits = s.state.gardens[0]!.credits.balance;
+  await c.command({ op: 'check', id: original.id });
+  await wait(c);
+  assert.equal(s.state.nodes.length, 1);
+  assert.equal(s.state.nodes[0]!.id, node.id);
+  assert.equal(s.state.consumed.length, 1);
+  assert.equal(s.state.gardens[0]!.credits.balance, credits);
+  assert.equal(m.calls(), 3);
+  assert.equal(s.state.jobs.at(-1)!.targetRevision!.revision, 1);
+  await c.close();
+});
+
+await test('resume preserves schedule membership and cannot clear a storage/evidence blocker', async () => {
+  const s = await prepared(),
+    m = model(s),
+    c = new CoherentController(s, services, [], m.runtime),
+    gid = s.state.gardens[0]!.id;
+  await assert.rejects(c.command({ op: 'resume' }), /ни один сад/);
+  s.change((w) => {
+    w.gardens[0]!.background = true;
+    w.attention = 'Persistence attention: DIAGNOSTIC';
+  });
+  await assert.rejects(c.command({ op: 'resume' }), /Продолжение/);
+  assert.equal(s.state.attention, 'Persistence attention: DIAGNOSTIC');
+  assert.equal(m.calls(), 0);
+  await c.command({ op: 'clearAttention' });
+  await c.command({ op: 'resume' });
+  assert.equal(s.state.gardens[0]!.id, gid);
+  assert.equal(s.state.gardens[0]!.background, true);
+  assert.equal(m.calls(), 0);
+  await c.close();
+});
 
 await test('schema-3 SQLite transaction survives reopen, retaining exact originals and paused launch', async () => {
   const s = await prepared(),

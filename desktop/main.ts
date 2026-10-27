@@ -1,3 +1,7 @@
+import { ClaudeRuntime } from './claude-runtime';
+import { EncryptedCredentialStore } from './credentials';
+import { GroqRuntime } from './groq-runtime';
+import { OwnedOllama } from './runtime';
 import {
   app,
   BrowserWindow,
@@ -7,6 +11,7 @@ import {
   nativeImage,
   powerMonitor,
   session,
+  safeStorage,
   shell,
   Tray,
 } from 'electron';
@@ -80,7 +85,10 @@ if (!single) {
       }
       if (isAuthorLink(url) || reference) {
         void shell.openExternal(url).catch((error: unknown) => {
-          dialog.showErrorBox('Could not open author link', String(error));
+          dialog.showErrorBox(
+            'Не удалось открыть ссылку автора',
+            'Проверьте доступ к браузеру. Техническая причина: ' + String(error),
+          );
         });
       }
       return { action: 'deny' };
@@ -139,8 +147,8 @@ if (!single) {
               ? {
                   title:
                     kind === 'models'
-                      ? 'Choose the installed Ollama model directory'
-                      : 'Choose an empty Codex export folder',
+                      ? 'Выберите папку уже установленной модели Ollama'
+                      : 'Выберите пустую папку для чтения в Codex',
                   properties: ['openDirectory', 'createDirectory'] as (
                     'openDirectory' | 'createDirectory'
                   )[],
@@ -148,17 +156,17 @@ if (!single) {
               : {
                   title:
                     kind === 'executable'
-                      ? 'Choose your installed ollama.exe'
+                      ? 'Выберите установленную программу ollama.exe'
                       : kind === 'restore'
-                        ? 'Choose a Compost Club backup'
-                        : 'Choose UTF-8 idea files',
+                        ? 'Выберите полную резервную копию Compost Club'
+                        : 'Выберите файлы исходных идей в UTF-8',
                   properties: [
                     'openFile',
                     ...(kind === 'import' ? ['multiSelections' as const] : []),
                   ] as ('openFile' | 'multiSelections')[],
                   filters: [
                     {
-                      name: kind === 'executable' ? 'Ollama executable' : 'Idea files',
+                      name: kind === 'executable' ? 'Программа Ollama' : 'Файлы идей',
                       extensions:
                         kind === 'executable'
                           ? ['exe']
@@ -175,9 +183,9 @@ if (!single) {
         },
         saveBackup: async (raw) => {
           const result = await dialog.showSaveDialog({
-            title: 'Save private recovery backup',
+            title: 'Сохранить полную приватную копию',
             defaultPath: `compost-club-backup-${new Date().toISOString().slice(0, 10)}.json`,
-            filters: [{ name: 'JSON backup', extensions: ['json'] }],
+            filters: [{ name: 'Полная резервная копия JSON', extensions: ['json'] }],
           });
           if (!result.canceled && result.filePath) {
             DesktopStore.parseBackup(raw);
@@ -197,9 +205,9 @@ if (!single) {
         confirm: async (message) => {
           const result = await dialog.showMessageBox({
             type: 'warning',
-            title: 'Review before changing retained data',
+            title: 'Проверьте изменения сохранённых данных',
             message,
-            buttons: ['Cancel', 'Confirm'],
+            buttons: ['Отмена', 'Подтвердить'],
             defaultId: 0,
             cancelId: 0,
             noLink: true,
@@ -222,10 +230,29 @@ if (!single) {
             args: loginArguments(),
           }).openAtLogin,
       };
-      controller = new DesktopController(new DesktopStore(app.getPath('userData')), services, [
-        root,
+      const credentials = new EncryptedCredentialStore(app.getPath('userData'), safeStorage);
+      await credentials.initialize();
+      const claudeTokens = new EncryptedCredentialStore(
         app.getPath('userData'),
-      ]);
+        safeStorage,
+        'claude',
+      );
+      await claudeTokens.initialize();
+      controller = new DesktopController(
+        new DesktopStore(app.getPath('userData')),
+        services,
+        [root, app.getPath('userData')],
+        new OwnedOllama(),
+        new GroqRuntime(credentials),
+        new ClaudeRuntime(
+          app.getPath('userData'),
+          () => controller?.store.state.claudeExecutable,
+          undefined,
+          undefined,
+          claudeTokens,
+          claudeTokens,
+        ),
+      );
       createWindow();
       const bitmap = Buffer.alloc(20 * 20 * 4);
       for (let y = 0; y < 20; y++)
@@ -243,16 +270,18 @@ if (!single) {
           }
       const icon = nativeImage.createFromBitmap(bitmap, { width: 20, height: 20, scaleFactor: 1 });
       tray = new Tray(icon);
-      tray.setToolTip('Compost Club · paused');
+      tray.setToolTip('Compost Club · на паузе');
       const update = () => {
         if (closing) return;
         const state = controller!.view();
-        tray?.setToolTip(`Compost Club · ${state.status}`);
+        tray?.setToolTip(
+          `Compost Club · ${state.status === 'pausing' ? 'останавливаем' : state.busy ? 'создаём идею' : state.workspace.paused ? 'на паузе' : 'по расписанию'}`,
+        );
         tray?.setContextMenu(
           Menu.buildFromTemplate([
-            { label: 'Open Compost Club', click: show },
+            { label: 'Открыть Compost Club', click: show },
             {
-              label: 'Add an idea',
+              label: 'Добавить исходную идею',
               click: () => {
                 show();
                 void window?.webContents.executeJavaScript(
@@ -262,25 +291,28 @@ if (!single) {
             },
             { type: 'separator' },
             {
-              label: 'Pause and release model',
-              enabled: state.status !== 'pausing',
+              label:
+                state.status === 'pausing'
+                  ? 'Останавливаем…'
+                  : state.busy || !state.workspace.paused
+                    ? 'Пауза'
+                    : 'Продолжить',
+              enabled:
+                state.status !== 'pausing' &&
+                (state.busy ||
+                  !state.workspace.paused ||
+                  (state.status !== 'attention' &&
+                    state.workspace.gardens.some((g) => g.background))),
               click: () => {
                 void controller!
-                  .command({ op: 'pause' })
-                  .catch((e: unknown) => dialog.showErrorBox('Pause needs attention', String(e)));
-              },
-            },
-            {
-              label: 'Resume experiment',
-              enabled: !state.busy && state.workspace.paused,
-              click: () => {
-                void controller!
-                  .command({ op: 'resume' })
-                  .catch((e: unknown) => dialog.showErrorBox('Cannot resume', String(e)));
+                  .command({ op: state.busy || !state.workspace.paused ? 'pause' : 'resume' })
+                  .catch((e: unknown) =>
+                    dialog.showErrorBox('Не удалось изменить состояние', String(e)),
+                  );
               },
             },
             { type: 'separator' },
-            { label: 'Exit', click: () => app.quit() },
+            { label: 'Выйти', click: () => app.quit() },
           ]),
         );
         if (window && !window.isDestroyed() && !window.webContents.isDestroyed())
@@ -327,8 +359,9 @@ if (!single) {
     })
     .catch((e: unknown) => {
       dialog.showErrorBox(
-        'Compost Club could not open',
-        String(e) + '\nExisting data has not been replaced. See the local recovery guide.',
+        'Не удалось открыть Compost Club',
+        'Сохранённые данные оставлены на месте. Проверьте приватную резервную копию и руководство по восстановлению. Техническая причина: ' +
+          String(e),
       );
       app.exit(1);
     });
@@ -347,7 +380,11 @@ if (!single) {
       .catch((e: unknown) => {
         closing = false;
         show();
-        dialog.showErrorBox('Shutdown needs attention', e instanceof Error ? e.message : String(e));
+        dialog.showErrorBox(
+          'Не удалось безопасно завершить работу',
+          'Сохраните полную приватную копию и проверьте причину остановки. Технические подробности: ' +
+            (e instanceof Error ? e.message : String(e)),
+        );
       });
     if (!controller) app.exit();
   });
