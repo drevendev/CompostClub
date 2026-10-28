@@ -26,11 +26,21 @@ _Actual Chromium capture of the compact sample workspace. The sample pairs six f
 
 The [published DEV article](https://dev.to/drevendev/let-your-wild-ideas-ferment-a-quiet-garden-powered-by-local-gemma-1c0o) follows real local Gemma results from public project summaries. The [49.93-second English video](https://drevendev.github.io/CompostClub/?v=07c202852017) shows Echo Cartography and recomposting. Newer idea branches and optional Sentry tracing are illustrated separately in the article. [Publication materials, captions and credits](docs/DEV_PUBLICATION.md).
 
+## Manual external generation preview
+
+The 0.2.0-rc.5 candidate adds an explicitly selected manual connection to **official Claude Code using your own Claude subscription**, plus optional Groq BYOK. Desktop Settings now offers **Haiku, Sonnet and Opus**, visible authentication status and removable operator-only Sentry metadata tracing (OFF without opt-in). Each job freezes its selected alias and context; there is no remote background or automatic fallback. A bounded fictional RU run produced screened Sonnet/Opus proposals; Haiku format failures remain retained and its creative acceptance is open. Local storage, local Ollama and the recorded sample remain independent. No account, model or CLI is installed for you.
+
+[Setup, privacy, subscription login, optional Groq key and acceptance status](docs/PROVIDER_PATCH.md). This is an experimental source/PR candidate, not a stable quality claim or an installed owner upgrade. Local Gemma RU issues remain open.
+
 ## Use the local desktop candidate
 
-The Windows candidate runs without an application server or terminal: an application window and tray control a local SQLite garden and an explicitly selected installed Ollama/model. It starts paused, supports batch/file input, bounded background pairings, review, validated backups and a stable Markdown/JSON export directory for Codex. Pause cancels owned work and releases its model process before reporting success.
+The experimental **0.2.0-rc.1 Coherent Gardens** Windows candidate adds named gardens, preserved full originals and source preparation, explicit references, rich generation with a fallible semantic checker, approved feedback preferences, deliberate growth and opt-in cross-garden exchange. An application window and tray control a local SQLite workspace and an explicitly selected installed Ollama/model. It starts paused; manual jobs have separate explicit authorization. Pause drains owned work and releases its model process before reporting success.
 
-Open the supplied portable application shortcut, or build with `npm run desktop:package`. Follow the [desktop setup/use/recovery guide](docs/LOCAL_DESKTOP_RUNNING.md). No weights or personal data are bundled. The private owner quality pilot and actual 7–14 day observation are still pending; structural checks do not certify creative usefulness. The browser instructions below remain available separately.
+Open the supplied portable application shortcut, or build with `npm run desktop:package`. Follow the [RC setup, migration and rollback guide](docs/COHERENT_GARDENS_RC.md) and [acceptance record](docs/COHERENT_GARDENS_ACCEPTANCE.md). No weights or personal data are bundled. **Usefulness is not promoted:** the frozen local comparison produced 0 screened/displayable candidates in 16 cases, and owner review is pending future real-card trials. Filtered drafts and original failures remain inspectable. The actual 7–14 day observation is still pending. The browser instructions below describe the separate smaller v0.1 application.
+
+The [card contract for repositories, Obsidian and Codex](docs/CARD_CONTRACT.md) specifies stable IDs, exact revisions, originals, model proposals, human decisions and previewed synchronization. It documents adapter boundaries; it does not enable automatic remote synchronization.
+
+Codex can [control the running desktop through its authenticated local operator interface](docs/OPERATOR.md): status, settings, review, jobs, pause/resume and safe Exit, without GUI automation or editing a live database. The portable includes `operator.mjs`. An explicit operator preset can raise the default three-credit capacity to ten.
 
 ## Try the sample garden
 
@@ -73,7 +83,7 @@ For live generation, start with the [Ollama setup](docs/RUNNING.md#run-live-loca
 
 ## Data stays with the garden
 
-Scraps and results live in browser IndexedDB, the desktop's local SQLite workspace or explicit exports. There are no end-user accounts, telemetry by default, cloud generation, external fonts or paid APIs. Optional operator-only Sentry metadata tracing is off by default; see [setup and removal](docs/OPTIONAL_SERVICES.md). Render and Entire were declined and are not used. Model output and user input render as text.
+Scraps and results live in browser IndexedDB, the desktop's local SQLite workspace or explicit exports. There are no Compost Club end-user accounts, telemetry by default or external fonts. Optional manual external generation uses the owner’s separately authenticated provider after context consent; no paid plan is activated by the application. Optional operator-only Sentry metadata tracing is off by default; see [setup and removal](docs/OPTIONAL_SERVICES.md). Render and Entire were declined and are not used. Model output and user input render as text.
 
 Ollama mode uses a server bound to `127.0.0.1`, forwarding to a fixed loopback Ollama address. Browser AI contacts the disclosed Hugging Face/CDN endpoints only after download consent; ideas are processed on the device. Model weights carry separate terms and are excluded from Git. The [architecture](docs/ARCHITECTURE.md) describes the boundaries and current limitations.
 

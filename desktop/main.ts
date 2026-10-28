@@ -1,3 +1,8 @@
+import { ClaudeRuntime } from './claude-runtime';
+import { createDesktopObserver } from './telemetry';
+import { EncryptedCredentialStore } from './credentials';
+import { GroqRuntime } from './groq-runtime';
+import { OwnedOllama } from './runtime';
 import {
   app,
   BrowserWindow,
@@ -7,6 +12,7 @@ import {
   nativeImage,
   powerMonitor,
   session,
+  safeStorage,
   shell,
   Tray,
 } from 'electron';
@@ -14,9 +20,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { open, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { DesktopStore } from './store';
-import { DesktopController, type DesktopServices } from './controller';
+import { CoherentStore as DesktopStore } from './coherent-store';
+import { CoherentController as DesktopController } from './coherent-controller';
+import type { DesktopServices } from './controller';
 import { isAuthorLink } from '../src/content/author';
+import { safeUrl } from '../src/domain/coherent/prepare';
+import { startOperator, type OperatorHandle } from './operator';
 
 const root = path.resolve(__dirname, '..');
 app.setName('Compost Club');
@@ -33,10 +42,18 @@ if (!single) {
 } else {
   let window: BrowserWindow | null = null,
     controller: DesktopController | undefined,
+    operator: OperatorHandle | undefined,
     tray: Tray | undefined,
-    closing = false;
+    closing = false,
+    requestedShow = false;
   const show = () => {
+    if (closing) return;
+    if (!app.isReady() || !controller) {
+      requestedShow = true;
+      return;
+    }
     if (!window || window.isDestroyed()) createWindow();
+    if (window!.isMinimized()) window!.restore();
     window!.show();
     window!.focus();
   };
@@ -47,8 +64,11 @@ if (!single) {
       minWidth: 430,
       minHeight: 650,
       title: 'Compost Club',
+      icon: path.join(root, 'dist-desktop-ui', 'garden-icon.png'),
       backgroundColor: '#f6f2e9',
-      show: process.env.COMPOST_ACCEPTANCE !== '1',
+      show:
+        process.env.COMPOST_ACCEPTANCE !== '1' &&
+        !app.commandLine.hasSwitch('compost-start-hidden'),
       webPreferences: {
         preload: path.join(__dirname, 'preload.cjs'),
         sandbox: true,
@@ -60,9 +80,22 @@ if (!single) {
     });
     window.setMenuBarVisibility(false);
     window.webContents.setWindowOpenHandler(({ url }) => {
-      if (isAuthorLink(url)) {
+      let reference = false;
+      try {
+        reference =
+          safeUrl(url) === url &&
+          !!controller?.store.state.references.some(
+            (r) => !r.removed && r.url && safeUrl(r.url) === url,
+          );
+      } catch {
+        /* Unsupported URL stays blocked. */
+      }
+      if (isAuthorLink(url) || reference) {
         void shell.openExternal(url).catch((error: unknown) => {
-          dialog.showErrorBox('Could not open author link', String(error));
+          dialog.showErrorBox(
+            'Не удалось открыть ссылку автора',
+            'Проверьте доступ к браузеру. Техническая причина: ' + String(error),
+          );
         });
       }
       return { action: 'deny' };
@@ -80,14 +113,19 @@ if (!single) {
       }
     });
     void window.loadFile(path.join(root, 'dist-desktop-ui', 'desktop.html'));
-    window.webContents.on('did-finish-load', () => {
-      if (controller) window?.webContents.send('compost:state', controller.view());
+    const contents = window.webContents;
+    contents.on('did-finish-load', () => {
+      if (!closing && controller && !contents.isDestroyed())
+        contents.send('compost:state', controller.view());
+    });
+    window.on('closed', () => {
+      window = null;
     });
   };
   app.on('second-instance', show);
   void app
     .whenReady()
-    .then(() => {
+    .then(async () => {
       Menu.setApplicationMenu(null);
       session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) =>
         callback(false),
@@ -116,8 +154,8 @@ if (!single) {
               ? {
                   title:
                     kind === 'models'
-                      ? 'Choose the installed Ollama model directory'
-                      : 'Choose an empty Codex export folder',
+                      ? 'Выберите папку уже установленной модели Ollama'
+                      : 'Выберите пустую папку для чтения в Codex',
                   properties: ['openDirectory', 'createDirectory'] as (
                     'openDirectory' | 'createDirectory'
                   )[],
@@ -125,17 +163,17 @@ if (!single) {
               : {
                   title:
                     kind === 'executable'
-                      ? 'Choose your installed ollama.exe'
+                      ? 'Выберите установленную программу ollama.exe'
                       : kind === 'restore'
-                        ? 'Choose a Compost Club backup'
-                        : 'Choose UTF-8 idea files',
+                        ? 'Выберите полную резервную копию Compost Club'
+                        : 'Выберите файлы исходных идей в UTF-8',
                   properties: [
                     'openFile',
                     ...(kind === 'import' ? ['multiSelections' as const] : []),
                   ] as ('openFile' | 'multiSelections')[],
                   filters: [
                     {
-                      name: kind === 'executable' ? 'Ollama executable' : 'Idea files',
+                      name: kind === 'executable' ? 'Программа Ollama' : 'Файлы идей',
                       extensions:
                         kind === 'executable'
                           ? ['exe']
@@ -152,9 +190,9 @@ if (!single) {
         },
         saveBackup: async (raw) => {
           const result = await dialog.showSaveDialog({
-            title: 'Save private recovery backup',
+            title: 'Сохранить полную приватную копию',
             defaultPath: `compost-club-backup-${new Date().toISOString().slice(0, 10)}.json`,
-            filters: [{ name: 'JSON backup', extensions: ['json'] }],
+            filters: [{ name: 'Полная резервная копия JSON', extensions: ['json'] }],
           });
           if (!result.canceled && result.filePath) {
             DesktopStore.parseBackup(raw);
@@ -174,9 +212,9 @@ if (!single) {
         confirm: async (message) => {
           const result = await dialog.showMessageBox({
             type: 'warning',
-            title: 'Review before changing retained data',
+            title: 'Проверьте изменения сохранённых данных',
             message,
-            buttons: ['Cancel', 'Confirm'],
+            buttons: ['Отмена', 'Подтвердить'],
             defaultId: 0,
             cancelId: 0,
             noLink: true,
@@ -199,11 +237,33 @@ if (!single) {
             args: loginArguments(),
           }).openAtLogin,
       };
-      controller = new DesktopController(new DesktopStore(app.getPath('userData')), services, [
-        root,
+      const credentials = new EncryptedCredentialStore(app.getPath('userData'), safeStorage);
+      const telemetry = await createDesktopObserver(app.getPath('userData'));
+      await credentials.initialize();
+      const claudeTokens = new EncryptedCredentialStore(
         app.getPath('userData'),
-      ]);
+        safeStorage,
+        'claude',
+      );
+      await claudeTokens.initialize();
+      controller = new DesktopController(
+        new DesktopStore(app.getPath('userData')),
+        services,
+        [root, app.getPath('userData')],
+        new OwnedOllama(),
+        new GroqRuntime(credentials),
+        new ClaudeRuntime(
+          app.getPath('userData'),
+          () => controller?.store.state.claudeExecutable,
+          undefined,
+          undefined,
+          claudeTokens,
+          claudeTokens,
+        ),
+        telemetry,
+      );
       createWindow();
+      if (requestedShow) show();
       const bitmap = Buffer.alloc(20 * 20 * 4);
       for (let y = 0; y < 20; y++)
         for (let x = 0; x < 20; x++)
@@ -220,15 +280,18 @@ if (!single) {
           }
       const icon = nativeImage.createFromBitmap(bitmap, { width: 20, height: 20, scaleFactor: 1 });
       tray = new Tray(icon);
-      tray.setToolTip('Compost Club · paused');
+      tray.setToolTip('Compost Club · на паузе');
       const update = () => {
+        if (closing) return;
         const state = controller!.view();
-        tray?.setToolTip(`Compost Club · ${state.status}`);
+        tray?.setToolTip(
+          `Compost Club · ${state.status === 'pausing' ? 'останавливаем' : state.busy ? 'создаём идею' : state.workspace.paused ? 'на паузе' : 'по расписанию'}`,
+        );
         tray?.setContextMenu(
           Menu.buildFromTemplate([
-            { label: 'Open Compost Club', click: show },
+            { label: 'Открыть Compost Club', click: show },
             {
-              label: 'Add an idea',
+              label: 'Добавить исходную идею',
               click: () => {
                 show();
                 void window?.webContents.executeJavaScript(
@@ -238,33 +301,62 @@ if (!single) {
             },
             { type: 'separator' },
             {
-              label: 'Pause and release model',
-              enabled: state.status !== 'pausing',
+              label:
+                state.status === 'pausing'
+                  ? 'Останавливаем…'
+                  : state.busy || !state.workspace.paused
+                    ? 'Пауза'
+                    : 'Продолжить',
+              enabled:
+                state.status !== 'pausing' &&
+                (state.busy ||
+                  !state.workspace.paused ||
+                  (state.status !== 'attention' &&
+                    state.workspace.gardens.some((g) => g.background))),
               click: () => {
                 void controller!
-                  .command({ op: 'pause' })
-                  .catch((e: unknown) => dialog.showErrorBox('Pause needs attention', String(e)));
-              },
-            },
-            {
-              label: 'Resume experiment',
-              enabled: !state.busy && !state.workspace.experiment.enabled,
-              click: () => {
-                void controller!
-                  .command({ op: 'resume' })
-                  .catch((e: unknown) => dialog.showErrorBox('Cannot resume', String(e)));
+                  .command({ op: state.busy || !state.workspace.paused ? 'pause' : 'resume' })
+                  .catch((e: unknown) =>
+                    dialog.showErrorBox('Не удалось изменить состояние', String(e)),
+                  );
               },
             },
             { type: 'separator' },
-            { label: 'Exit', click: () => app.quit() },
+            { label: 'Выйти', click: () => app.quit() },
           ]),
         );
-        if (window && !window.isDestroyed()) window.webContents.send('compost:state', state);
+        if (window && !window.isDestroyed() && !window.webContents.isDestroyed())
+          window.webContents.send('compost:state', state);
       };
       controller.subscribe(update);
       update();
+      operator = await startOperator(
+        app.getPath('userData'),
+        (command, confirmed) => {
+          if (closing) return Promise.reject(new Error('Application is shutting down.'));
+          return controller!.command(command, confirmed);
+        },
+        () => app.quit(),
+        async () => {
+          show();
+          const current = window;
+          if (!current || current.isDestroyed()) throw new Error('Window is unavailable.');
+          return {
+            pid: process.pid,
+            visible: current.isVisible(),
+            minimized: current.isMinimized(),
+            focused: current.isFocused(),
+            ready:
+              !current.webContents.isLoadingMainFrame() &&
+              (await current.webContents.executeJavaScript(
+                'Boolean(document.querySelector(".desktop-app"))',
+              )) === true,
+          };
+        },
+      );
       tray.on('double-click', show);
       ipcMain.handle('compost:command', async (event, input: unknown) => {
+        if (closing) throw new Error('Application is shutting down.');
         if (
           !window ||
           event.sender !== window.webContents ||
@@ -277,20 +369,25 @@ if (!single) {
           return { ...controller!.view(), error: e instanceof Error ? e.message : String(e) };
         }
       });
-      const timer = setInterval(() => controller!.tick(), 5000);
+      const timer = setInterval(() => {
+        if (!closing) controller!.tick();
+      }, 5000);
       timer.unref();
       powerMonitor.on('suspend', () => {
+        if (closing) return;
         void controller!.pause('Paused for sleep. Resume explicitly after wake.').catch(() => {});
       });
       powerMonitor.on('resume', () => {
+        if (closing) return;
         void controller!.pause('Paused after wake. Resume explicitly when ready.').catch(() => {});
       });
       app.on('activate', show);
     })
     .catch((e: unknown) => {
       dialog.showErrorBox(
-        'Compost Club could not open',
-        String(e) + '\nExisting data has not been replaced. See the local recovery guide.',
+        'Не удалось открыть Compost Club',
+        'Сохранённые данные оставлены на месте. Проверьте приватную резервную копию и руководство по восстановлению. Техническая причина: ' +
+          String(e),
       );
       app.exit(1);
     });
@@ -301,14 +398,19 @@ if (!single) {
     closing = true;
     void controller
       ?.close()
-      .then(() => {
+      .then(async () => {
+        await operator?.close();
         tray?.destroy();
         app.exit();
       })
       .catch((e: unknown) => {
         closing = false;
         show();
-        dialog.showErrorBox('Shutdown needs attention', e instanceof Error ? e.message : String(e));
+        dialog.showErrorBox(
+          'Не удалось безопасно завершить работу',
+          'Сохраните полную приватную копию и проверьте причину остановки. Технические подробности: ' +
+            (e instanceof Error ? e.message : String(e)),
+        );
       });
     if (!controller) app.exit();
   });

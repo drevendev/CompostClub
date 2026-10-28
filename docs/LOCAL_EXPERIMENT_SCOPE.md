@@ -1,5 +1,7 @@
 # Local desktop experiment — scope
 
+**Implementation update, 25 October 2026:** [0.2.0-rc.1 local guide](COHERENT_GARDENS_RC.md), [implementation and remaining gates](COHERENT_GARDENS_ACCEPTANCE.md). The local RC is experimental; owner usefulness and the actual observation period remain unfinished. The dated baseline below is preserved as history.
+
 **Successor scope, 24 October 2026:** the initial desktop candidate is the baseline for [v0.2 Coherent Gardens](NEXT_RELEASE_SPEC.md), with [ordered implementation and issue reconciliation](NEXT_RELEASE_TASKS.md). Early private use has begun and exposed context/coherence gaps; the full 7–14 day observation is not claimed complete. Below remains the dated initial-experiment contract, including its 60-minute/six-call defaults. v0.2 preserves existing settings and introduces a separately previewed 15-minute profile, rich screened candidates, deliberate growth and named gardens. Its exact exchange/accounting rules take precedence over older future-only/manual-only descriptions. No personal input or new application behavior is included in this documentation change.
 
 Agreed: 23 October 2026 (Asia/Nicosia). Implementation authorized and delivered as a local Windows candidate on 24 October 2026. [Ordered tasks and readiness criteria](LOCAL_EXPERIMENT_TASKS.md), [implementation decisions](LOCAL_DESKTOP_ADR.md) and [desktop use/recovery guide](LOCAL_DESKTOP_RUNNING.md). Owner quality review and actual 7–14 day observation remain separate, unfinished use stages.

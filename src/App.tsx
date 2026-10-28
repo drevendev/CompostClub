@@ -1479,7 +1479,7 @@ export default function App() {
               <p>
                 {modelKey === '270m'
                   ? '270M failed our initial blend quality check. It remains available for experiments.'
-                  : '1B is more capable, but still makes mistakes. Strict source validation can reject a result.'}{' '}
+                  : '1B also failed the initial EN/RU contract checks. Both browser models are experimental and have no demonstrated usefulness pass.'}{' '}
                 Downloads may need more than 1 GB of free RAM; file size is not GPU memory usage.
               </p>
               <p>

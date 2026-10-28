@@ -1,0 +1,171 @@
+{
+  "version": "0.2.0-rc.1",
+  "date": "2026-10-25",
+  "status": "Experimental local RC; usefulness not promoted. Evidence boundaries and the earlier long-harness failure are retained explicitly.",
+  "privacy": "Sanitized fictional diagnostics and aggregate observations only; no owner inputs, paths, raw receipts or inference-pack hashes.",
+  "verification": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "format": "passed",
+    "unitTests": 155,
+    "desktopTests": 43,
+    "bridgeTests": 3,
+    "sourcePackagingTests": 1,
+    "docs": "passed",
+    "productionBuild": "passed",
+    "recordedStandalone": "passed",
+    "chromium": {
+      "recovery": 8,
+      "p1WorkflowLayoutGrowthDiagnostics": 24,
+      "sampleOffline": 4,
+      "productionSubpath": "passed",
+      "nativeUi": "Actual Windows fictional migration, two gardens, draft preservation, duplicates, 10% consent, Escape/focus, 430px, 200%, reduced motion, zero renderer HTTP/errors. Captured before final operator/notification-guard additions; screenshot is that feature-acceptance capture."
+    },
+    "syntheticNativeWorkflow": {
+      "label": "Diagnostic only, zero inference and no owner quality score",
+      "acceptedChain": 3,
+      "alternatives": 2,
+      "compare": true,
+      "humanEditOriginalRetained": true,
+      "rejection": true,
+      "reload": true,
+      "backupRestore": true,
+      "cascadeConfirmed": true
+    }
+  },
+  "finalExactPortable": {
+    "sha256": "d3577fdab537be031fcc15a0b7a12cd4a64cd7eac47b5a1d5029b091815c1512",
+    "files": 93,
+    "hashesVerified": true,
+    "nativeControl": "authenticated local named pipe; no UI automation or injected hooks",
+    "nativePidEqualsObservedChild": true,
+    "tenCreditsPersisted": true,
+    "mutualTenPercentExchange": true,
+    "idleExitCode": 0,
+    "idleExitMs": 214,
+    "nextLaunchPaused": true,
+    "uncaughtDestroyedWebContents": false,
+    "genuineModelStageExit": [
+      {
+        "target": "generating",
+        "exitCode": 0,
+        "exitMs": 772,
+        "ownedModelProcessAbsent": true,
+        "dispatchedCallsRetained": true,
+        "nextStoreOpenPaused": true,
+        "uncaughtDestroyedWebContents": false
+      },
+      {
+        "target": "screening",
+        "exitCode": 0,
+        "exitMs": 666,
+        "ownedModelProcessAbsent": true,
+        "dispatchedCallsRetained": true,
+        "nextStoreOpenPaused": true,
+        "uncaughtDestroyedWebContents": false
+      }
+    ]
+  },
+  "earlierRealBackgroundObservation": {
+    "binding": "Observed before final main-process notification guards, direct operator and optional ten-credit capacity. This is component timing/pause evidence, not a claim that the entire final-build long harness passed.",
+    "intervalMinutes": 15,
+    "acceleratedClock": false,
+    "closedToTray": true,
+    "scheduledDispatches": 3,
+    "spacingMs": [
+      901368,
+      903510
+    ],
+    "outcomes": [
+      {
+        "stage": "needs_revision",
+        "generationCalls": 1,
+        "screeningCalls": 1
+      },
+      {
+        "stage": "needs_revision",
+        "generationCalls": 1,
+        "screeningCalls": 1
+      },
+      {
+        "stage": "failed",
+        "generationCalls": 1,
+        "screeningCalls": 2
+      }
+    ],
+    "scheduledModelCalls": 7,
+    "pauseDuringStages": [
+      {
+        "target": "generating",
+        "status": "pause confirmed",
+        "elapsedMs": 888,
+        "ownedProcessAbsent": true,
+        "sharedProcessSurvived": true
+      },
+      {
+        "target": "screening",
+        "status": "pause confirmed",
+        "elapsedMs": 982,
+        "ownedProcessAbsent": true,
+        "sharedProcessSurvived": true
+      }
+    ],
+    "fullHarnessStatus": "FAILED at idle Exit wait; original error and all evidence retained privately",
+    "failure": "Electron did not exit.",
+    "followUp": "Windows Playwright child PID differed from actual Electron PID. Final portable uses direct native spawn and authenticated pipe, with independently observed native PID and successful idle/genuine-stage exit. Late destroyed-WebContents notification paths were guarded.",
+    "modelProcessTreeSamples": 73,
+    "maxSampledModelTreeHostRssBytes": 3963772928,
+    "gpuVram": "not measured",
+    "performanceClaim": "No speed or no-slowdown guarantee",
+    "observedModelProcessesAbsentAtEnd": true
+  },
+  "evaluation": {
+    "compatible": 12,
+    "controls": 4,
+    "languages": "6 EN + 6 RU compatible",
+    "baselineCalls": 17,
+    "newPipelineCalls": 23,
+    "screenedDisplayable": 0,
+    "seen": true,
+    "ownerScores": "Pending, never inferred from filtering",
+    "qualityGate": "Not passed",
+    "baselineStageLatencyMs": {
+      "n": 17,
+      "median": 9930,
+      "p95": 15216,
+      "max": 15216
+    },
+    "newJobLatencyMs": {
+      "n": 15,
+      "median": 12247,
+      "p95": 101507,
+      "max": 101507
+    },
+    "newDispatchToRetainedRawLatencyMs": {
+      "n": 23,
+      "median": 22731,
+      "p95": 50005,
+      "max": 55614
+    },
+    "preliminaryRuns": "Interrupted preliminary diagnostics and the excluded seen development case are retained locally and excluded from completed comparison denominators."
+  },
+  "capacity": {
+    "label": "Fictional measured capacity diagnostic, no inference",
+    "gardens": 2,
+    "sources": 400,
+    "distinctOriginalDocuments": 400,
+    "workspaceBytes": 1930165,
+    "prepareMs": 82,
+    "validateMs": 117,
+    "selectionMs": 441,
+    "saveMs": 283,
+    "reopenMs": 421
+  },
+  "remainingGates": [
+    "Owner usefulness, reference attribution and screening false-positive/negative decisions",
+    "Owner-accepted genuine cross-garden candidate and three accepted live growth steps/two alternatives",
+    "A complete combined long harness on the final host if certifying the full R8 lifecycle gate",
+    "Actual 7–14 day owner observation"
+  ],
+  "publication": "Draft PR only; no GitHub Release or deployment"
+}

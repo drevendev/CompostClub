@@ -27,6 +27,7 @@ export function replay(request: Request): string {
   return record.raw;
 }
 export class BrowserAI {
+  private loadEpoch = 0;
   private worker: Worker | null = null;
   private rejectPending: ((reason: Error) => void) | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -72,6 +73,8 @@ export class BrowserAI {
     });
   }
   async load(key: ModelKey, onProgress: (value: number, label: string) => void): Promise<void> {
+    this.cancel();
+    const epoch = this.loadEpoch;
     const gpu = (
       navigator as Navigator & {
         gpu?: { requestAdapter: () => Promise<{ features: Set<string> } | null> };
@@ -82,9 +85,10 @@ export class BrowserAI {
         'This browser does not provide WebGPU. Try the sample garden or local Ollama.',
       );
     const adapter = await gpu.requestAdapter();
+    if (epoch !== this.loadEpoch)
+      throw new Error('Model loading cancelled before worker creation.');
     if (!adapter || !adapter.features.has('shader-f16'))
       throw new Error('The GPU needs WebGPU with shader-f16 support for this model.');
-    this.cancel();
     this.worker = new Worker(new URL('./browser.worker.ts', import.meta.url), { type: 'module' });
     await this.call({ type: 'load', model: key }, onProgress, 600000);
     this.loaded = key;
@@ -124,6 +128,7 @@ export class BrowserAI {
     }
   }
   cancel(): void {
+    ++this.loadEpoch;
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     this.worker?.terminate();

@@ -45,6 +45,10 @@ test('real HTTP bridge: early reservation, split UTF-8, URL containment, 404s an
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  let startupError = '';
+  child.stderr.on('data', (chunk) => {
+    startupError += chunk.toString();
+  });
   try {
     let health;
     for (let i = 0; i < 100; i++) {
@@ -55,7 +59,7 @@ test('real HTTP bridge: early reservation, split UTF-8, URL containment, 404s an
         await delay(50);
       }
     }
-    assert.ok(health?.token, JSON.stringify(health));
+    assert.ok(health?.token, JSON.stringify({ health, startupError, exitCode: child.exitCode }));
     const headers = { 'content-type': 'application/json', origin, 'x-compost-token': health.token };
     const body = Buffer.from(
       JSON.stringify({
@@ -201,6 +205,7 @@ test('Sentry OFF never loads a client; opt-in actual envelopes exclude private d
   assert.ok(!payload.includes('server_name'));
   for (const e of envelopes)
     for (const [, item] of e[1]) if (item.user) assert.equal(item.user.ip_address, '0.0.0.0');
+  await Sentry.close();
 });
 
 test('transaction allowlist discards automatic machine/request/user data', () => {
@@ -217,4 +222,81 @@ test('transaction allowlist discards automatic machine/request/user data', () =>
   );
   assert.ok(!clean.includes('SECRET'));
   assert.ok(clean.includes('gemma3:4b'));
+});
+
+test('Claude/Groq metadata traces retain model/stage/status/usage but no token, prompt, raw output, error or machine fields', async () => {
+  const envelopes = [];
+  const observer = await createObserver({
+    env: {
+      COMPOST_SENTRY_ENABLED: '1',
+      SENTRY_DSN: 'https://11111111111111111111111111111111@o1.ingest.de.sentry.io/123',
+    },
+    transport: () => ({
+      send: async (envelope) => {
+        envelopes.push(envelope);
+        return { statusCode: 200 };
+      },
+      flush: async () => true,
+    }),
+  });
+  await observer.run(
+    {
+      system: 'anthropic',
+      model: 'opus',
+      operation: 'blend',
+      phase: 'generating',
+      type: 'inference',
+      contract: 'provider-1',
+    },
+    async (trace) => {
+      trace.tokens(123, 45);
+      trace.httpStatus(200);
+      trace.reportedModel('claude-opus-5');
+      return 'PRIVATE_OUTPUT sk-ant-oat01-PRIVATE_TOKEN';
+    },
+  );
+  await observer.run(
+    {
+      system: 'anthropic',
+      model: 'haiku',
+      operation: 'configureClaudeModel',
+      phase: 'model_selection',
+      type: 'control',
+      contract: 'provider-1',
+    },
+    async () => 'PRIVATE_SOURCE',
+  );
+  await assert.rejects(
+    observer.run(
+      {
+        system: 'groq',
+        model: 'openai/gpt-oss-20b',
+        operation: 'blend',
+        phase: 'screening',
+        contract: 'provider-1',
+      },
+      async (trace) => {
+        trace.httpStatus(429);
+        trace.reportedModel('PRIVATE_MODEL');
+        throw new Error('PRIVATE_ERROR sk-ant-oat01-PRIVATE_TOKEN');
+      },
+    ),
+  );
+  await observer.flush();
+  const payload = JSON.stringify(envelopes);
+  assert.ok(envelopes.length > 0);
+  assert.ok(payload.includes('claude-opus-5'));
+  assert.ok(payload.includes('model_selection'));
+  assert.ok(payload.includes('gen_ai.usage.input_tokens'));
+  assert.ok(payload.includes('compost.http_status'));
+  assert.ok(payload.includes('429'));
+  assert.ok(payload.includes('Compost model stage'));
+  assert.ok(payload.includes('Compost provider operation'));
+  for (const secret of ['PRIVATE', 'sk-ant-oat01', 'server_name', 'exception', 'request.headers'])
+    assert.ok(!payload.includes(secret), secret);
+  for (const envelope of envelopes)
+    for (const [, item] of envelope[1])
+      if (item.user) assert.equal(item.user.ip_address, '0.0.0.0');
+  const Sentry = await import('@sentry/node');
+  await Sentry.close();
 });

@@ -1,8 +1,8 @@
 # Optional operator services
 
-Sentry is the only connected optional service. Local ideas, IndexedDB saves, Gemma, backups and the recorded standalone HTML do not require a service account. No cloud inference, end-user accounts, paid upgrade, payment method or automatic model downloads are introduced. Operator authorization: 22 October 2026. The owner subsequently declined Render and Entire; their earlier preparation notes below are historical, not an active integration plan.
+Sentry is the only connected optional monitoring service. Local ideas, IndexedDB saves, Gemma, backups and the recorded standalone HTML do not require a service account. Separate owner-authorized manual Claude/Groq inference is described in [the provider guide](PROVIDER_PATCH.md); monitoring never gates it or local/offline work. No end-user account, paid upgrade, payment method or automatic download is introduced. Operator metadata authorization: 22 October, extended to desktop provider operations on 28 October 2026. Render and Entire remain declined; earlier notes below are historical.
 
-## Sentry — local metadata tracing only
+## Sentry — operator metadata tracing only
 
 Use a separate `compost-club` Node project in the existing organization. Never reuse another project's DSN or alter its configuration. The owner account was inspected on 22 October: Sponsored Business, no payment method, no billing details, pay-as-you-go limit $0. Quotas are shared across the organization; this is not a new independent free allowance. Sponsorship terms can change; recheck billing before use.
 
@@ -18,6 +18,12 @@ Do not put DSNs in Vite variables or frontend code. Health/connection status dis
 Traces represent the local bridge call and bridge-side structural validation. They do not measure browser validation, atomic persistence or semantic usefulness. A short response can be structurally valid and still be a poor idea. The client independently journals and validates raw results. Independent calls start isolated traces rather than inheriting one global trace ID. At most five buffered envelopes, three-second outbound timeout and no redirect/retry loop; rejected or unavailable telemetry must not block inference. Raw model failures stay local.
 
 Before sending personal data, inspect actual envelopes with synthetic sentinels in prompts, responses and errors. Verify stored Sentry event JSON excludes source IP/geo, including provider enrichment. A genuine public-safe local Gemma trace is required before claiming Sentry Agent Tracing in an article. Do not use another project's evidence.
+
+### Desktop provider tracing
+
+The desktop adapter uses the same sanitizing observer for provider/model selection, authentication, consent, release, generation/screening and structural validation. A private profile may opt in using `operator-telemetry.private.json` with `format: "compost-operator-telemetry-1"`, `enabled: true` and the existing Compost Club project `dsn`. Process environment flags also work. No browser client or product analytics is added. Settings shows whether it is enabled. Invalid/disabled profile configuration turns monitoring OFF without blocking the garden. Even a monitoring promise that never settles cannot retry or gate a business operation. Model versions/usage are observed metadata, not quality or cost estimates.
+
+This operator file and profile crypto metadata stay outside idea backups, reading exports, portable contents and source archives. For desktop opt-out set profile `enabled` to `false` and restart (this takes precedence over inherited opt-in); alternatively clear process opt-in where no profile configuration exists.
 
 ### Disable and remove
 
