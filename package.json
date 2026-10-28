@@ -1,6 +1,6 @@
 {
   "name": "compost-club",
-  "version": "0.2.0-rc.6",
+  "version": "0.2.0-rc.7",
   "private": true,
   "type": "module",
   "description": "A quiet local AI garden for unfinished thoughts.",
@@ -29,6 +29,7 @@
     "desktop:start": "electron dist-desktop/main.cjs",
     "desktop:package": "npm run desktop:build && node scripts/package-desktop.mjs",
     "test:desktop": "tsx --test desktop/tests/*.test.ts",
+    "test:desktop-ui": "playwright test --config playwright.desktop-ui.config.ts",
     "test:capacity": "tsx scripts/desktop-capacity.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src desktop --max-warnings 0",

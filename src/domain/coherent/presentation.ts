@@ -49,6 +49,8 @@ export const labels: Record<string, string> = {
 export const label = (s: string | undefined) => (s ? (labels[s] ?? s) : 'Пока нет решения');
 export function explain(reason: string): string {
   if (!reason) return '';
+  if (/Response contract limits|Invalid text field|Invalid bounded list/.test(reason))
+    return 'Модель нарушила ограничения формата ответа. Карточка не создана; исходный ответ сохранён, слот остался доступен. Подробная причина — в сохранённой попытке.';
   if (/Provider configuration changed|Remote consent invalid/.test(reason))
     return 'Подключение или разрешение изменилось. Просмотрите контекст и подтвердите новую попытку.';
   if (

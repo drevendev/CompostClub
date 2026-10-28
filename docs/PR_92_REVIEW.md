@@ -49,6 +49,12 @@ Reviewed provider isolation and secret storage, immutable stage configuration, c
 
 ## Usability and delivery boundary
 
+### RC7 follow-up after primary-use failures
+
+The RC6 ordinary-use readiness claim was too broad. Two genuine owner-triggered Sonnet jobs failed length/cardinality limits and their generic repair did not resolve them. #103 now adds a versioned provider-2 contract, initial limit prose, safe all-violation feedback and a preflight-reserved 1024-byte repair budget. #104 adds the latest unsuccessful attempt notice and a focused route to its saved details. Both narrow issues are eligible for closure by this PR after these regressions and acceptance; this does not close broader quality gates.
+
+After separate authorization, the new frozen RU application-pair evaluation used exactly three Sonnet calls: core 771/700 rejected, bounded repair accepted, checker pass, one committed proposal. The genuine fictional card was then displayed and opened in the exact RC7 portable using a separate hidden copy of the evaluation data with zero added creative calls. All initial failures remain retained. Added coordination/reset/timer assumptions still require human review; no general usefulness or reliability rate is inferred. The owner profile was not used for inference or restarted by the test. See the current acceptance record for identities and boundaries.
+
 Manual Claude Sonnet and Opus are usable in the experimental preview: each produced one genuinely screened proposal on a frozen fictional RU pair. This is limited evidence, not a usefulness rate. Haiku is selectable with the explicit #99 limitation. Remote background is disabled; local Gemma RU quality remains open. Full original responses are retained on failures without spending the idea slot; dispatched calls can still consume the subscription allowance.
 
 The genuine budget remains eight calls under a nine-call ceiling, stopped. RC6 review adds no creative call. The [acceptance record](PROVIDER_PATCH_ACCEPTANCE.md) preserves RC5 and older evidence; exact RC6 identities accompany delivery. The PR remains draft pending the broader gates above. No merge, release publication, or personal-installation replacement is part of this review.

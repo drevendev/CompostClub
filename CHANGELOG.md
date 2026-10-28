@@ -2,6 +2,12 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
+## 0.2.0-rc.7 — 2026-10-28
+
+- Correct two RC6 Sonnet format failures: new provider-2 jobs state exact field/list limits and use all bounded structural violation paths/counts in the shared repair; admission reserves that feedback before generation. Historical provider-1 contracts and original failed responses remain unchanged (#103).
+- Show the selected garden's latest unsuccessful attempt on the main screen, with charged calls, retained slot and a direct link to saved details, including asynchronously completed failures (#104).
+- Add full-controller authored failure-shape regressions for Claude/Groq and actual headless Chromium subscription-notice acceptance. Genuine success on the new contract requires a separately authorized frozen evaluation; earlier limited RC5 results do not certify RC7.
+
 ## 0.2.0-rc.6 — 2026-10-28
 
 - Recheck the exact pending consent and its current expiry after asynchronous authentication. Cancelling, replacing or expiring a preview during Claude authentication or Groq credential access now prevents dispatch and leaves workspace/call/credit state unchanged (#100).

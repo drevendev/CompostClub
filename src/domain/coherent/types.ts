@@ -286,8 +286,14 @@ export interface Job {
   model: string;
   modelDigest: string;
   promptVersion:
-    'provider-1' | 'coherent-2' | 'coherent-3' | 'coherent-4' | 'coherent-5' | 'coherent-6';
-  schemaVersion: 'candidate-4' | 'candidate-1' | 'candidate-2' | 'candidate-3';
+    | 'provider-2'
+    | 'provider-1'
+    | 'coherent-2'
+    | 'coherent-3'
+    | 'coherent-4'
+    | 'coherent-5'
+    | 'coherent-6';
+  schemaVersion: 'candidate-5' | 'candidate-4' | 'candidate-1' | 'candidate-2' | 'candidate-3';
   language: 'ru' | 'en';
   direction: Direction | null;
   question: string;

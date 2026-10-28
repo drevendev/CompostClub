@@ -3,6 +3,7 @@ import { bytes, canonical, hash } from './hash';
 import { generationPrompt, screeningPrompt, schemaForJob, schemaForAssessment } from './contract';
 import { key } from './prepare';
 import type { Candidate, Job } from './types';
+import { REMOTE_REPAIR_MAX_BYTES } from './response-limits';
 
 export const CONTEXT_LIMIT = 4096;
 export const TEMPLATE_RESERVE = 512;
@@ -18,6 +19,7 @@ const COMPACT_REPAIR =
   'Shorten each field to its schema maxLength. One e-ID per parent. Empty unused fields. Valid JSON only; no extra prose.';
 export interface Admission {
   version:
+    | 'provider-admission-2'
     | 'provider-admission-1'
     | 'job-admission-1'
     | 'job-admission-2'
@@ -34,6 +36,7 @@ export interface Admission {
   generationUpperBound: number;
   screeningUpperBound: number;
   repairInstruction: string;
+  repairMaxBytes?: number;
   contextHash: string;
   exactDraftHash: string | null;
   omissions: string[];
@@ -177,7 +180,7 @@ export function draftLimits(j: Job): Record<string, number> {
 export function planAdmission(j: Job, exactDraft?: Candidate): Admission {
   if (isRemote(j.provider)) {
     const a: Admission = {
-      version: 'provider-admission-1',
+      version: j.promptVersion === 'provider-2' ? 'provider-admission-2' : 'provider-admission-1',
       representation: 'screening-tuple-1',
       counting: 'utf8-byte-upper-bound',
       tokenizer: null,
@@ -189,19 +192,22 @@ export function planAdmission(j: Job, exactDraft?: Candidate): Admission {
       generationUpperBound: 0,
       screeningUpperBound: 0,
       repairInstruction: FORMAT_REPAIR,
+      ...(j.promptVersion === 'provider-2' ? { repairMaxBytes: REMOTE_REPAIR_MAX_BYTES } : {}),
       contextHash: j.pack.hash,
       exactDraftHash: exactDraft ? hash(canonical(exactDraft)) : null,
       omissions: [],
     };
     const probe = { ...j, admission: a, draft: exactDraft ?? null };
+    const reservedRepair =
+      j.promptVersion === 'provider-2' ? 'x'.repeat(REMOTE_REPAIR_MAX_BYTES) : FORMAT_REPAIR;
     a.generationUpperBound =
-      bytes(generationPrompt(probe, FORMAT_REPAIR)) +
+      bytes(generationPrompt(probe, reservedRepair)) +
       bytes(JSON.stringify(schemaForJob(probe))) +
       128 +
       512 +
       a.generationTokens;
     a.screeningUpperBound =
-      bytes(screeningPrompt({ ...probe, draft: null }, FORMAT_REPAIR)) +
+      bytes(screeningPrompt({ ...probe, draft: null }, reservedRepair)) +
       bytes(JSON.stringify(schemaForAssessment(probe))) +
       128 +
       a.maxDraftBytes +

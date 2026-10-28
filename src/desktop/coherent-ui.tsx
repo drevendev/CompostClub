@@ -161,6 +161,7 @@ function App() {
   >({});
   const eurekaPending = useRef(false);
   const [sendingEureka, setSendingEureka] = useState(false);
+  const [dismissedOutcome, setDismissedOutcome] = useState('');
   const send = useCallback(async (c: CoherentCommand) => {
     setError('');
     try {
@@ -217,6 +218,15 @@ function App() {
     sources = w.sources.filter((s) => s.garden === g.id),
     nodes = w.nodes.filter((n) => n.garden === g.id),
     jobs = w.jobs.filter((j) => j.garden === g.id),
+    lastAttempt = jobs.at(-1),
+    failedOutcome =
+      lastAttempt &&
+      lastAttempt.id !== dismissedOutcome &&
+      ['failed', 'needs_revision', 'needs_context', 'negative', 'interrupted'].includes(
+        lastAttempt.stage,
+      )
+        ? lastAttempt
+        : null,
     draft = drafts[g.id] ?? { title: '', text: '', tags: '' },
     flow = funnel(w, g.id),
     eurekaReason = explain(view.eureka.find((e) => e.garden === g.id)?.reason ?? ''),
@@ -675,6 +685,36 @@ function App() {
             </p>
           )}
         </section>
+        {failedOutcome && (
+          <section role="status" className="panel" aria-label="Результат последней попытки">
+            <h2>Последняя попытка не создала карточку</h2>
+            <p>
+              {explain(failedOutcome.primaryFailure || failedOutcome.repairRefusal) ||
+                jobTitle(failedOutcome)}
+            </p>
+            <p>
+              Учтено вызовов: {failedOutcome.calls.length}. Слот сохранён. Исходные ответы доступны
+              в истории попытки.
+            </p>
+            <div className="actions">
+              <button
+                onClick={() => {
+                  setTab('filtered');
+                  requestAnimationFrame(() => {
+                    const card = document.getElementById('attempt-' + failedOutcome.id);
+                    card?.scrollIntoView({ block: 'start' });
+                    card?.focus({ preventScroll: true });
+                  });
+                }}
+              >
+                Открыть сохранённую попытку
+              </button>
+              <button onClick={() => setDismissedOutcome(failedOutcome.id)}>
+                Скрыть результат попытки
+              </button>
+            </div>
+          </section>
+        )}
         {error && (
           <div role="alert" className="error">
             <p>{explain(error)}</p>
@@ -2218,7 +2258,7 @@ function NodeReader({
 }
 function JobCard({ j, send, busy }: { j: Job; send: Send; busy: boolean }) {
   return (
-    <article className="source-card">
+    <article className="source-card" id={'attempt-' + j.id} tabIndex={-1}>
       <h3>{jobTitle(j)}</h3>
       <p>
         {when(j.entry.at)} ·{' '}

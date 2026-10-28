@@ -30,7 +30,12 @@ async function main() {
     executable = option('--claude-executable');
   if (!path.isAbsolute(profile) || !path.isAbsolute(executable))
     throw new Error('Explicit profile and native executable paths required.');
-  const file = path.resolve('fixtures/public/claude-model-acceptance.json');
+  const contractRegression = args.includes('--contract-regression');
+  const file = path.resolve(
+    contractRegression
+      ? 'fixtures/public/provider-contract-acceptance.json'
+      : 'fixtures/public/claude-model-acceptance.json',
+  );
   const raw = await readFile(file, 'utf8');
   const protocol = JSON.parse(raw) as {
     version: string;
@@ -45,10 +50,13 @@ async function main() {
   assert.equal(protocol.fictional, true);
   assert.equal(protocol.variantsPerModel, 1);
   assert.equal(protocol.maximumCallsPerModel, 3);
-  assert.equal(protocol.maximumCalls, 9);
-  assert.deepEqual(protocol.models, ['haiku', 'sonnet', 'opus']);
+  const maximumCalls = contractRegression ? 3 : 9;
+  assert.equal(protocol.maximumCalls, maximumCalls);
+  assert.deepEqual(protocol.models, contractRegression ? ['sonnet'] : ['haiku', 'sonnet', 'opus']);
+  if (contractRegression) assert.equal(protocol.version, 'provider-contract-2026-10-28-1');
   assert.equal(protocol.parents.length, 2);
   const priorFile = option('--haiku-regression-after');
+  if (contractRegression && priorFile) throw new Error('Separate protocols cannot be mixed.');
   let priorCalls = 0,
     priorHash = '';
   if (priorFile) {
@@ -99,7 +107,7 @@ async function main() {
       {
         inputSha256: hash(raw),
         version: protocol.version,
-        maximumCalls: 9,
+        maximumCalls,
         modelVariants: protocol.models,
         variantsPerModel: 1,
         ...(priorFile
@@ -129,10 +137,10 @@ async function main() {
   let total = priorCalls;
   const results: Record<string, unknown>[] = [];
   for (const model of priorFile ? ['haiku'] : protocol.models) {
-    assert.ok(total + 3 <= 9);
+    assert.ok(total + 3 <= maximumCalls);
     const store = new CoherentStore(path.join(output, model));
     const state = create(Date.now(), 'Asia/Nicosia');
-    state.gardens[0]!.profile = 'game';
+    state.gardens[0]!.profile = contractRegression ? 'application' : 'game';
     state.settings.language = 'ru';
     state.settings.calls = 3;
     state.provider = { kind: 'claude', model, revision: 1 };
@@ -193,7 +201,7 @@ async function main() {
     const job = store.state.jobs.at(-1);
     failure ||= job?.primaryFailure || job?.repairRefusal || '';
     total += store.state.calls.length;
-    assert.ok(store.state.calls.length <= 3 && total <= 9);
+    assert.ok(store.state.calls.length <= 3 && total <= maximumCalls);
     const evidence = {
       requestedModel: model,
       clientVersion: runtime.version,
@@ -234,7 +242,7 @@ async function main() {
     await observer.flush();
     await writeFile(
       path.join(output, 'progress.json'),
-      JSON.stringify({ totalCalls: total, maximumCalls: 9, results, delivery }, null, 2),
+      JSON.stringify({ totalCalls: total, maximumCalls, results, delivery }, null, 2),
     );
     if (credentialOrQuota) break;
   }
@@ -247,7 +255,7 @@ async function main() {
         inputSha256: hash(raw),
         cli: '2.1.259 inspected before evaluation',
         totalCalls: total,
-        maximumCalls: 9,
+        maximumCalls,
         results,
         telemetryEnabled: observer.enabled,
         telemetryDelivery: delivery,
@@ -261,7 +269,7 @@ async function main() {
     JSON.stringify({
       output,
       totalCalls: total,
-      maximumCalls: 9,
+      maximumCalls,
       modelsAttempted: results.length,
       telemetryEnabled: observer.enabled,
       acceptedMetadataEnvelopes: delivery.filter((d) => d.status >= 200 && d.status < 300).length,

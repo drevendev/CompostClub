@@ -35,7 +35,8 @@ export function admissionConditions(w: Workspace, id: string) {
   const selectedGardens = new Set([id, ...(g.plan?.parents.map((p) => p.garden) ?? [])]);
   return hash(
     canonical({
-      contract: 'coherent-6/job-admission-4/provider-1',
+      contract:
+        'coherent-6/job-admission-4/' + (isRemote(w.provider) ? 'provider-2' : 'provider-1'),
       provider: providerSnapshot(w.provider, w.runtime.model),
       profile: g.profile,
       objective: g.objective,
@@ -533,8 +534,8 @@ export function prepareJob(
     provider: providerSnapshot(w.provider, w.runtime.model),
     model: providerSnapshot(w.provider, w.runtime.model).requestedModel,
     modelDigest: '',
-    promptVersion: isRemote(w.provider) ? 'provider-1' : 'coherent-6',
-    schemaVersion: isRemote(w.provider) ? 'candidate-4' : 'candidate-3',
+    promptVersion: isRemote(w.provider) ? 'provider-2' : 'coherent-6',
+    schemaVersion: isRemote(w.provider) ? 'candidate-5' : 'candidate-3',
     language: w.settings.language,
     direction: options.direction ?? null,
     question: request,

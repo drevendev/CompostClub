@@ -43,7 +43,7 @@ describe('provider contract · authored diagnostics, no live model', () => {
     expect(j.provider!.seed).toBe(false);
     expect(j.admission!.contextLimit).toBe(16384);
     expect(j.admission!.screeningUpperBound).toBeLessThanOrEqual(16384);
-    expect(j.promptVersion).toBe('provider-1');
+    expect(j.promptVersion).toBe('provider-2');
     validate(w);
   });
   it('refuses unsupported profile/config and changed provider before dispatch', () => {

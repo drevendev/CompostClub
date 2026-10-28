@@ -250,6 +250,46 @@ for (const status of [401, 403, 429, 500])
     assert.ok(canonical(s.receipts()).includes('groq-transport'));
     await c.close();
   });
+for (const repaired of [true, false])
+  await test(`field/list failure shapes receive exact bounded repair feedback; repaired=${repaired}`, async () => {
+    const {
+      store: s,
+      controller: c,
+      sent,
+    } = await setup(async (index, s) => {
+      const j = s.state.jobs.at(-1)!;
+      if (index === 0) {
+        const invalid = candidate(j);
+        invalid.summary = 'X'.repeat(385);
+        invalid.interaction = 'Y'.repeat(294);
+        invalid.contributions.push({ ...invalid.contributions[0]! });
+        return response(JSON.stringify(invalid));
+      }
+      if (index === 1) {
+        const fixed = candidate(j);
+        if (!repaired) fixed.interaction = 'Y'.repeat(286);
+        return response(JSON.stringify(fixed));
+      }
+      return response(JSON.stringify({ decision: 'pass', findings: [], limitations: '' }));
+    });
+    await confirm(c);
+    await drain(c);
+    const j = s.state.jobs.at(-1)!;
+    const feedback = JSON.parse(sent[1]!.body) as { messages: { content: string }[] };
+    assert.ok(feedback.messages[0]!.content.includes('$.summary maxLength 385/360'));
+    assert.ok(feedback.messages[0]!.content.includes('$.interaction maxLength 294/240'));
+    assert.ok(feedback.messages[0]!.content.includes('$.contributions maxItems 3/2'));
+    assert.equal(sent.length, repaired ? 3 : 2);
+    assert.equal(s.state.nodes.length, repaired ? 1 : 0);
+    assert.equal(s.state.gardens[0]!.credits.balance, repaired ? 2 : 3);
+    assert.equal(j.raw.length, repaired ? 3 : 2);
+    assert.equal(j.repairUsed, true);
+    assert.equal(j.admission!.version, 'provider-admission-2');
+    for (const d of j.dispatches!)
+      assert.ok(d.inputByteUpperBound! + d.outputTokens <= j.admission!.contextLimit);
+    if (!repaired) assert.ok(j.repairRefusal.includes('$.interaction maxLength 286/240'));
+    await c.close();
+  });
 await test('one shared repair cannot turn repeated instruction echoes into a card', async () => {
   const {
     store: s,

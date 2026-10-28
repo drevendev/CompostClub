@@ -1,4 +1,20 @@
-# Provider patch acceptance · 0.2.0-rc.6
+# Provider patch acceptance · 0.2.0-rc.7
+
+## Primary RC6 failure and RC7 correction · 28 October 2026
+
+The earlier readiness statement was too broad: a single successful fictional pair did not establish ordinary-use reliability. Two owner-triggered Sonnet attempts on the primary RC6 received four real stage responses but no card. Attempt A had summary 385/360; its repair had interaction 266/240. Attempt B had three contributions instead of two and interaction 294/240; its repair still had interaction 286/240. Slots stayed available and all original responses/calls were retained. No private text, identifiers or raw responses are included here. These owner calls are separate from the frozen earlier eight-call evaluation.
+
+Code defects: the one repair received only the generic admission instruction, with no actual failing field/count information; asynchronous charged failures did not produce a main-screen completion notice. RC7 adds provider-2/candidate-5/provider-admission-2, initial schema-derived limit prose, a bounded all-violation structural report and a visible unsuccessful-attempt notice. Complete repair feedback is reserved before dispatch; local 4096 behavior and historical provider-1 prompt/schema/admission remain unchanged. No values are truncated, no missing content is synthesized and no hidden retry is added.
+
+Authored tests reproduce both failure shapes through Claude/Groq controller pipelines: repaired output proceeds to the one checker; repeated invalid repair stops at two calls without a card/slot charge. 180 unit + 97 desktop + 4 bridge + 1 packaging tests passed, zero skips. Real headless Chromium verifies subscription-driven failure visibility, details navigation, dismissal and a new notice without a new click/inference. This uses diagnostic IPC, not the owner application or a genuine model output.
+
+The proposed genuine follow-up is frozen in `fixtures/public/provider-contract-acceptance.json`, SHA-256 `bc625714e5e980f0a3d4d51c0424c3acad0eeddf5c446c56a98ee230bb760fae`: one new fictional RU application pair, Sonnet, one attempt, at most three calls including one shared repair. The owner separately authorized this test. The exact three-call run completed: initial core 771/700 was rejected; bounded repair produced a valid draft; screening passed and one proposal was committed. The initial failure and exact responses remain retained. Reported model was claude-sonnet-5 on all stages; CLI 2.1.259. Stop at three calls, with no rerun. Earlier failed/seen protocols are not rerun. The main application is not restarted by this work. Eleven metadata envelopes received ingest acknowledgement; no stored-dashboard inspection is claimed. The genuine fictional card was subsequently displayed and opened in the exact portable in a separate hidden copy of its evaluation profile: unchanged revision hash, three retained calls, zero added creative calls, zero renderer HTTP/errors, no owner profile access.
+
+The official [CLI reference](https://code.claude.com/docs/en/cli-reference#flags) exposes `--json-schema`; the [structured-output documentation](https://code.claude.com/docs/en/agent-sdk/structured-outputs) also describes re-prompting on mismatch. RC7 therefore retains the explicit one-turn CLI path and application-accounted repair rather than silently changing to an agent retry loop. JSON validity remains separate from substantive quality.
+
+Manual reading found the fixed counts, expiry/extension conditions, tool limit and mandatory return check retained in the core. Added coordination/reset/timer assumptions and substantive usefulness remain review questions; a checker pass is fallible and does not close #83 or owner quality gates.
+
+## Historical RC6 acceptance
 
 ## RC6 review verification · 28 October 2026
 

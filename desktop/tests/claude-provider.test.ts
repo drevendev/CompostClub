@@ -34,7 +34,8 @@ async function setup(
     | 'login'
     | 'fenced'
     | 'invalid-draft'
-    | 'reflect-token' = 'success',
+    | 'reflect-token'
+    | 'owner-shape' = 'success',
   tokenStore?: CredentialStore,
   telemetry?: Observer,
 ) {
@@ -56,13 +57,22 @@ async function setup(
   const launch = ((_exe: string, args: readonly string[], options: SpawnOptions) => {
     invocations.push({ args, options });
     const index = invocations.length - 1,
-      content =
-        index % 2 === 0
-          ? JSON.stringify({
-              ...candidate(store.state.jobs.at(-1)!),
-              ...(mode === 'invalid-draft' ? { core: '' } : {}),
-            })
-          : JSON.stringify({ decision: 'pass', findings: [], limitations: '' });
+      content = (mode === 'owner-shape' ? index < 2 : index % 2 === 0)
+        ? JSON.stringify({
+            ...candidate(store.state.jobs.at(-1)!),
+            ...(mode === 'invalid-draft' ? { core: '' } : {}),
+            ...(mode === 'owner-shape' && index === 0
+              ? {
+                  summary: 'X'.repeat(385),
+                  interaction: 'Y'.repeat(294),
+                  contributions: [
+                    ...candidate(store.state.jobs.at(-1)!).contributions,
+                    { ...candidate(store.state.jobs.at(-1)!).contributions[0]! },
+                  ],
+                }
+              : {}),
+          })
+        : JSON.stringify({ decision: 'pass', findings: [], limitations: '' });
     const result = JSON.stringify({
       type: 'result',
       result:
@@ -179,6 +189,22 @@ await test('escaped nested CLI token reflection preserves the protected original
   assert.ok(!canonical(s.envelope()).includes('ESCAPED_DIAGNOSTIC'));
   assert.equal(s.state.nodes.length, 0);
   assert.equal(s.state.gardens[0]!.credits.balance, 3);
+  await c.close();
+});
+await test('Claude repairs the authored owner failure shape with all field/count feedback and one checker', async () => {
+  const { store: s, controller: c, invocations } = await setup('owner-shape');
+  await confirm(c);
+  await drain(c);
+  const j = s.state.jobs.at(-1)!;
+  assert.equal(invocations.length, 3);
+  assert.equal(j.raw.length, 3);
+  assert.equal(j.repairUsed, true);
+  assert.equal(s.state.nodes.length, 1);
+  assert.equal(s.state.gardens[0]!.credits.balance, 2);
+  assert.ok(j.dispatches![1]!.prompt.includes('$.summary maxLength 385/360'));
+  assert.ok(j.dispatches![1]!.prompt.includes('$.contributions maxItems 3/2'));
+  for (const d of j.dispatches!)
+    assert.ok(d.inputByteUpperBound! + d.outputTokens <= j.admission!.contextLimit);
   await c.close();
 });
 await test('missing Claude subscription login refuses before any creative process, job charge or commit', async () => {

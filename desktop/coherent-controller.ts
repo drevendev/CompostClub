@@ -1,4 +1,5 @@
 import { ClaudeRuntime } from './claude-runtime';
+import { boundedRepairFeedback } from '../src/domain/coherent/response-limits';
 import {
   noop,
   noopTrace,
@@ -1852,6 +1853,12 @@ export class CoherentController {
   ): Promise<string> {
     const j = this.job(id),
       special = j.operation === 'dna' || j.operation === 'preferences';
+    if (
+      repair &&
+      j.admission?.repairMaxBytes !== undefined &&
+      bytes(repair) > j.admission.repairMaxBytes
+    )
+      throw new Error('Format repair exceeds its predeclared allowance; no dispatch.');
     const prompt =
       s === 'screening'
         ? screeningPrompt(j, repair)
@@ -2086,7 +2093,14 @@ export class CoherentController {
         throw new Error(primary, { cause: e });
       }
       try {
-        raw = await this.call(id, s, signal, this.job(id).admission?.repairInstruction ?? primary);
+        const repair =
+          j.promptVersion === 'provider-2'
+            ? boundedRepairFeedback(
+                raw,
+                s === 'generating' ? schemaForJob(j) : schemaForAssessment(j),
+              )
+            : (j.admission?.repairInstruction ?? primary);
+        raw = await this.call(id, s, signal, repair);
         return await validate(raw);
       } catch (repairError) {
         this.change((w) => {
