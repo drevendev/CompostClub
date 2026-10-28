@@ -60,7 +60,7 @@ The video above shows blending and recomposting. This screenshot shows the newer
 
 ## Code
 
-[Repository and local setup](https://github.com/drevendev/CompostClub) · [Model experiments and raw evidence](https://github.com/drevendev/CompostClub/blob/main/docs/MODEL_EVAL.md) · [Known issues and roadmap](https://github.com/drevendev/CompostClub/blob/main/docs/ROADMAP.md)
+[Repository and local setup](https://github.com/drevendev/CompostClub) · [Model experiments and raw evidence](https://github.com/drevendev/CompostClub/blob/master/docs/MODEL_EVAL.md) · [Known issues and roadmap](https://github.com/drevendev/CompostClub/blob/master/docs/ROADMAP.md)
 
 To try the labelled sample, use Node 24 and npm 11:
 
@@ -71,7 +71,7 @@ npm ci
 npm run dev
 ```
 
-Open the printed local URL and choose **Try the sample garden**. This route needs no model download. For fresh ideas, follow the separate [live local Gemma setup](https://github.com/drevendev/CompostClub/blob/main/docs/RUNNING.md#run-live-local-gemma).
+Open the printed local URL and choose **Try the sample garden**. This route needs no model download. For fresh ideas, follow the separate [live local Gemma setup](https://github.com/drevendev/CompostClub/blob/master/docs/RUNNING.md#run-live-local-gemma).
 
 The application and original SVG illustrations are MIT-licensed. Gemma weights have their own terms and are not bundled with the app.
 
@@ -110,11 +110,11 @@ The application preserves raw source revisions and the original model responses.
 
 Recovery matters here because the scraps are the user's contribution. Backup validation, competing-tab checks, restore conflict detection, and cascade previews for deletion all protect that contribution. The current checks cover 97 unit tests, three HTTP/Sentry regressions, and 32 Chromium journeys, including growth review and privacy exports. Those application checks are separate from model-quality evidence.
 
-GitHub Actions takes repetitive release checks off my hands. The [Repository checks workflow](https://github.com/drevendev/CompostClub/blob/main/.github/workflows/quality.yml) installs pinned dependencies, runs verification, builds the app and standalone sample, and exercises recovery, pairing workflows and the Pages subpath in Chromium. The [successful post-merge run](https://github.com/drevendev/CompostClub/actions/runs/39778088037) includes the tending workflow and optional Sentry adapter.
+GitHub Actions takes repetitive release checks off my hands. The [Repository checks workflow](https://github.com/drevendev/CompostClub/blob/master/.github/workflows/quality.yml) installs pinned dependencies, runs verification, builds the app and standalone sample, and exercises recovery, pairing workflows and the Pages subpath in Chromium. The [successful post-merge run](https://github.com/drevendev/CompostClub/actions/runs/39778088037) includes the tending workflow and optional Sentry adapter.
 
 ### Watching a local model without collecting its ideas
 
-I connected **Sentry Agent Tracing** to the Node bridge as optional technical monitoring. It is **off by default**, and the connection status shows when the operator enables it. The browser and offline HTML contain no Sentry client. The [adapter and removal instructions](https://github.com/drevendev/CompostClub/blob/main/docs/OPTIONAL_SERVICES.md) keep it independent of the garden's data and local inference.
+I connected **Sentry Agent Tracing** to the Node bridge as optional technical monitoring. It is **off by default**, and the connection status shows when the operator enables it. The browser and offline HTML contain no Sentry client. The [adapter and removal instructions](https://github.com/drevendev/CompostClub/blob/master/docs/OPTIONAL_SERVICES.md) keep it independent of the garden's data and local inference.
 
 On a fresh tending request with the merged code, Sentry recorded **16.43 seconds**, **220 input tokens**, and **107 output tokens** for local Gemma 3 4B. The child span measured about **0.48 ms** of bridge-side structural validation. This is a separate request from the earlier 8.5-second blend and the accepted branch above. These are individual observations on my machine, not a benchmark or a measure of usefulness.
 
