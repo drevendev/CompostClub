@@ -42,7 +42,7 @@ The partner wishlist is accounted for: Gemma and Sentry are implemented; Actions
 
 ## GitHub Actions evidence
 
-- [Repository checks workflow](https://github.com/drevendev/CompostClub/blob/main/.github/workflows/quality.yml)
+- [Repository checks workflow](https://github.com/drevendev/CompostClub/blob/master/.github/workflows/quality.yml)
 - [Successful post-merge Repository checks run 39778088037](https://github.com/drevendev/CompostClub/actions/runs/39778088037), verified through GitHub: conclusion success, workflow quality.yml, commit 1519ccaf68ad908db6955ab3350f59af84c65843; 97 unit tests, three HTTP/Sentry regressions and 32 Chromium journeys
 - [Successful Pages deployment of the new movie](https://github.com/drevendev/CompostClub/actions/runs/39747617849)
 
