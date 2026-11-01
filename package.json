@@ -50,7 +50,7 @@
     "test:packaging": "node --test tests/source-package.test.mjs"
   },
   "dependencies": {
-    "@huggingface/transformers": "4.3.1",
+    "@huggingface/transformers": "4.3.2",
     "@sentry/node": "11.8.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
