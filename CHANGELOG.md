@@ -2,6 +2,14 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
+## 0.2.0-rc.10 — 2026-11-02
+
+- Add a serverless WinForms/WebView2 host using the same compiled React interface as Electron. Keep the minimal WPF host and explicit primary/WPF/Electron shortcuts with one shared protected profile (#112).
+- Route allowlisted commands and state subscriptions over the existing Node stdio/controller. Preserve native file dialogs, imports/exports, validated restore, exact-context consent/cancellation, tray lifecycle and window reuse. Pin and verify official signed SDK dependencies; never download a runtime or model on application startup.
+- Share the OS-protected Windows credential vault with newly built Electron as well as WPF/WebView2, preserving encrypted originals and deletion tombstones.
+- Fix owner-reported RC9 blur by initializing PerMonitorV2 before creating controls. Assert actual window DPI context and matching browser pixel ratio; keep logical window size without bitmap scaling or Windows-setting changes (#113).
+- Add actual hybrid shortcut/DPI acceptance on fictional isolated profiles with inference disabled. Keep model quality and broader UI/UX redesign as separate open work.
+
 ## 0.2.0-rc.8 — 2026-11-02
 
 - Add a complete native WPF shell hosted by stock Windows PowerShell and installed signed Node 24, with normal `.lnk` launch, tray/window reuse and safe shutdown. No custom EXE, browser or application HTTP server is needed (#108).

@@ -2,6 +2,7 @@ import { ClaudeRuntime } from './claude-runtime';
 import { ownProfile } from './profile-owner';
 import { createDesktopObserver } from './telemetry';
 import { EncryptedCredentialStore } from './credentials';
+import { NativeCredentialStore, windowsProtection } from './native-credentials';
 import { GroqRuntime } from './groq-runtime';
 import { OwnedOllama } from './runtime';
 import {
@@ -240,14 +241,24 @@ if (!single) {
             args: loginArguments(),
           }).openAtLogin,
       };
-      const credentials = new EncryptedCredentialStore(app.getPath('userData'), safeStorage);
+      const credentials =
+        process.platform === 'win32'
+          ? new NativeCredentialStore(
+              app.getPath('userData'),
+              'groq',
+              windowsProtection(path.join(__dirname, 'native-dpapi.ps1')),
+            )
+          : new EncryptedCredentialStore(app.getPath('userData'), safeStorage);
       const telemetry = await createDesktopObserver(app.getPath('userData'));
       await credentials.initialize();
-      const claudeTokens = new EncryptedCredentialStore(
-        app.getPath('userData'),
-        safeStorage,
-        'claude',
-      );
+      const claudeTokens =
+        process.platform === 'win32'
+          ? new NativeCredentialStore(
+              app.getPath('userData'),
+              'claude',
+              windowsProtection(path.join(__dirname, 'native-dpapi.ps1')),
+            )
+          : new EncryptedCredentialStore(app.getPath('userData'), safeStorage, 'claude');
       await claudeTokens.initialize();
       controller = new DesktopController(
         new DesktopStore(app.getPath('userData')),

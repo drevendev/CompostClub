@@ -4,7 +4,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 // Both desktop hosts must acquire this before opening a writable SQLite connection.
-export async function ownProfile(directory: string, host: 'electron' | 'wpf') {
+export async function ownProfile(directory: string, host: 'electron' | 'wpf' | 'webview') {
   await mkdir(directory, { recursive: true });
   const file = path.join(directory, 'profile-owner.private.json');
   const alive = (pid: unknown) => {

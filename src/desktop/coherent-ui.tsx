@@ -161,6 +161,9 @@ function App() {
   >({});
   const eurekaPending = useRef(false);
   const [sendingEureka, setSendingEureka] = useState(false);
+  useEffect(() => {
+    if (view) window.dispatchEvent(new Event('compost:ready'));
+  }, [view]);
   const [dismissedOutcome, setDismissedOutcome] = useState('');
   const send = useCallback(async (c: CoherentCommand) => {
     setError('');

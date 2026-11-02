@@ -15,14 +15,19 @@ import { startOperator, type OperatorHandle } from './operator';
 import { safeUrl } from '../src/domain/coherent/prepare';
 import { hash } from '../src/domain/coherent/hash';
 import type { DesktopServices } from './controller';
+import { rendererCommand, inferenceOperations } from './webview-protocol';
 
 async function main() {
-  const argument = (name: string) => process.argv[process.argv.indexOf(name) + 1] ?? '';
+  const argument = (name: string) => {
+    const index = process.argv.indexOf(name);
+    return index < 0 ? '' : (process.argv[index + 1] ?? '');
+  };
   const directory = argument('--data-dir'),
     packageRoot = argument('--package-root');
+  const webview = process.argv.includes('--webview');
   if (!path.isAbsolute(directory) || !path.isAbsolute(packageRoot))
     throw Error('Explicit native profile and package paths are required.');
-  const owner = await ownProfile(directory, 'wpf');
+  const owner = await ownProfile(directory, webview ? 'webview' : 'wpf');
   const send = (value: unknown) => {
     if (!process.stdout.destroyed) process.stdout.write(JSON.stringify(value) + '\n');
   };
@@ -144,7 +149,10 @@ async function main() {
     },
     external,
   );
-  const refresh = () => send({ type: 'screen', screen: ui.render() });
+  const refresh = () =>
+    webview
+      ? send({ type: 'view', view: controller.view() })
+      : send({ type: 'screen', screen: ui.render() });
   let dirty = false;
   controller.subscribe(() => {
     dirty = true;
@@ -165,7 +173,9 @@ async function main() {
     lastTick = now;
     if (dirty) {
       dirty = false;
-      send({ type: 'status', status: ui.status(), controls: ui.toolbarState(), changed: true });
+      if (webview) refresh();
+      else
+        send({ type: 'status', status: ui.status(), controls: ui.toolbarState(), changed: true });
     }
   }, 1000);
   async function shutdown(disconnected = false) {
@@ -241,6 +251,38 @@ async function main() {
         }
         continue;
       }
+      if (webview && request.op === 'invoke') {
+        try {
+          request.command = rendererCommand(request.command);
+          if (typeof request.id !== 'string' || !/^[\w-]{1,80}$/.test(request.id))
+            throw Error('Invalid request identity.');
+        } catch (e) {
+          send({
+            type: 'reply',
+            id: request.id,
+            error: e instanceof Error ? e.message : 'Invalid request.',
+          });
+          continue;
+        }
+        const command = request.command as import('./coherent-types').CoherentCommand;
+        if (command.op === 'pause' || command.op === 'cancelRemote') {
+          const stopped = controller
+            .command(command)
+            .then((view) => {
+              send({ type: 'reply', id: request.id, view });
+              refresh();
+            })
+            .catch((e: unknown) =>
+              send({
+                type: 'reply',
+                id: request.id,
+                error: e instanceof Error ? e.message : 'Cancellation failed.',
+              }),
+            );
+          interrupting = Promise.all([interrupting, stopped]).then(() => {});
+          continue;
+        }
+      }
       if (
         request.op === 'interrupt' &&
         (request.target === 'pause' || request.target === 'cancelRemote')
@@ -270,6 +312,43 @@ async function main() {
         .then(async () => {
           if (closing) return;
           try {
+            if (webview && request.op === 'invoke') {
+              const command = request.command as import('./coherent-types').CoherentCommand;
+              try {
+                const previewOnly =
+                  ['claude', 'groq'].includes(store.state.provider?.kind ?? '') &&
+                  [
+                    'run',
+                    'eureka',
+                    'tend',
+                    'decode',
+                    'proposePreferences',
+                    'revise',
+                    'checkNode',
+                    'check',
+                  ].includes(command.op);
+                if (
+                  process.env.COMPOST_NO_INFERENCE === '1' &&
+                  inferenceOperations.has(command.op) &&
+                  !previewOnly
+                )
+                  throw Error('Генерация отключена в этой проверке.');
+                const view = await controller.command(command);
+                send({ type: 'reply', id: request.id, view });
+              } catch (e) {
+                send({
+                  type: 'reply',
+                  id: request.id,
+                  error: e instanceof Error ? e.message : 'Operation failed.',
+                });
+              }
+              refresh();
+              return;
+            }
+            if (webview && request.op === 'external') {
+              await external(String(request.url));
+              return;
+            }
             if (request.op === 'shutdown') {
               await shutdown();
               return;

@@ -43,3 +43,6 @@ jobs:
       - run: npm ci
       - run: npm run native:build
       - run: npm run test:native
+      - run: npm run webview:sdk
+      - run: npm run webview:build
+      - run: npm run test:webview

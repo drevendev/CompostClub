@@ -1,6 +1,6 @@
 {
   "name": "compost-club",
-  "version": "0.2.0-rc.8",
+  "version": "0.2.0-rc.10",
   "private": true,
   "type": "module",
   "description": "A quiet local AI garden for unfinished thoughts.",
@@ -50,7 +50,10 @@
     "test:bridge": "node --test tests/bridge.test.mjs",
     "test:packaging": "node --test tests/source-package.test.mjs",
     "native:build": "tsc --noEmit && node scripts/build-native.mjs",
-    "test:native": "tsx scripts/native-acceptance.ts"
+    "test:native": "tsx scripts/native-acceptance.ts",
+    "webview:sdk": "powershell.exe -NoProfile -File scripts/setup-webview2.ps1",
+    "webview:build": "tsc --noEmit && vite build --mode desktop && node scripts/build-webview.mjs",
+    "test:webview": "tsx scripts/webview-acceptance.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.1",
