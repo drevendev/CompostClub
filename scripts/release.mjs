@@ -33,10 +33,10 @@ await cp('dist', pages, { recursive: true, errorOnExist: true, force: false });
 const identity = {
   date: new Date().toISOString(),
   sourceSha256: source.identity.sourceSha256,
-  sourceDirectory: source.directory,
-  sourceArchive: archive,
+  sourceDirectory: path.basename(source.directory),
+  sourceArchive: path.basename(archive),
   sourceArchiveSha256: sha256(await readFile(archive)),
-  pagesDirectory: pages,
+  pagesDirectory: path.basename(pages),
   standalone: JSON.parse(await readFile('release/standalone-receipt.json', 'utf8')),
 };
 await writeFile('release/build-identity.json', JSON.stringify(identity, null, 2) + '\n');

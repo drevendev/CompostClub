@@ -2,7 +2,14 @@ import { test, expect, type Page } from '@playwright/test';
 import { readFile, mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
-import { addScrap, createGarden, serializeGarden, MAX_BACKUP_BYTES } from '../src/domain/garden';
+import {
+  addScrap,
+  createGarden,
+  serializeGarden,
+  MAX_BACKUP_BYTES,
+  pairKey,
+} from '../src/domain/garden';
+import { recordedPersonal } from './garden-fixtures';
 
 // Persistence fault injection with fictional records; no inference is simulated.
 async function writeRecord(page: Page, value: unknown) {
@@ -49,10 +56,20 @@ function replacement() {
     Date.now(),
   );
 }
+const missingPair = recordedPersonal(100);
+missingPair.attempts = [];
+const sourceCycle = recordedPersonal(100);
+sourceCycle.scraps[0]!.parentSproutId = sourceCycle.sprouts[0]!.id;
+const nonexistentRevision = recordedPersonal(100);
+nonexistentRevision.sprouts[0]!.parents[0].revision = 999;
+nonexistentRevision.sprouts[0]!.key = pairKey(nonexistentRevision.sprouts[0]!.parents);
 const originals = [
   { name: 'corrupt', value: null },
   { name: 'future-version', value: { version: 99, ownerNote: 'A fictional future garden. 🌱' } },
   { name: 'oversized', value: { ...replacement(), seed: 'x'.repeat(MAX_BACKUP_BYTES) } },
+  { name: 'missing-consumed-pair', value: missingPair },
+  { name: 'source-ancestry-cycle', value: sourceCycle },
+  { name: 'nonexistent-source-revision', value: nonexistentRevision },
 ];
 async function chooseBackup(page: Page, value: unknown) {
   await page.getByLabel('Recovery JSON backup', { exact: true }).setInputFiles({

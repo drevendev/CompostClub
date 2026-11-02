@@ -1,6 +1,6 @@
 {
   "name": "compost-club",
-  "version": "0.1.0",
+  "version": "0.2.0-rc.11",
   "private": true,
   "type": "module",
   "description": "A quiet local AI garden for unfinished thoughts.",
@@ -29,6 +29,7 @@
     "desktop:start": "electron dist-desktop/main.cjs",
     "desktop:package": "npm run desktop:build && node scripts/package-desktop.mjs",
     "test:desktop": "tsx --test desktop/tests/*.test.ts",
+    "test:desktop-ui": "playwright test --config playwright.desktop-ui.config.ts",
     "test:capacity": "tsx scripts/desktop-capacity.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src desktop --max-warnings 0",
@@ -47,7 +48,12 @@
     "package:single": "vite build --mode offline && node scripts/package-single.mjs",
     "package:demo": "npm run build && npm run package:single && node scripts/release.mjs",
     "test:bridge": "node --test tests/bridge.test.mjs",
-    "test:packaging": "node --test tests/source-package.test.mjs"
+    "test:packaging": "node --test tests/source-package.test.mjs",
+    "native:build": "tsc --noEmit && node scripts/build-native.mjs",
+    "test:native": "tsx scripts/native-acceptance.ts",
+    "webview:sdk": "powershell.exe -NoProfile -File scripts/setup-webview2.ps1",
+    "webview:build": "tsc --noEmit && vite build --mode desktop && node scripts/build-webview.mjs",
+    "test:webview": "tsx scripts/webview-acceptance.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.1",

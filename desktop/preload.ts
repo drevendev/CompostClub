@@ -1,10 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { DesktopAPI, DesktopCommand, DesktopView } from './types';
-const api: DesktopAPI = {
-  invoke: (command: DesktopCommand) =>
-    ipcRenderer.invoke('compost:command', command) as Promise<DesktopView>,
+import type { CoherentAPI, CoherentCommand, CoherentView } from './coherent-types';
+const api: CoherentAPI = {
+  invoke: (command: CoherentCommand) =>
+    ipcRenderer.invoke('compost:command', command) as Promise<CoherentView>,
   subscribe: (callback) => {
-    const handler = (_event: unknown, view: DesktopView) => callback(view);
+    const handler = (_event: unknown, view: CoherentView) => callback(view);
     ipcRenderer.on('compost:state', handler);
     return () => {
       ipcRenderer.removeListener('compost:state', handler);

@@ -1,0 +1,137 @@
+{
+  "format": "ru-generation-regression-1",
+  "disclosure": "Four authored fictional design pairs in matched RU/EN translations, two RU controls, and two previously seen RU regressions. Frozen before live baseline and one correction. Not owner ideas or a usefulness study.",
+  "maxCalls": 54,
+  "maxVariants": 2,
+  "criteria": {
+    "newRuCardsMinimum": 3,
+    "knownRuCardsMinimum": 2,
+    "enCardsMinimum": 2,
+    "controlsCommittedMaximum": 0,
+    "placeholderCardsMaximum": 0
+  },
+  "cases": [
+    {
+      "id": "ru-workshop",
+      "language": "ru",
+      "baseline": true,
+      "trigger": "eureka",
+      "seed": 260101,
+      "compatible": true,
+      "a": "В игре мастерская выпускает детали. За ход можно либо обработать заготовку, либо охладить станок. После обработки станок перегревается.",
+      "b": "Игрок может взять одно действие следующего хода взаймы. После этого один будущий ход он обязан пропустить."
+    },
+    {
+      "id": "ru-caravan",
+      "language": "ru",
+      "baseline": true,
+      "trigger": "scheduled",
+      "seed": 260102,
+      "compatible": true,
+      "a": "Игрок ведёт караван по клеткам пустыни. На каждой клетке тратится вода; возле колодца запас восполняется.",
+      "b": "Игрок может проложить короткую дорогу, заплатив очками сейчас. По старой дороге идти дольше, но бесплатно."
+    },
+    {
+      "id": "ru-notes",
+      "language": "ru",
+      "baseline": true,
+      "trigger": "eureka",
+      "seed": 260103,
+      "compatible": true,
+      "a": "Игрок кладёт музыкальные ноты в очередь. Нота звучит через два хода; сыгравшие ноты исчезают.",
+      "b": "Враги двигаются только после громкого звука. Можно выполнить тихое действие без движения врагов."
+    },
+    {
+      "id": "ru-greenhouse",
+      "language": "ru",
+      "baseline": true,
+      "trigger": "scheduled",
+      "seed": 260104,
+      "compatible": true,
+      "a": "Игрок расставляет клетки теплицы. Каждое растение за ход потребляет одну единицу воды; без воды урожая нет.",
+      "b": "Игрок строит резервуары, которые заполняются только во время дождя. Место резервуара нельзя занять другой постройкой."
+    },
+    {
+      "id": "en-workshop",
+      "language": "en",
+      "baseline": false,
+      "trigger": "eureka",
+      "seed": 260101,
+      "compatible": true,
+      "a": "A game workshop makes parts. Each turn the player either processes a blank or cools the machine. Processing overheats the machine.",
+      "b": "The player may borrow one action from a future turn. Afterwards they must skip one future turn."
+    },
+    {
+      "id": "en-caravan",
+      "language": "en",
+      "baseline": false,
+      "trigger": "scheduled",
+      "seed": 260102,
+      "compatible": true,
+      "a": "The player moves a caravan across desert cells. Each cell costs water; a well refills the supply.",
+      "b": "The player may build a shortcut by paying points now. The old road takes longer but costs no points."
+    },
+    {
+      "id": "en-notes",
+      "language": "en",
+      "baseline": false,
+      "trigger": "eureka",
+      "seed": 260103,
+      "compatible": true,
+      "a": "The player queues musical notes. Each note sounds two turns later, then disappears.",
+      "b": "Enemies move only after a loud sound. A quiet action can be performed without moving enemies."
+    },
+    {
+      "id": "en-greenhouse",
+      "language": "en",
+      "baseline": false,
+      "trigger": "scheduled",
+      "seed": 260104,
+      "compatible": true,
+      "a": "The player arranges greenhouse cells. Each plant consumes one water per turn; without water it produces no crop.",
+      "b": "The player builds tanks that fill only during rain. A tank's space cannot hold another building."
+    },
+    {
+      "id": "ru-contradiction",
+      "language": "ru",
+      "baseline": false,
+      "trigger": "eureka",
+      "seed": 260105,
+      "compatible": false,
+      "a": "Неизменное обязательное условие игры: вся карта и расположение всех клеток видны игроку с самого начала. Скрытые сведения о карте запрещены.",
+      "b": "Неизменное обязательное условие игры: игрок никогда не видит карту целиком. Расположение каждой клетки обязательно скрыто до первого входа на неё."
+    },
+    {
+      "id": "ru-missing",
+      "language": "ru",
+      "baseline": false,
+      "trigger": "scheduled",
+      "seed": 260106,
+      "compatible": false,
+      "a": "Хочу классную игру про серебро. Действия игрока и ограничения пока не придуманы.",
+      "b": "Другой набросок: красный ветер. Действия игрока и ограничения пока не придуманы."
+    },
+    {
+      "id": "known-ru-bridges",
+      "language": "ru",
+      "baseline": true,
+      "known": true,
+      "trigger": "eureka",
+      "seed": 260107,
+      "compatible": true,
+      "a": "Игра: веди фишку через мосты. После двух проходов мост ломается.",
+      "b": "Игра: возьми дополнительный шаг в долг, затем пропусти ход для погашения."
+    },
+    {
+      "id": "known-ru-mirrors",
+      "language": "ru",
+      "baseline": true,
+      "known": true,
+      "trigger": "scheduled",
+      "seed": 260108,
+      "compatible": true,
+      "a": "Игра: поворачивай зеркала, чтобы луч открыл дверь. Поворот уводит луч от другой двери.",
+      "b": "Игра: заряди батарею, пропустив ход; заряд даёт ещё один поворот."
+    }
+  ]
+}

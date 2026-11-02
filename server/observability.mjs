@@ -2,25 +2,38 @@
 const allowed = new Set([
   'gen_ai.system',
   'gen_ai.request.model',
+  'gen_ai.response.model',
   'gen_ai.operation.name',
   'gen_ai.usage.input_tokens',
   'gen_ai.usage.output_tokens',
   'compost.phase',
   'compost.result',
   'compost.contract_version',
+  'compost.operation',
+  'compost.http_status',
 ]);
+const publicModel = (value) =>
+  ['gemma3:4b', 'sonnet', 'haiku', 'opus', 'openai/gpt-oss-20b', 'other'].includes(value) ||
+  /^claude-(sonnet|haiku|opus)-\d{1,2}(?:-\d{1,2})?(?:-\d{8})?$/.test(value);
 function attributes(data = {}) {
   return Object.fromEntries(
     Object.entries(data).filter(
       ([k, v]) =>
         allowed.has(k) &&
-        (k.startsWith('gen_ai.usage.')
-          ? Number.isSafeInteger(v) && v >= 0
-          : typeof v === 'string' && /^[a-zA-Z0-9:_.-]{1,40}$/.test(v)),
+        (k === 'gen_ai.request.model' || k === 'gen_ai.response.model'
+          ? typeof v === 'string' && publicModel(v)
+          : k === 'compost.http_status'
+            ? Number.isSafeInteger(v) && v >= 100 && v <= 599
+            : k.startsWith('gen_ai.usage.')
+              ? Number.isSafeInteger(v) && v >= 0
+              : typeof v === 'string' && /^[a-zA-Z0-9:_.-]{1,40}$/.test(v)),
     ),
   );
 }
 export function cleanTransaction(event) {
+  const data = attributes(event.contexts?.trace?.data);
+  const local = !data['gen_ai.system'] || data['gen_ai.system'] === 'ollama';
+  const inference = event.contexts?.trace?.op !== 'function';
   const cleanSpan = (s) => ({
     trace_id: s.trace_id,
     span_id: s.span_id,
@@ -28,14 +41,25 @@ export function cleanTransaction(event) {
     start_timestamp: s.start_timestamp,
     timestamp: s.timestamp,
     op: ['gen_ai.chat', 'function'].includes(s.op) ? s.op : 'function',
-    description: s.op === 'gen_ai.chat' ? 'Local Gemma generation' : 'Validate local response',
+    description:
+      s.op === 'gen_ai.chat'
+        ? local
+          ? 'Local Gemma generation'
+          : 'Remote model generation'
+        : local
+          ? 'Validate local response'
+          : 'Validate response',
     status: s.status,
     data: attributes(s.data),
   });
   return {
     event_id: event.event_id,
     type: 'transaction',
-    transaction: 'Compost local generation',
+    transaction: inference
+      ? local
+        ? 'Compost local generation'
+        : 'Compost model stage'
+      : 'Compost provider operation',
     start_timestamp: event.start_timestamp,
     timestamp: event.timestamp,
     platform: 'node',
@@ -46,16 +70,19 @@ export function cleanTransaction(event) {
       trace: {
         trace_id: event.contexts?.trace?.trace_id,
         span_id: event.contexts?.trace?.span_id,
-        op: 'gen_ai.chat',
+        op: inference ? 'gen_ai.chat' : 'function',
         status: event.contexts?.trace?.status,
-        data: attributes(event.contexts?.trace?.data),
+        data,
       },
     },
     spans: (event.spans ?? []).map(cleanSpan),
   };
 }
-const noopTrace = {
+export const noopTrace = {
   tokens() {},
+  httpStatus() {},
+  reportedModel() {},
+  outcome() {},
   validate(fn) {
     try {
       fn();
@@ -64,8 +91,8 @@ const noopTrace = {
     }
   },
 };
-const noop = { enabled: false, run: (_meta, fn) => fn(noopTrace), flush: async () => true };
-export async function createObserver({ env = process.env, transport } = {}) {
+export const noop = { enabled: false, run: (_meta, fn) => fn(noopTrace), flush: async () => true };
+export async function createObserver({ env = process.env, transport, onDelivery } = {}) {
   if (env.COMPOST_SENTRY_ENABLED !== '1' || !env.SENTRY_DSN) return noop;
   try {
     const url = new URL(env.SENTRY_DSN);
@@ -82,6 +109,7 @@ export async function createObserver({ env = process.env, transport } = {}) {
     const Sentry = await import('@sentry/node');
     Sentry.init({
       dsn: env.SENTRY_DSN,
+      debug: false,
       defaultIntegrations: false,
       integrations: [],
       sendDefaultPii: false,
@@ -99,9 +127,16 @@ export async function createObserver({ env = process.env, transport } = {}) {
         platform: 'node',
         user: { ip_address: '0.0.0.0' },
         level: 'error',
-        message: 'Compost local generation failed',
+        message: 'Compost operation failed',
         environment: 'local-opt-in',
-        contexts: { trace: e.contexts?.trace },
+        contexts: {
+          trace: {
+            trace_id: e.contexts?.trace?.trace_id,
+            span_id: e.contexts?.trace?.span_id,
+            op: e.contexts?.trace?.op === 'function' ? 'function' : 'gen_ai.chat',
+            data: attributes(e.contexts?.trace?.data),
+          },
+        },
       }),
       transport:
         transport ??
@@ -115,6 +150,11 @@ export async function createObserver({ env = process.env, transport } = {}) {
               redirect: 'error',
             });
             await response.body?.cancel();
+            try {
+              onDelivery?.(response.status);
+            } catch {
+              /* Metadata callback is optional. */
+            }
             return {
               statusCode: response.status,
               headers: {
@@ -128,6 +168,8 @@ export async function createObserver({ env = process.env, transport } = {}) {
       enabled: true,
       async run(meta, fn) {
         let pending;
+        const local = !meta.system || meta.system === 'ollama';
+        const inference = !meta.type || meta.type === 'inference';
         // Keep the business promise independent: instrumentation must neither
         // retry inference nor turn its successful result into a model failure.
         const invoke = (trace) => (pending ??= Promise.resolve().then(() => fn(trace)));
@@ -136,18 +178,50 @@ export async function createObserver({ env = process.env, transport } = {}) {
             Sentry.startNewTrace(() =>
               Sentry.startSpan(
                 {
-                  name: 'Compost local generation',
-                  op: 'gen_ai.chat',
-                  attributes: {
-                    'gen_ai.system': 'ollama',
+                  name: inference
+                    ? local
+                      ? 'Compost local generation'
+                      : 'Compost model stage'
+                    : 'Compost provider operation',
+                  op: inference ? 'gen_ai.chat' : 'function',
+                  attributes: attributes({
+                    'gen_ai.system': meta.system ?? 'ollama',
                     'gen_ai.request.model': meta.model,
-                    'gen_ai.operation.name': 'chat',
+                    'gen_ai.operation.name': inference ? 'chat' : meta.type,
                     'compost.phase': meta.phase,
-                    'compost.contract_version': meta.operation === 'tend' ? 'tend-1' : 'splice-2',
-                  },
+                    'compost.operation': meta.operation,
+                    'compost.contract_version':
+                      meta.contract ?? (meta.operation === 'tend' ? 'tend-1' : 'splice-2'),
+                  }),
                 },
                 async (span) => {
+                  let outcome = '';
                   const trace = {
+                    httpStatus(status) {
+                      try {
+                        if (Number.isSafeInteger(status) && status >= 100 && status <= 599)
+                          span.setAttribute('compost.http_status', status);
+                      } catch {}
+                    },
+                    reportedModel(model) {
+                      try {
+                        if (typeof model === 'string')
+                          span.setAttribute(
+                            'gen_ai.response.model',
+                            publicModel(model) ? model : 'other',
+                          );
+                      } catch {}
+                    },
+                    outcome(result) {
+                      try {
+                        if (
+                          ['returned', 'invalid', 'cancelled', 'transport_error'].includes(result)
+                        ) {
+                          outcome = result;
+                          span.setAttribute('compost.result', result);
+                        }
+                      } catch {}
+                    },
                     tokens(input, output) {
                       try {
                         if (Number.isSafeInteger(input) && input >= 0)
@@ -175,7 +249,7 @@ export async function createObserver({ env = process.env, transport } = {}) {
                       try {
                         Sentry.startSpan(
                           {
-                            name: 'Validate local response',
+                            name: local ? 'Validate local response' : 'Validate response',
                             op: 'function',
                           },
                           validate,
@@ -188,14 +262,14 @@ export async function createObserver({ env = process.env, transport } = {}) {
                   try {
                     const result = await invoke(trace);
                     try {
-                      span.setAttribute('compost.result', 'returned');
+                      if (!outcome) span.setAttribute('compost.result', 'returned');
                     } catch {}
                     return result;
                   } catch (e) {
                     try {
                       span.setStatus({ code: 2 });
-                      span.setAttribute('compost.result', 'transport_error');
-                      Sentry.captureMessage('Compost local generation failed', 'error');
+                      if (!outcome) span.setAttribute('compost.result', 'transport_error');
+                      Sentry.captureMessage('Compost operation failed', 'error');
                     } catch {}
                     throw e;
                   }

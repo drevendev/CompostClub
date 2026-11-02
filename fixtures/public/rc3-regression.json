@@ -1,0 +1,55 @@
+{
+  "format": "rc3-regression-1",
+  "disclosure": "Authored fictional inputs frozen before the single coherent-5 live regression. Not owner data or a usefulness study.",
+  "maxCalls": 18,
+  "cases": [
+    {
+      "id": "ru-eureka",
+      "language": "ru",
+      "trigger": "eureka",
+      "compatible": true,
+      "a": "Игра: веди фишку через мосты. После двух проходов мост ломается.",
+      "b": "Игра: возьми дополнительный шаг в долг, затем пропусти ход для погашения."
+    },
+    {
+      "id": "ru-scheduled",
+      "language": "ru",
+      "trigger": "scheduled",
+      "compatible": true,
+      "a": "Игра: поворачивай зеркала, чтобы луч открыл дверь. Поворот уводит луч от другой двери.",
+      "b": "Игра: заряди батарею, пропустив ход; заряд даёт ещё один поворот."
+    },
+    {
+      "id": "en-eureka",
+      "language": "en",
+      "trigger": "eureka",
+      "compatible": true,
+      "a": "Game: turn canal gates to route a boat. Opening one gate floods the other channel.",
+      "b": "Game: borrow a move now, then close a gate next turn to repay the debt."
+    },
+    {
+      "id": "en-scheduled",
+      "language": "en",
+      "trigger": "scheduled",
+      "compatible": true,
+      "a": "Game: move a cart along tracks; each used track cools down for one turn.",
+      "b": "Game: spend a battery for an extra move; recharge only by waiting one turn."
+    },
+    {
+      "id": "ru-incompatible",
+      "language": "ru",
+      "trigger": "eureka",
+      "compatible": false,
+      "a": "Обязательное неизменное условие игры: только один человек играет полностью офлайн; никаких других игроков.",
+      "b": "Обязательное неизменное условие игры: ровно два человека играют друг с другом по сети; одиночного режима нет."
+    },
+    {
+      "id": "en-incompatible",
+      "language": "en",
+      "trigger": "scheduled",
+      "compatible": false,
+      "a": "Fixed nonnegotiable constraint: an entirely offline solo game with no other players.",
+      "b": "Fixed nonnegotiable constraint: exactly two human players connected online; no solo mode."
+    }
+  ]
+}

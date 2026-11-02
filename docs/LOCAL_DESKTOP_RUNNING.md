@@ -1,5 +1,11 @@
 # Run the personal desktop experiment
 
+**0.2.0-rc.3:** local technical preview for [issue #81](https://github.com/drevendev/CompostClub/issues/81). See [RC3 regression](RC3_REGRESSION_ACCEPTANCE.md): bounded generator schema, visible background blockers, stale-block re-evaluation. Compatible RU regression cases still returned semantic refusals; this is not full generation acceptance. Keep a validated current data copy and previous executable before switching; start paused.
+
+**0.2.0-rc.2 is a local review candidate, not an accepted release.** It adds whole-job admission, the global Pause/Eureka toolbar and durable operator requests. See [implementation](GENERATION_FIX_IMPLEMENTATION.md) and [honest acceptance outcome](GENERATION_FIX_ACCEPTANCE.md). The final RU generation gate remains open; the personal installation has not been replaced.
+
+**0.2.0-rc.1:** use the current [Coherent Gardens RC guide](COHERENT_GARDENS_RC.md) for schema-3 migration, named gardens, budgets and rollback. The [acceptance record](COHERENT_GARDENS_ACCEPTANCE.md) retains the negative quality result. The instructions below preserve the earlier desktop baseline; its old defaults and screens are historical.
+
 The behavior is defined in the [scope](LOCAL_EXPERIMENT_SCOPE.md); [implementation tasks](LOCAL_EXPERIMENT_TASKS.md) distinguish implemented application features from the owner's actual observation period. This guide covers the Windows desktop candidate. Browser and recorded HTML instructions remain in [RUNNING.md](RUNNING.md).
 
 ## Start the portable application

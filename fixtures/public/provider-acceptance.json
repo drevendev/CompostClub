@@ -1,0 +1,146 @@
+{
+  "version": "provider-acceptance-1",
+  "status": "Authored fictional inputs frozen before any remote model observation; translations are paired, not independent designs.",
+  "variants": 1,
+  "maximumCalls": 36,
+  "stop": "One pipeline attempt per case, at most one shared repair; then three authored damaged-draft checker probes with at most one repair each. Stop on infrastructure, persistence or accounting failure. Never rerun to obtain a pass.",
+  "cases": [
+    {
+      "id": "ru-beetle",
+      "language": "ru",
+      "expected": "compatible",
+      "parents": [
+        "В игре жук за ход проходит ровно две соседние клетки. Перескакивать клетки нельзя.",
+        "В игре цветок после посещения закрывается ровно на три хода. Закрытый цветок посещать нельзя."
+      ],
+      "rubric": [
+        "Ровно две соседние клетки за ход; без прыжков.",
+        "Закрытие посещённого цветка на три хода запрещает повторное посещение.",
+        "Есть совместный выбор маршрута и конкретное последствие."
+      ]
+    },
+    {
+      "id": "en-beetle",
+      "language": "en",
+      "expected": "compatible",
+      "parents": [
+        "In this game a beetle moves exactly two adjacent cells per turn. It cannot jump over cells.",
+        "In this game a visited flower closes for exactly three turns. A closed flower cannot be visited."
+      ],
+      "rubric": [
+        "Exactly two adjacent cells per turn; no jumping.",
+        "Visited flowers close for three turns and cannot be revisited while closed.",
+        "The combined route choice has a concrete consequence."
+      ]
+    },
+    {
+      "id": "ru-train",
+      "language": "ru",
+      "expected": "compatible",
+      "parents": [
+        "Игрушечный поезд продвигается ровно на один участок пути за ход и никогда не едет назад.",
+        "Переезд закрыт каждый третий ход. Во время закрытия пересекать его запрещено."
+      ],
+      "rubric": [
+        "Один участок за ход, движение назад запрещено.",
+        "На каждый третий ход приходится запрет пересечения переезда.",
+        "Новый маршрут или выбор времени совместим с обоими правилами."
+      ]
+    },
+    {
+      "id": "en-train",
+      "language": "en",
+      "expected": "compatible",
+      "parents": [
+        "A toy train advances exactly one track section per turn and never moves backwards.",
+        "A crossing is closed every third turn. Crossing it while closed is forbidden."
+      ],
+      "rubric": [
+        "One section per turn; no backward movement.",
+        "Crossing is forbidden on each third turn.",
+        "The new route or timing choice preserves both rules."
+      ]
+    },
+    {
+      "id": "ru-cards",
+      "language": "ru",
+      "expected": "compatible",
+      "parents": [
+        "Чтобы открыть книжный шкаф, игрок обязан одновременно предъявить две карты с одинаковым символом.",
+        "В руке игрока может быть не больше трёх карт. При получении четвёртой карты одну нужно сразу сбросить."
+      ],
+      "rubric": [
+        "Открытие требует одновременно две карты с одинаковым символом.",
+        "В руке максимум три карты; получение четвёртой требует немедленного сброса.",
+        "Выбор сброса влияет на возможность открыть шкаф."
+      ]
+    },
+    {
+      "id": "en-cards",
+      "language": "en",
+      "expected": "compatible",
+      "parents": [
+        "To open a bookcase the player must present two cards with the same symbol simultaneously.",
+        "The player may hold at most three cards. Receiving a fourth card requires immediately discarding one."
+      ],
+      "rubric": [
+        "Opening requires two same-symbol cards simultaneously.",
+        "At most three cards; a fourth forces an immediate discard.",
+        "The discard choice affects opening the bookcase."
+      ]
+    },
+    {
+      "id": "ru-kiln",
+      "language": "ru",
+      "expected": "compatible",
+      "parents": [
+        "Температура печи повышается на три градуса в конце каждого хода. Ваза разрушается при температуре девять градусов или выше.",
+        "Охлаждение снижает температуру ровно на четыре градуса. За каждое охлаждение обязательно сбрасывается одна карта."
+      ],
+      "rubric": [
+        "Рост на три в конце каждого хода; разрушение при девяти или выше.",
+        "Охлаждение на четыре обязательно стоит одну сброшенную карту.",
+        "Выбор охлаждения имеет совместное последствие для вазы и руки."
+      ]
+    },
+    {
+      "id": "en-kiln",
+      "language": "en",
+      "expected": "compatible",
+      "parents": [
+        "The kiln heats by three degrees at the end of every turn. The vase breaks at nine degrees or above.",
+        "Cooling lowers the temperature by exactly four degrees. Every cooling action requires discarding one card."
+      ],
+      "rubric": [
+        "Three-degree increase at every turn end; breakage at nine or above.",
+        "Cooling by four has a mandatory one-card discard cost.",
+        "Cooling choices jointly affect the vase and hand."
+      ]
+    },
+    {
+      "id": "ru-conflict",
+      "language": "ru",
+      "expected": "negative",
+      "parents": [
+        "Нерушимое правило этой игры: любое действие игрока обязано тратить ровно одну монету. Других действий нет.",
+        "Нерушимое правило этой же игры: ни одно действие игрока никогда не может тратить монеты."
+      ],
+      "rubric": [
+        "Не отменять универсальное обязательное расходование монеты и не превращать его в необязательное.",
+        "Не выдавать противоречащий обоим условиям результат за совместимую карточку."
+      ]
+    },
+    {
+      "id": "en-missing",
+      "language": "en",
+      "expected": "negative",
+      "parents": [
+        "I would like something nice, but I have not specified any action, rule, object or goal.",
+        "I also have no described action, constraint or mechanism yet."
+      ],
+      "rubric": [
+        "An honest missing-context or negative outcome; do not claim a grounded successful synthesis."
+      ]
+    }
+  ]
+}

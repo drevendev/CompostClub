@@ -1,5 +1,7 @@
 # Следующий фикс: работающая генерация, «Эврика» и понятный интерфейс
 
+> Current provider patch: [manual Claude subscription and optional Groq setup/status](PROVIDER_PATCH.md). The owner authorized implementation on 27 October 2026 and clarified Claude subscription as the first connection. Historical local-only acceptance below remains provider-specific; it is not satisfied by remote or synthetic output.
+
 Статус: **спецификация к реализации**, 25 октября 2026. Цель — следующий локальный RC после `0.2.0-rc.1`. База: `37113d639700d893d36cf8218728b3b68a08d58b`, [драфт PR #74](https://github.com/drevendev/CompostClub/pull/74). Наличие этого документа не означает, что перечисленные исправления уже поставлены.
 
 ## 1. Что входит в фикс

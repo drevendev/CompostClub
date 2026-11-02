@@ -2,7 +2,65 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
-## Unreleased
+## 0.2.0-rc.11 — 2026-11-02
+
+- Separate manual/automatic execution from provider/model choice across React and minimal WPF. Keep Eureka available in both modes; choosing automatic mode alone starts no jobs (#114).
+- Allow explicitly consented schedules for Claude Haiku/Sonnet/Opus and optional Groq with session-only scope authority. Preserve intervals, budgets, review backlog, exact manual previews, raw failures and atomic commits. Pause/restart/restore cannot silently authorize sending.
+- Warn before model/provider changes. Cancelling retains the previous state; confirmation preserves the selected mode and discloses continued scheduling with the new model. Guard late confirmation/authentication against concurrent Pause and scope changes.
+- Add labelled fictional controller and native/browser regressions; no real model requests during this update.
+
+## 0.2.0-rc.10 — 2026-11-02
+
+- Add a serverless WinForms/WebView2 host using the same compiled React interface as Electron. Keep the minimal WPF host and explicit primary/WPF/Electron shortcuts with one shared protected profile (#112).
+- Route allowlisted commands and state subscriptions over the existing Node stdio/controller. Preserve native file dialogs, imports/exports, validated restore, exact-context consent/cancellation, tray lifecycle and window reuse. Pin and verify official signed SDK dependencies; never download a runtime or model on application startup.
+- Share the OS-protected Windows credential vault with newly built Electron as well as WPF/WebView2, preserving encrypted originals and deletion tombstones.
+- Fix owner-reported RC9 blur by initializing PerMonitorV2 before creating controls. Assert actual window DPI context and matching browser pixel ratio; keep logical window size without bitmap scaling or Windows-setting changes (#113).
+- Add actual hybrid shortcut/DPI acceptance on fictional isolated profiles with inference disabled. Keep model quality and broader UI/UX redesign as separate open work.
+
+## 0.2.0-rc.8 — 2026-11-02
+
+- Add a complete native WPF shell hosted by stock Windows PowerShell and installed signed Node 24, with normal `.lnk` launch, tray/window reuse and safe shutdown. No custom EXE, browser or application HTTP server is needed (#108).
+- Reuse the existing SQLite/controller/provider contracts for card review and revisions, source preparation/DNA/references, growth, imports, donor policies, budgets, full backup/restore, readable exports and maintenance. Keep the authenticated named-pipe operator interface.
+- Add shared profile ownership, bounded direct stdio transport, priority cancellation, sleep pause, native dialogs and versioned Windows DPAPI credential migration without starting Electron. Preserve the old encrypted files; removed tokens do not return through legacy migration.
+- Add native view/storage/ownership regressions, real Windows shortcut/WPF acceptance with a marked fictional profile, and a Windows CI job. All inference is blocked in native acceptance. Existing recorded HTML and model-quality limitations remain separate.
+
+## 0.2.0-rc.7 — 2026-10-28
+
+- Correct two RC6 Sonnet format failures: new provider-2 jobs state exact field/list limits and use all bounded structural violation paths/counts in the shared repair; admission reserves that feedback before generation. Historical provider-1 contracts and original failed responses remain unchanged (#103).
+- Show the selected garden's latest unsuccessful attempt on the main screen, with charged calls, retained slot and a direct link to saved details, including asynchronously completed failures (#104).
+- Add full-controller authored failure-shape regressions for Claude/Groq and actual headless Chromium subscription-notice acceptance. Genuine success on the new contract requires a separately authorized frozen evaluation; earlier limited RC5 results do not certify RC7.
+
+## 0.2.0-rc.6 — 2026-10-28
+
+- Recheck the exact pending consent and its current expiry after asynchronous authentication. Cancelling, replacing or expiring a preview during Claude authentication or Groq credential access now prevents dispatch and leaves workspace/call/credit state unchanged (#100).
+- Isolate JSON-escaped and nested credential reflections in protected recovery before ordinary response retention; preserve exact originals and prevent a card/retry (#101).
+- Add six deterministic regressions for those races and a reviewed issue-closure map. Preserve the existing bounded genuine results; no additional model call is used to obtain a pass.
+
+## 0.2.0-rc.5 — 2026-10-28
+
+- Add explicit Haiku/Sonnet/Opus selection, freeze the requested alias for every stage, invalidate old consent after selection changes and preserve reported model versions separately.
+- Show connection-check progress/success/failure and invalidate late/stale results when the token, executable, provider or model changes.
+- Extend removable, default-OFF operator Sentry metadata to desktop provider/configuration/auth/consent/stop/model/validation operations. Telemetry throws or hangs cannot retry or gate inference; prompts, outputs, raw errors and credentials remain excluded.
+- Recognize one complete outer JSON Markdown fence without changing values, preserve the exact original and disclose normalization. Keep Windows profile crypto metadata with protected credentials during an isolated profile transition.
+- Genuine bounded fictional RU evidence: Sonnet and Opus each committed one screened proposal; Haiku's initial fence failure and subsequent length-limit failure remain retained. Eight cumulative CLI stage calls; no further generation to obtain a pass. All three remain selectable; Haiku creative-format acceptance and owner usefulness remain open.
+
+## 0.2.0-rc.4 — 2026-10-28
+
+- Add explicit manual Claude subscription generation through official Claude Code, protected setup-token entry, optional Groq BYOK, selected-context consent and requested/reported provider provenance. Remote scheduling and fallback remain disabled.
+- Preserve failed raw evidence, uncertain call debt and atomic card/pair/credit commits; align Unicode validation, reject fresh instruction echoes and retain honest empty limitations.
+- Add a PowerShell-compatible preview launcher and Windows shortcut with authenticated existing-window reuse, explicit restore and rendered readiness checks. Preserve startup diagnostics and existing caches/data.
+- Keep genuine provider/semantic acceptance open; exact-package synthetic credential/UI and window-launch diagnostics do not certify creative usefulness. See the [provider acceptance record](docs/PROVIDER_PATCH_ACCEPTANCE.md).
+
+## 0.2.0-rc.1 — 2026-10-25
+
+- Add schema-3 named desktop gardens, complete source/file originals and revision history, reproducible selected context, scoped aliases, approved DNA/preferences and explicit supported reference facts.
+- Introduce bounded rich local candidates and a separate fallible semantic check, durable dispatch/raw evidence, shared repair limits, filtered draft review and labelled human overrides.
+- Add independent manual jobs, per-garden rhythm/credit, global compute and daily accounting, seeded opt-in exchange, deliberate growth DAG/revisions, migration rollback and redacted exports.
+- Integrate calm native screens, bundled licensed typography and Windows garden icon; retain browser/recorded compatibility and fix superseded browser-model load cancellation.
+- Retain the negative frozen local evaluation: 40 genuine calls across baseline/new pipeline; 0 screened/displayable results in 16 cases. Owner usefulness decisions and a live accepted growth demonstration remain pending. All profiles stay experimental; this local RC does not certify the v0.2 promotion gate or publish a release.
+- Include deterministic, storage, Chromium, lifecycle and artifact checks with a reviewed source selection. See the [RC acceptance record](docs/COHERENT_GARDENS_ACCEPTANCE.md).
+
+## Earlier unreleased browser improvements
 
 - Retain up to 100 exact raw/text revisions per source, including edits before generation; inspect/download history, include it in backups and Markdown, disclose missing legacy revisions and count saved revisions in cascade deletion previews.
 - Keep keyboard skip focus independent from the garden URL and restore garden selection during browser back/forward navigation.

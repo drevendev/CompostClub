@@ -1,0 +1,22 @@
+{
+  "version": "provider-contract-2026-10-28-1",
+  "fictional": true,
+  "variantsPerModel": 1,
+  "models": ["sonnet"],
+  "maximumCallsPerModel": 3,
+  "maximumCalls": 3,
+  "language": "ru",
+  "profile": "application",
+  "parents": [
+    "Вымышленное приложение для общей мастерской: участник бронирует один из четырёх столов на 30 минут. Бронь без подтверждения автоматически снимается через 10 минут. Продлить бронь можно один раз на 15 минут, только если стол не забронирован следующим участником. Администратор не может обойти очередь.",
+    "Вымышленное приложение обмена инструментами: участник может взять не более двух инструментов одновременно. Возврат каждого инструмента требует отметки о проверке комплектности. Пока проверка не завершена, новый инструмент получить нельзя. При нехватке предметов действует очередь по времени заявки."
+  ],
+  "rubric": [
+    "Preserve four tables, 30-minute booking, mandatory 10-minute unconfirmed expiry and one conditional 15-minute extension.",
+    "Preserve the two-tool limit, mandatory completeness check, no new borrowing before that check, and chronological queue without administrator bypass.",
+    "Both sources causally contribute to one concrete application proposal; it has an action, alternative and consequence.",
+    "All declared field/count limits pass without value truncation or schema relaxation.",
+    "One attempt, at most one shared format repair and three stage calls total; retain every failure and stop without rerunning.",
+    "A screened proposal is not owner usefulness approval."
+  ]
+}
