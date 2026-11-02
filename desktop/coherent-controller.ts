@@ -1,4 +1,5 @@
 import { ClaudeRuntime } from './claude-runtime';
+import { automationScope, executionMode } from '../src/domain/coherent/automation';
 import { boundedRepairFeedback } from '../src/domain/coherent/response-limits';
 import {
   noop,
@@ -98,6 +99,9 @@ export class CoherentController {
     job: string;
   } | null = null;
   private authorizedRemote = new Set<string>();
+  // Authority is deliberately session-only: backups and imports cannot resume sending.
+  private automationPermit: { id: string; scopeHash: string } | null = null;
+  private controlGeneration = 0;
   private active: Promise<void> | undefined;
   private abort: AbortController | undefined;
   private pausing = false;
@@ -351,9 +355,11 @@ export class CoherentController {
         w.attention ||
         (this.active
           ? `Job ${this.currentId} → ${w.jobs.find((j) => j.id === this.currentId)?.stage ?? 'starting'}`
-          : w.paused
-            ? 'Background paused. Manual requests authorize one bounded job.'
-            : reasons.join(' · ') || 'Choose gardens for background work.'),
+          : executionMode(w) === 'manual'
+            ? 'Выбран ручной режим. «Эврика» запускает одну попытку.'
+            : w.paused
+              ? 'Background paused. Manual requests authorize one bounded job.'
+              : reasons.join(' · ') || 'Choose gardens for background work.'),
       activeJob: this.currentId,
       preview: this.preview,
       backups: this.store.backups(),
@@ -396,6 +402,9 @@ export class CoherentController {
     }
   }
   async pause(reason = 'Paused by you. Model resources released.') {
+    this.controlGeneration++;
+    this.automationPermit = null;
+    this.pendingRemote = null;
     if (this.pausing) {
       if (this.active)
         await Promise.race([
@@ -505,6 +514,123 @@ export class CoherentController {
     // newly retained response with a renderer's earlier workspace snapshot.
     this.change(fn);
   }
+  private controlStamp() {
+    const w = this.store.state;
+    return canonical([
+      this.controlGeneration,
+      w.epoch,
+      w.paused,
+      automationScope(w),
+      this.pendingRemote?.id,
+    ]);
+  }
+  private automaticConsentText() {
+    const w = this.store.state;
+    const selected = w.gardens.filter((g) => g.background);
+    const donors = w.gardens.filter(
+      (d) => d.policy.donate && selected.some((g) => g.policy.donors.includes(d.id)),
+    );
+    return (
+      `Сады в расписании: ${selected.map((g) => g.name).join(', ') || 'нет'}. Разрешённые доноры: ${donors.map((g) => g.name).join(', ') || 'нет'}.\n` +
+      `До ${w.settings.attempts} попыток, ${w.settings.calls} вызовов и ${w.settings.candidates} новых карточек в день; очередь просмотра до ${w.settings.backlog}. Интервалы и слоты каждого сада сохраняются.\n` +
+      'Внешнему сервису будут автоматически передаваться выбранные исходные идеи и карточки, одобренные референсы и предпочтения этих садов, включая добавленные позднее. Отдельного предпросмотра каждой автоматической попытки не будет. Пауза или выход из приложения прекращают разрешение; после запуска нужно продолжить расписание заново. Закрытие окна в трей сохраняет расписание. Отмена не гарантирует остановку сервера или возврат квоты.'
+    );
+  }
+  private requireAutomationReady() {
+    const w = this.store.state;
+    if (executionMode(w) !== 'automatic')
+      throw new Error('Выбран ручной режим. Сначала выберите автоматический режим.');
+    if (this.active || this.pausing) throw new Error('Wait for active work to drain.');
+    if (this.pendingRemote) throw new Error('Сначала подтвердите или отмените разовую отправку.');
+    if (this.remote.emergencyPending || this.claude.emergencyPending || this.store.emergency.length)
+      throw new Error('Сначала сохраните исходные ответы восстановления.');
+    if (this.stopUnconfirmed || this.error || this.exportError || w.attention)
+      throw new Error(
+        'Продолжение недоступно: сначала устраните причину в настройках и проверьте сохранность ответов.',
+      );
+    if (!w.gardens.some((g) => g.background))
+      throw new Error(
+        'В расписание не включён ни один сад. В настройках сада включите «Включать этот сад в расписание».',
+      );
+  }
+  private startAutomation(resetIntervals = true) {
+    this.requireAutomationReady();
+    this.change((w) => {
+      w.paused = false;
+      if (resetIntervals)
+        for (const g of w.gardens)
+          if (g.background) g.nextAt = Math.max(g.nextAt, Date.now() + g.interval * 60000);
+    });
+    this.automationPermit = isRemote(this.store.state.provider)
+      ? { id: uuid(), scopeHash: automationScope(this.store.state) }
+      : null;
+  }
+  private async resumeAutomation() {
+    this.requireAutomationReady();
+    if (
+      !this.store.state.paused &&
+      (!isRemote(this.store.state.provider) || this.validAutomationPermit())
+    )
+      return;
+    const stamp = this.controlStamp();
+    const p = providerSnapshot(this.store.state.provider, this.store.state.runtime.model);
+    if (
+      isRemote(p) &&
+      !(await this.services.confirm(
+        `Продолжить автоматическую обработку через ${p.kind} · ${p.requestedModel}?\n${this.automaticConsentText()}`,
+      ))
+    )
+      return;
+    if (stamp !== this.controlStamp())
+      throw new Error('Настройки расписания изменились. Подтвердите актуальный состав.');
+    this.startAutomation();
+  }
+  private validAutomationPermit() {
+    return (
+      executionMode(this.store.state) === 'automatic' &&
+      !this.store.state.paused &&
+      this.automationPermit?.scopeHash === automationScope(this.store.state)
+    );
+  }
+  private assertAutomaticJob(j: Job) {
+    if (j.trigger !== 'scheduled' || !isRemote(j.provider)) return;
+    const grant = j.remoteConsent?.automation;
+    if (
+      !this.validAutomationPermit() ||
+      !grant ||
+      grant.permitId !== this.automationPermit?.id ||
+      grant.scopeHash !== this.automationPermit.scopeHash
+    )
+      throw new Error('Job cancelled or paused: automatic permission changed.');
+  }
+  private async changeModel(name: string, remote: boolean, update: (w: Workspace) => void) {
+    const w = this.store.state;
+    const continued = executionMode(w) === 'automatic' && !w.paused;
+    const stamp = this.controlStamp();
+    const warning =
+      `Выбрать ${name}?\nРежим работы сохранится: ${executionMode(w) === 'manual' ? 'ручной' : 'автоматический'}. ` +
+      (continued ? 'Расписание продолжится с новой моделью. ' : 'Расписание останется на паузе. ') +
+      'Текущая работа будет остановлена, исходные ответы сохранятся. Разовый предпросмотр нужно подтвердить заново. Доступность, качество, скорость и квоты зависят от модели.\n' +
+      (remote && continued
+        ? this.automaticConsentText()
+        : remote
+          ? 'Выбранный контекст передаётся внешнему сервису после подтверждения разовой отправки или включения расписания.'
+          : 'Локальная обработка использует установленную Ollama.');
+    if (!(await this.services.confirm(warning))) return;
+    if (stamp !== this.controlStamp())
+      throw new Error('Настройки изменились. Повторите выбор модели.');
+    const scope = automationScope(this.store.state);
+    const draining = this.pause();
+    const generation = this.controlGeneration;
+    await draining;
+    if (generation !== this.controlGeneration || scope !== automationScope(this.store.state))
+      throw new Error('Управление изменилось во время остановки. Повторите выбор модели.');
+    this.resetClaudeCheck();
+    this.change(update);
+    // No await between committing the model and the new session grant. A pause
+    // while the confirmation was open is detected above and never overwritten.
+    if (continued) this.startAutomation(false);
+  }
   async command(
     input: unknown,
     operatorConfirmed = false,
@@ -517,6 +643,8 @@ export class CoherentController {
         'configureProvider',
         'configureClaude',
         'configureClaudeModel',
+        'configureLocalModel',
+        'configureExecutionMode',
         'checkClaude',
         'setClaudeToken',
         'removeClaudeToken',
@@ -614,13 +742,16 @@ export class CoherentController {
       case 'configureProvider': {
         if (c.kind !== 'local' && c.kind !== 'groq' && c.kind !== 'claude')
           throw new Error('Unsupported provider.');
-        await this.pause();
-        this.pendingRemote = null;
-        this.resetClaudeCheck();
-        this.change((w) => {
+        if ((this.store.state.provider?.kind ?? 'local') === c.kind) break;
+        const next = providerSnapshot(
+          { kind: c.kind, revision: 1 },
+          this.store.state.runtime.model,
+        );
+        await this.changeModel(next.kind + ' · ' + next.requestedModel, isRemote(next), (w) => {
           w.provider = {
             kind: c.kind as 'local' | 'groq' | 'claude',
             revision: (w.provider?.revision ?? 0) + 1,
+            ...(c.kind === 'claude' ? { model: 'sonnet' } : {}),
           };
         });
         break;
@@ -654,15 +785,37 @@ export class CoherentController {
           throw new Error('Сначала выберите подключение Claude.');
         const model = text(c.model, 80);
         assertClaudeModel(model);
-        await this.pause();
-        this.pendingRemote = null;
-        this.resetClaudeCheck();
-        this.change((w) => {
+        if (
+          providerSnapshot(this.store.state.provider, this.store.state.runtime.model)
+            .requestedModel === model
+        )
+          break;
+        await this.changeModel('Claude · ' + model, true, (w) => {
           w.provider = {
             kind: 'claude',
             revision: (w.provider?.revision ?? 0) + 1,
             model,
           };
+        });
+        break;
+      }
+      case 'configureLocalModel': {
+        const model = text(c.model, 30);
+        if (!['gemma3:1b', 'gemma3:4b'].includes(model))
+          throw new Error('Unsupported local model.');
+        if (model === this.store.state.runtime.model) break;
+        await this.changeModel('Ollama · ' + model, false, (w) => {
+          w.runtime.model = model as Workspace['runtime']['model'];
+        });
+        break;
+      }
+      case 'configureExecutionMode': {
+        if (c.mode !== 'manual' && c.mode !== 'automatic')
+          throw new Error('Invalid execution mode.');
+        if (executionMode(this.store.state) === c.mode) break;
+        await this.pause();
+        this.change((w) => {
+          w.settings.executionMode = c.mode as 'manual' | 'automatic';
         });
         break;
       }
@@ -776,30 +929,7 @@ export class CoherentController {
         await this.pause();
         break;
       case 'resume':
-        if (isRemote(this.store.state.provider))
-          throw new Error(
-            'Удалённое расписание выключено. Используйте ручную отправку с предпросмотром.',
-          );
-        if (this.active || this.pausing) throw new Error('Wait for active work to drain.');
-        if (this.remote.emergencyPending || this.claude.emergencyPending)
-          throw new Error(
-            'Секретный исходный ответ удерживается в памяти. Восстановите защищённое хранилище и сохраните recovery до выхода.',
-          );
-        if (this.store.emergency.length)
-          throw new Error('Save emergency evidence before resuming.');
-        if (this.stopUnconfirmed || this.error || this.exportError || this.store.state.attention)
-          throw new Error(
-            'Продолжение недоступно: сначала устраните причину в настройках и проверьте сохранность ответов.',
-          );
-        if (!this.store.state.gardens.some((g) => g.background))
-          throw new Error(
-            'В расписание не включён ни один сад. В настройках сада включите «Включать этот сад в расписание».',
-          );
-        this.change((w) => {
-          w.paused = false;
-          for (const g of w.gardens)
-            if (g.background) g.nextAt = Math.max(g.nextAt, now + g.interval * 60000);
-        });
+        await this.resumeAutomation();
         break;
       case 'clearAttention':
         if (this.active || this.pausing || this.stopUnconfirmed || this.store.emergency.length)
@@ -1117,6 +1247,20 @@ export class CoherentController {
         });
         break;
       case 'settings':
+        if (c.model !== this.store.state.runtime.model) {
+          const model = text(c.model, 30);
+          if (!['gemma3:1b', 'gemma3:4b'].includes(model))
+            throw new Error('Unsupported local model.');
+          const stamp = this.controlStamp();
+          if (
+            !(await this.services.confirm(
+              `Изменить локальную модель на ${model}? Режим работы сохранится. Сохранение границ поставит расписание на паузу; текущая работа будет остановлена, ответы сохранены.`,
+            ))
+          )
+            break;
+          if (stamp !== this.controlStamp())
+            throw new Error('Настройки изменились. Повторите выбор модели.');
+        }
         await this.pause('Compute settings changed.');
         this.change((w) => {
           w.settings = {
@@ -1965,6 +2109,7 @@ export class CoherentController {
           if (signal.aborted || this.pausing || this.stopUnconfirmed)
             throw new Error('Cancelled before dispatch.');
           this.change((w) => {
+            this.assertAutomaticJob(w.jobs.find((j) => j.id === id)!);
             const call = dispatch(w, id, s, Date.now(), !!repair),
               job = w.jobs.find((j) => j.id === id)!;
             if (
@@ -2114,6 +2259,7 @@ export class CoherentController {
     const started = Date.now();
     try {
       const remote = isRemote(this.job(id).provider);
+      this.assertAutomaticJob(this.job(id));
       if (remote && !this.authorizedRemote.has(id))
         throw new Error('Remote job needs fresh session consent.');
       const model = remote
@@ -2122,6 +2268,7 @@ export class CoherentController {
           : await this.remote.start()
         : await this.runtime.start(this.store.state.runtime);
       if (signal.aborted) throw new Error('Cancelled during model startup.');
+      this.assertAutomaticJob(this.job(id));
       this.change((w) => {
         const j = w.jobs.find((j) => j.id === id)!;
         revalidate(w, j, Date.now());
@@ -2289,8 +2436,20 @@ export class CoherentController {
     }
   }
   tick(now = Date.now()) {
-    if (isRemote(this.store.state.provider)) return;
-    if (this.active || this.pausing || this.error || this.store.state.paused) return;
+    if (
+      this.pausing ||
+      this.error ||
+      this.store.state.paused ||
+      executionMode(this.store.state) !== 'automatic'
+    )
+      return;
+    if (isRemote(this.store.state.provider) && !this.validAutomationPermit()) {
+      void this.pause(
+        'Настройки автоматической отправки изменились. Подтвердите расписание заново.',
+      );
+      return;
+    }
+    if (this.active || this.pendingRemote) return;
     if (now < this.store.state.lastObservedAt - 1000) {
       void this.pause('Clock moved backwards.');
       return;
@@ -2311,10 +2470,36 @@ export class CoherentController {
         this.change((w) => {
           id = prepareJob(w, g.id, 'blend', now, {
             manual: false,
+            automaticConsent: this.validAutomationPermit(),
             seed: garden(w, g.id).plan!.seed,
           }).id;
+          if (isRemote(w.provider)) {
+            const job = w.jobs.find((j) => j.id === id)!;
+            job.remoteConsent = {
+              contextHash: job.pack.hash,
+              providerHash: providerHash(job.provider!),
+              at: now,
+              expires: now + 540000,
+              automation: {
+                permitId: this.automationPermit!.id,
+                scopeHash: this.automationPermit!.scopeHash,
+              },
+            };
+            const requests = (w.requests ??= []);
+            if (requests.length >= 4000) throw new Error('Request journal full.');
+            requests.push({
+              id: 'automatic:' + id,
+              fingerprint: hash(canonical(job.remoteConsent)),
+              garden: job.garden,
+              job: id,
+              at: now,
+              state: 'started',
+              reason: '',
+            });
+          }
         });
         if (id) {
+          if (isRemote(this.store.state.provider)) this.authorizedRemote.add(id);
           this.launch(id);
           return;
         }

@@ -34,7 +34,7 @@ await cp('scripts/desktop-operator.mjs', path.join(directory, 'operator.mjs'));
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 await writeFile(
   path.join(directory, 'START-HERE.txt'),
-  `Compost Club ${pkg.version} · native Windows WPF\n\nStart Start-CompostClub.ps1 using installed signed Windows PowerShell (STA) and Node 24. No custom EXE, browser or web server is bundled. No runtime/model is downloaded. The original SQLite profile remains canonical.\nClose hides the window in the tray; Exit drains work and closes the host. After sleep scheduling is paused.\nClaude/Groq calls require the usual exact-context preview and manual consent. Native Windows DPAPI credentials are separate; originals remain preserved.\nDo not publish private profiles, receipts or reading snapshots. See docs/NATIVE_WINDOWS.md in the source archive.\n`,
+  `Compost Club ${pkg.version} · native Windows WPF\n\nStart Start-CompostClub.ps1 using installed signed Windows PowerShell (STA) and Node 24. No custom EXE, browser or web server is bundled. No runtime/model is downloaded. The original SQLite profile remains canonical.\nClose hides the window in the tray; Exit drains work and closes the host. After sleep scheduling is paused.\nChoose manual/automatic mode independently of provider/model. Manual Claude/Groq jobs require exact-context previews; Continue confirms external scheduling scope and limits. Model changes warn; Pause/restart revokes scheduling permission. Native Windows DPAPI credentials are separate; originals remain preserved.\nDo not publish private profiles, receipts or reading snapshots. See docs/NATIVE_WINDOWS.md in the source archive.\n`,
 );
 const files = {};
 for (const f of (await readdir(directory)).sort())

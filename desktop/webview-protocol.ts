@@ -6,6 +6,8 @@ const operations = new Set([
   'configureProvider',
   'configureClaude',
   'configureClaudeModel',
+  'configureLocalModel',
+  'configureExecutionMode',
   'checkClaude',
   'setClaudeToken',
   'removeClaudeToken',

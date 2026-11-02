@@ -123,10 +123,16 @@ click('Создать новый сад');
 steps.push({ kind: 'navigate', page: 'garden', gardenName: 'Нативный тестовый сад' });
 check('Нативный тестовый сад');
 nav('settings');
+fill('Выбрать режим работы', { mode: 'manual' });
+click('Выбрать режим работы');
+check('Ручной режим');
 fill('Выбрать провайдера', { kind: 'claude' });
 click('Выбрать провайдера');
 fill('Выбрать модель Claude', { model: 'opus' });
 click('Выбрать модель Claude');
+check('Ручной режим');
+fill('Выбрать режим работы', { mode: 'automatic' });
+click('Выбрать режим работы');
 fill('Сохранить setup-token Claude', { token: 'sk-ant-DIAGNOSTIC-FICTIONAL-NOT-A-REAL-TOKEN' });
 click('Сохранить setup-token Claude');
 check('Setup-token сохранён');
@@ -154,7 +160,7 @@ const plan = {
   services: {
     pick: [[imported], [backup]],
     saveBackup: [backup, lifeBackup],
-    confirm: [false, true, true],
+    confirm: [false, true, true, true, true, true],
   },
   steps,
 };

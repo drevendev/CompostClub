@@ -169,7 +169,7 @@ async function main() {
         .finally(() => {
           tickBusy = false;
         });
-    } else if (!tickBusy) controller.tick();
+    } else if (!tickBusy && process.env.COMPOST_NO_INFERENCE !== '1') controller.tick();
     lastTick = now;
     if (dirty) {
       dirty = false;

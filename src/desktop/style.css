@@ -801,8 +801,18 @@
 }
 .coherent-app .toolbar-commands {
   display: flex;
-  align-items: start;
+  flex-wrap: wrap;
+  align-items: end;
   gap: 10px;
+}
+.coherent-app .toolbar-commands label {
+  flex: 1 1 12em;
+  min-width: 0;
+  max-width: 100%;
+}
+.coherent-app .toolbar-commands select {
+  width: 100%;
+  max-width: 100%;
 }
 .coherent-app .toolbar-commands button {
   min-width: 8em;

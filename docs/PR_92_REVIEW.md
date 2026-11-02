@@ -1,5 +1,9 @@
 # PR #92 review and issue disposition · 28 October 2026
 
+## RC11 execution mode continuation · 2 November 2026
+
+The owner explicitly requested manual/automatic selection independently of model/provider and a model-change warning (#114). [Execution controls and consent](EXECUTION_MODE.md) supersedes historical manual-only remote statements below for explicitly enabled schedules. Keep broader #76 UX work open. This continuation adds no real model evidence and must not implicitly enable the primary schedule. Diagnostic tests cover both execution modes, provider/model transitions and cancellation/authentication races; actual native acceptance keeps inference disabled. Task closure remains merge-bound and the original creative/release gates remain open.
+
 ## RC10 React hybrid and DPI continuation · 2 November 2026
 
 The owner requested three retained hosts: the existing React/Electron design, minimal WPF, and a serverless WinForms/WebView2 hybrid using the **same compiled desktop React assets**. RC10 implements the typed invoke/subscription bridge over the existing Node stdio controller, native services, one-window shortcut reuse and shared protected Windows credentials. All hosts retain the same canonical SQLite profile with exclusive ownership. Official SDK dependencies are version/hash pinned, signed and accompanied by their license/notices; no browser runtime, custom application executable or model is downloaded at startup. [Hybrid guide](WEBVIEW_WINDOWS.md).

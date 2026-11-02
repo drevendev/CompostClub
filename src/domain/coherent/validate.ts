@@ -20,6 +20,11 @@ export function validate(w: Workspace): void {
   );
   sizeGuard(w);
   providerSnapshot(w.provider, w.runtime.model);
+  ensure(
+    w.settings.executionMode === undefined ||
+      ['manual', 'automatic'].includes(w.settings.executionMode),
+    'Invalid execution mode.',
+  );
   for (const [v, max] of [
     [w.gardens, 4],
     [w.sources, 800],
@@ -388,6 +393,13 @@ export function validate(w: Workspace): void {
           Number.isSafeInteger(j.remoteConsent.expires) &&
           j.remoteConsent.expires >= j.remoteConsent.at,
         'Invalid remote consent record.',
+      );
+    if (j.remoteConsent?.automation)
+      ensure(
+        j.trigger === 'scheduled' &&
+          bounded(j.remoteConsent.automation.permitId, 128) &&
+          /^[a-f0-9]{64}$/.test(j.remoteConsent.automation.scopeHash),
+        'Invalid automatic consent record.',
       );
     if (j.draft) parseDraft(JSON.stringify(j.draft), j);
     ensure(

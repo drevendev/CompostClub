@@ -1,9 +1,10 @@
 import type { CoherentCommand, CoherentView } from './coherent-types';
+import { executionMode } from '../src/domain/coherent/automation';
 import { author } from '../src/content/author';
 import { current, identity, prepare } from '../src/domain/coherent/prepare';
 import { counts, credit, INTERVALS } from '../src/domain/coherent/workspace';
 import { explain, label, jobTitle, funnel } from '../src/domain/coherent/presentation';
-import { CLAUDE_MODELS, isRemote } from '../src/domain/coherent/provider';
+import { CLAUDE_MODELS } from '../src/domain/coherent/provider';
 import {
   DIRECTIONS,
   type Identity,
@@ -216,13 +217,19 @@ export class NativeUI {
     const body: NativeElement[] = [];
     const toolbar = [
       this.button(
-        v.busy || !w.paused ? 'Пауза' : 'Продолжить',
+        v.busy || !w.paused
+          ? 'Пауза'
+          : executionMode(w) === 'manual'
+            ? 'Ручной режим'
+            : 'Продолжить',
         async () => {
           const v = this.view();
           await this.execute({ op: v.busy || !v.workspace.paused ? 'pause' : 'resume' });
         },
         v.status === 'pausing' ||
-          (!v.busy && w.paused && (isRemote(w.provider) || !w.gardens.some((g) => g.background))),
+          (!v.busy &&
+            w.paused &&
+            (executionMode(w) !== 'automatic' || !w.gardens.some((g) => g.background))),
       ),
       this.button(
         'Эврика',
@@ -343,10 +350,17 @@ export class NativeUI {
     const v = this.view(),
       w = v.workspace;
     return {
-      pauseText: v.busy || !w.paused ? 'Пауза' : 'Продолжить',
+      pauseText:
+        v.busy || !w.paused
+          ? 'Пауза'
+          : executionMode(w) === 'manual'
+            ? 'Ручной режим'
+            : 'Продолжить',
       pauseEnabled:
         v.status !== 'pausing' &&
-        (v.busy || !w.paused || (!isRemote(w.provider) && w.gardens.some((g) => g.background))),
+        (v.busy ||
+          !w.paused ||
+          (executionMode(w) === 'automatic' && w.gardens.some((g) => g.background))),
       eurekaEnabled: !v.busy && !v.eureka.find((e) => e.garden === this.g.id)?.reason,
     };
   }
@@ -997,7 +1011,18 @@ export class NativeUI {
       w = this.w;
     body.push(
       heading('Подключения'),
-      text('Локальное хранение. Внешняя обработка — только после предпросмотра и подтверждения.'),
+      text(
+        'Режим работы не зависит от модели. «Эврика» доступна в обоих режимах. После выбора автоматики нажмите «Продолжить». Внешнее расписание требует подтверждения садов и лимитов; разовая отправка — предпросмотра.',
+      ),
+      this.cmdForm('Выбрать режим работы', { op: 'configureExecutionMode' }, [
+        field(
+          'mode',
+          'Режим работы',
+          executionMode(w),
+          'choice',
+          options({ manual: 'Вручную', automatic: 'Автоматически' }),
+        ),
+      ]),
       this.cmdForm('Выбрать провайдера', { op: 'configureProvider' }, [
         field(
           'kind',

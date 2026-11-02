@@ -229,7 +229,13 @@ export const DIRECTIONS = [
 export type Direction = (typeof DIRECTIONS)[number];
 export interface Job {
   provider?: ProviderSnapshot;
-  remoteConsent?: { contextHash: string; providerHash: string; at: number; expires: number };
+  remoteConsent?: {
+    contextHash: string;
+    providerHash: string;
+    at: number;
+    expires: number;
+    automation?: { permitId: string; scopeHash: string };
+  };
   admission?: Admission;
   trigger?: 'scheduled' | 'eureka' | 'manual';
   requestId?: string;
@@ -394,6 +400,7 @@ export interface Workspace {
   calls: Call[];
   daily: Record<string, Daily>;
   settings: {
+    executionMode?: 'manual' | 'automatic';
     attempts: number;
     candidates: number;
     calls: number;

@@ -1,4 +1,5 @@
 import { CLAUDE_MODELS, isRemote } from '../domain/coherent/provider';
+import { executionMode } from '../domain/coherent/automation';
 import { version } from '../../package.json';
 import { createRoot } from 'react-dom/client';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -237,9 +238,13 @@ function App() {
     activeGarden = w.gardens.find((g) => g.id === activeJob?.garden),
     stopping = view.status === 'pausing',
     canPause = view.busy || !w.paused,
+    automatic = executionMode(w) === 'automatic',
     resumeBlocked =
       !canPause &&
-      (isRemote(w.provider) || view.status === 'attention' || !w.gardens.some((g) => g.background)),
+      (!automatic ||
+        view.status === 'attention' ||
+        !!view.remotePreview ||
+        !w.gardens.some((g) => g.background)),
     statusText = stopping
       ? isRemote(w.provider)
         ? 'Останавливаем ожидание и следующие вызовы…'
@@ -248,11 +253,13 @@ function App() {
         ? explain(view.reason)
         : activeJob
           ? `${label(activeJob.stage)} для сада «${activeGarden?.name}»`
-          : w.paused
-            ? 'Автозапуск на паузе'
-            : g.background
-              ? explain(backgroundReason(w, g.id, Date.now()))
-              : `Сад «${g.name}» не включён в расписание`;
+          : !automatic
+            ? 'Ручной режим · запустите одну попытку кнопкой «Эврика»'
+            : w.paused
+              ? 'Автоматика на паузе'
+              : g.background
+                ? explain(backgroundReason(w, g.id, Date.now()))
+                : `Сад «${g.name}» не включён в расписание`;
   const eureka = async () => {
     if (isRemote(w.provider)) {
       await send({ op: 'eureka', garden: g.id, requestId: crypto.randomUUID() });
@@ -396,20 +403,40 @@ function App() {
               view.provider?.requestedModel ??
               w.runtime.model}{' '}
             · {activeJob?.provider?.kind ?? view.provider?.kind ?? 'local'}
-            {isRemote(w.provider) ? ' · ручная внешняя отправка' : ''}
+            {isRemote(w.provider) ? ' · внешняя обработка' : ' · локальная обработка'}
           </small>
           <p role="status" aria-live="polite">
             {statusText}
           </p>
-          {w.paused && activeJob && <small>Автозапуск на паузе · выполняется разовая работа</small>}
+          {w.paused && activeJob && (
+            <small>Выполняется разовая работа · расписание не запущено</small>
+          )}
         </div>
         <div className="toolbar-commands">
+          <label>
+            Режим работы
+            <select
+              aria-label="Режим работы"
+              value={executionMode(w)}
+              disabled={stopping}
+              onChange={(e) => void send({ op: 'configureExecutionMode', mode: e.target.value })}
+            >
+              <option value="manual">Вручную</option>
+              <option value="automatic">Автоматически</option>
+            </select>
+          </label>
           <button
             aria-describedby="global-command-hint"
             disabled={stopping || resumeBlocked}
             onClick={() => void send({ op: canPause ? 'pause' : 'resume' })}
           >
-            {stopping ? 'Останавливаем…' : canPause ? 'Пауза' : 'Продолжить'}
+            {stopping
+              ? 'Останавливаем…'
+              : canPause
+                ? 'Пауза'
+                : automatic
+                  ? 'Продолжить'
+                  : 'Ручной режим'}
           </button>
           <button
             className="primary"
@@ -422,19 +449,23 @@ function App() {
         </div>
         <div className="toolbar-hints">
           <small id="global-command-hint">
-            {isRemote(w.provider)
-              ? 'Внешняя обработка только вручную. Отмена не гарантирует остановку сервера или возврат квоты.'
+            {!automatic
+              ? 'Расписание выключено. «Эврика» доступна при любой модели.'
               : resumeBlocked
                 ? view.status === 'attention'
                   ? 'Устраните причину в настройках перед продолжением.'
-                  : 'Выберите сады для расписания в настройках сада.'
+                  : view.remotePreview
+                    ? 'Подтвердите или отмените разовую отправку.'
+                    : 'Выберите сады для расписания в настройках сада.'
                 : canPause
                   ? 'Остановить работу во всех садах и освободить модель.'
                   : 'Продолжить расписание ранее включённых садов.'}
+            {isRemote(w.provider) &&
+              ' Внешняя обработка использует квоту вашего аккаунта. Отмена не гарантирует возврат квоты.'}
           </small>
           <small id="eureka-hint">
             {eurekaReason ||
-              `Одна попытка прямо сейчас для сада «${g.name}». Автозапуск не включается.`}
+              `Одна попытка прямо сейчас для сада «${g.name}». Режим и расписание сохраняются.`}
           </small>
         </div>
       </div>
@@ -1273,7 +1304,7 @@ function App() {
                   backlog: Number(val(f, 'backlog')),
                   language: val(f, 'language'),
                   exportScope: val(f, 'exportScope'),
-                  model: val(f, 'model'),
+                  model: w.runtime.model,
                 })
               }
             >
@@ -1310,13 +1341,6 @@ function App() {
                   </select>
                 </label>
                 <label>
-                  Установленная модель
-                  <select name="model" defaultValue={w.runtime.model}>
-                    <option>gemma3:4b</option>
-                    <option>gemma3:1b</option>
-                  </select>
-                </label>
-                <label>
                   Читаемый экспорт
                   <select name="exportScope" defaultValue={w.settings.exportScope}>
                     <option value="kept">Сохранённое</option>
@@ -1336,8 +1360,9 @@ function App() {
             <h3>Способ генерации</h3>
             <p>
               Хранение остаётся локальным. Внешняя обработка отправляет выбранный контекст
-              провайдеру только после отдельного подтверждения каждого задания. Фоновая отправка
-              выключена.
+              провайдеру. Режим «Вручную» или «Автоматически» выбирается отдельно в верхней панели.
+              Разовая внешняя отправка требует предпросмотра; расписание — подтверждения садов и
+              лимитов при продолжении.
             </p>
             <label>
               Подключение
@@ -1355,13 +1380,27 @@ function App() {
             <p>
               Выбрано:{' '}
               {view.provider?.kind === 'claude'
-                ? 'Claude · ' + view.provider.requestedModel + ' · только вручную'
+                ? 'Claude · ' + view.provider.requestedModel
                 : view.provider?.kind === 'groq'
-                  ? 'Groq · openai/gpt-oss-20b · только вручную'
+                  ? 'Groq · openai/gpt-oss-20b'
                   : 'локальная модель'}
               . Квоты и условия внешнего сервиса зависят от вашего аккаунта; платный тариф не
               подключается.
             </p>
+            {view.provider?.kind === 'local' && (
+              <label>
+                Локальная модель
+                <select
+                  aria-label="Локальная модель"
+                  value={w.runtime.model}
+                  disabled={view.busy}
+                  onChange={(e) => void send({ op: 'configureLocalModel', model: e.target.value })}
+                >
+                  <option>gemma3:4b</option>
+                  <option>gemma3:1b</option>
+                </select>
+              </label>
+            )}
             {view.provider?.kind === 'claude' && (
               <>
                 <label>
@@ -1388,8 +1427,8 @@ function App() {
                 </label>
                 <p>
                   Запрос: {view.provider.requestedModel}. Модель закрепляется для всего задания,
-                  включая проверку и исправление формата. Смена модели отменяет прежнее
-                  подтверждение отправки. Версию определяет установленный Claude Code; фактически
+                  включая проверку и исправление формата. При смене модели появится предупреждение;
+                  режим работы сохранится. Версию определяет установленный Claude Code; фактически
                   ответившая модель сохраняется отдельно. Доступ зависит от вашего аккаунта.
                 </p>
               </>

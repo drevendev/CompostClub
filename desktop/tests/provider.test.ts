@@ -204,7 +204,7 @@ for (const invalidation of ['cancel', 'expire', 'replace'])
       await c.close();
     }
   });
-await test('remote scheduled tick and resume refuse; manual cancel/missing key send nothing', async () => {
+await test('remote scheduled tick needs a session grant; manual cancel/missing key send nothing', async () => {
   const { store: s, controller: c, sent } = await setup();
   s.change((w) => {
     w.paused = false;
@@ -214,7 +214,7 @@ await test('remote scheduled tick and resume refuse; manual cancel/missing key s
   c.tick();
   assert.equal(sent.length, 0);
   assert.equal(s.state.jobs.length, 0);
-  await assert.rejects(c.command({ op: 'resume' }), /расписание/);
+  await c.pause();
   const p = await preview(c);
   await c.command({ op: 'cancelRemote' });
   await assert.rejects(c.command({ op: 'confirmRemote', previewId: p.id, consent: true }));

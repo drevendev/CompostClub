@@ -2,6 +2,13 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
+## 0.2.0-rc.11 — 2026-11-02
+
+- Separate manual/automatic execution from provider/model choice across React and minimal WPF. Keep Eureka available in both modes; choosing automatic mode alone starts no jobs (#114).
+- Allow explicitly consented schedules for Claude Haiku/Sonnet/Opus and optional Groq with session-only scope authority. Preserve intervals, budgets, review backlog, exact manual previews, raw failures and atomic commits. Pause/restart/restore cannot silently authorize sending.
+- Warn before model/provider changes. Cancelling retains the previous state; confirmation preserves the selected mode and discloses continued scheduling with the new model. Guard late confirmation/authentication against concurrent Pause and scope changes.
+- Add labelled fictional controller and native/browser regressions; no real model requests during this update.
+
 ## 0.2.0-rc.10 — 2026-11-02
 
 - Add a serverless WinForms/WebView2 host using the same compiled React interface as Electron. Keep the minimal WPF host and explicit primary/WPF/Electron shortcuts with one shared protected profile (#112).

@@ -66,6 +66,15 @@ script(
   `const v=await compost.invoke({op:'acceptImport',id:importPreview.id,choices:importPreview.items.map(()=> 'new-copy'),participating:false});check(v.workspace.documents.length===1,'Original imported document absent');`,
 );
 script(
+  `let mode=document.querySelector('select[aria-label="Режим работы"]');check(mode,'Mode selector absent');mode.value='manual';mode.dispatchEvent(new Event('change',{bubbles:true}));`,
+);
+script(
+  `const before=await compost.invoke({op:'snapshot'});check(before.workspace.settings.executionMode==='manual','Manual mode did not persist');check(document.body.innerText.includes('Ручной режим'),'Manual mode status absent');await compost.invoke({op:'configureProvider',kind:'claude'});await compost.invoke({op:'configureClaudeModel',model:'haiku'});const v=await compost.invoke({op:'snapshot'});check(v.workspace.settings.executionMode==='manual','Model changed execution mode');check(v.workspace.calls.length===0,'Selection generated a call');await compost.invoke({op:'configureExecutionMode',mode:'automatic'});`,
+);
+script(
+  `const v=await compost.invoke({op:'snapshot'});check(v.workspace.settings.executionMode==='automatic'&&v.workspace.paused,'Choosing automatic mode started inference');`,
+);
+script(
   `await compost.invoke({op:'configureProvider',kind:'claude'});await compost.invoke({op:'configureClaudeModel',model:'opus'});const v=await compost.invoke({op:'setClaudeToken',token:'sk-ant-DIAGNOSTIC-FICTIONAL-NOT-REAL'});check(v.claudeToken.present,'Protected credential missing');`,
 );
 script(
@@ -86,7 +95,11 @@ script(
 const plan = {
   shortcut: path.join(out, 'React acceptance.lnk'),
   result: path.join(out, 'result.json'),
-  services: { pick: [[imported], [backup]], saveBackup: [backup], confirm: [true, true] },
+  services: {
+    pick: [[imported], [backup]],
+    saveBackup: [backup],
+    confirm: [true, true, true, true, true, true],
+  },
   steps,
 };
 const planFile = path.join(out, 'plan.private.json');

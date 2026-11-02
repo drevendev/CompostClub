@@ -1,5 +1,7 @@
 # Спецификация: выбор способа генерации
 
+> RC11 owner clarification: [manual/automatic execution is independent of provider/model](EXECUTION_MODE.md); opted-in external schedules use session-only scope consent (#114). Earlier manual-only external restrictions below are historical.
+
 > Current provider patch: [manual Claude subscription and optional Groq setup/status](PROVIDER_PATCH.md). The owner authorized implementation on 27 October 2026 and clarified Claude subscription as the first connection. Historical local-only acceptance below remains provider-specific; it is not satisfied by remote or synthetic output.
 
 Статус: согласованное направление для последующей реализации. **Реализацию не начинать без отдельного запроса владельца.** Эта спецификация не означает, что подключения уже работают или что качество генерации подтверждено.

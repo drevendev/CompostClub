@@ -1,5 +1,7 @@
 # Manual providers · 0.2.0-rc.7 candidate
 
+> RC11 scope update, 2 November: [execution mode and consent](EXECUTION_MODE.md) adds explicitly enabled external scheduling independently of model selection (#114). Historical manual-only descriptions below describe RC7. Manual external jobs still require their exact-context previews; RC11 adds no live quality evidence.
+
 RC7 corrects the primary RC6 Sonnet failures tracked in #103 and the missing asynchronous outcome notice in #104. New jobs use provider-2/candidate-5 with explicit limits and a preflight-reserved 1024-byte structural repair report. Old provider-1 jobs keep their original contracts and failed evidence. The selected garden's latest unsuccessful attempt now shows its outcome, call count, retained slot and a direct route to details. After separate owner authorization, the frozen one-pair Sonnet protocol used three calls: one initial length failure, successful bounded repair, then a screened proposal displayed in the exact portable. This limited technical pass is not a general reliability rate or owner usefulness approval.
 
 This patch implements #91 with the owner's 27 October clarification: **Claude through the owner's subscription is the primary external connection**. Groq is an optional separate API service. The updater, arbitrary endpoints, remote scheduling and mixed-provider stages remain separate work. The preview launch repair is tracked in #93.

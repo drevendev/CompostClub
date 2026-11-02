@@ -1,4 +1,5 @@
 import { isRemote } from './provider';
+import { executionMode } from './automation';
 import { providerSnapshot, providerHash } from './provider';
 import { canonical, hash, bytes } from './hash';
 import {
@@ -224,6 +225,8 @@ export function wait(
   if (now < w.lastObservedAt - 1000 || c.date < w.latestDate)
     return 'Clock moved backwards; pause and check the installation clock.';
   if (w.jobs.some(active)) return 'One local job owns the model.';
+  if (!manual && executionMode(w) !== 'automatic')
+    return 'Manual mode: scheduled work is disabled.';
   if (!manual && w.paused)
     return 'Global background pause. Manual work authorizes one bounded job.';
   if (!manual && !target.background) return 'This garden has background work disabled.';
@@ -249,8 +252,7 @@ export function random(seed: number): number {
   return (n >>> 0) / 4294967296;
 }
 export function backgroundReason(w: Workspace, id: string, now: number): string {
-  if (isRemote(w.provider))
-    return 'Внешняя обработка только вручную, с предпросмотром и согласием. Расписание не отправляет данные.';
+  if (executionMode(w) === 'manual') return 'Выбран ручной режим. «Эврика» запускает одну попытку.';
   const g = garden(w, id);
   if (g.plan?.blocked?.fingerprint === admissionConditions(w, id)) return g.plan.blocked.reason;
   if (g.plan?.reason.startsWith('Waiting:')) return g.plan.reason;
@@ -376,9 +378,10 @@ export function prepareJob(
     targetRevision?: Identity;
     probabilistic?: boolean;
     exactDraft?: Candidate;
+    automaticConsent?: boolean;
   } = {},
 ): Job {
-  if (isRemote(w.provider) && !(options.manual ?? true))
+  if (isRemote(w.provider) && !(options.manual ?? true) && !options.automaticConsent)
     throw new Error('Удалённое расписание выключено. Подтвердите одну ручную отправку контекста.');
   if (isRemote(w.provider) && ['dna', 'preferences'].includes(operation))
     throw new Error(
@@ -571,7 +574,12 @@ export function revalidate(w: Workspace, j: Job, now: number) {
     providerHash(j.provider) !== providerHash(providerSnapshot(w.provider, w.runtime.model))
   )
     throw new Error('Provider configuration changed; prepare a new explicit request.');
-  if (!active(j) || j.epoch !== w.epoch || (!j.manualPermit && w.paused) || w.attention)
+  if (
+    !active(j) ||
+    j.epoch !== w.epoch ||
+    (!j.manualPermit && (w.paused || executionMode(w) !== 'automatic')) ||
+    w.attention
+  )
     throw new Error('Job cancelled or paused.');
   if (date(w, now) !== j.date || j.date < w.latestDate || now < w.lastObservedAt - 1000)
     throw new Error(
@@ -880,6 +888,7 @@ export function editNode(w: Workspace, id: string, candidate: Candidate, now: nu
   });
 }
 export function due(w: Workspace, now: number): Garden[] {
+  if (executionMode(w) === 'manual') return [];
   return w.gardens
     .filter((g) => g.background && g.nextAt <= now)
     .sort((a, b) => a.nextAt - b.nextAt || a.lastServed - b.lastServed || a.id.localeCompare(b.id));
