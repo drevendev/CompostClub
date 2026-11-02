@@ -28,6 +28,8 @@ The [published DEV article](https://dev.to/drevendev/let-your-wild-ideas-ferment
 
 ## Manual external generation preview
 
+**Windows RC8:** the native [WPF host](docs/NATIVE_WINDOWS.md) provides the working UI without a custom EXE, browser or local application web server. It uses installed signed Windows PowerShell/Node 24, preserves SQLite and the existing provider contracts, and starts from a normal shortcut. Build with `npm run native:build`; run real Windows acceptance with `npm run test:native` (fictional isolated profile, inference disabled). The earlier Electron candidate remains in source; an unsigned portable can be blocked by Smart App Control. No Windows protection bypass is required or provided.
+
 The 0.2.0-rc.5 candidate adds an explicitly selected manual connection to **official Claude Code using your own Claude subscription**, plus optional Groq BYOK. Desktop Settings now offers **Haiku, Sonnet and Opus**, visible authentication status and removable operator-only Sentry metadata tracing (OFF without opt-in). Each job freezes its selected alias and context; there is no remote background or automatic fallback. A bounded fictional RU run produced screened Sonnet/Opus proposals; Haiku format failures remain retained and its creative acceptance is open. Local storage, local Ollama and the recorded sample remain independent. No account, model or CLI is installed for you.
 
 [Setup, privacy, subscription login, optional Groq key and acceptance status](docs/PROVIDER_PATCH.md). This is an experimental source/PR candidate, not a stable quality claim or an installed owner upgrade. Local Gemma RU issues remain open.

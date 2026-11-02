@@ -1,4 +1,5 @@
 import { ClaudeRuntime } from './claude-runtime';
+import { ownProfile } from './profile-owner';
 import { createDesktopObserver } from './telemetry';
 import { EncryptedCredentialStore } from './credentials';
 import { GroqRuntime } from './groq-runtime';
@@ -41,6 +42,7 @@ if (!single) {
   app.quit();
 } else {
   let window: BrowserWindow | null = null,
+    profileOwner: Awaited<ReturnType<typeof ownProfile>> | undefined,
     controller: DesktopController | undefined,
     operator: OperatorHandle | undefined,
     tray: Tray | undefined,
@@ -126,6 +128,7 @@ if (!single) {
   void app
     .whenReady()
     .then(async () => {
+      profileOwner = await ownProfile(app.getPath('userData'), 'electron');
       Menu.setApplicationMenu(null);
       session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) =>
         callback(false),
@@ -400,6 +403,7 @@ if (!single) {
       ?.close()
       .then(async () => {
         await operator?.close();
+        await profileOwner?.close();
         tray?.destroy();
         app.exit();
       })

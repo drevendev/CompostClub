@@ -1,5 +1,13 @@
 # PR #92 review and issue disposition · 28 October 2026
 
+## RC8 native Windows continuation · 2 November 2026
+
+The owner authorized a full WPF implementation and primary shortcut update after Smart App Control blocked the intact unsigned RC7 executable. The intervening loopback/browser proposal was explicitly rejected. [Native host design and function map](NATIVE_WINDOWS.md) records the replacement: signed installed runtimes, fixed WPF controls, Node controller/SQLite over stdio, no application HTTP server, protected credential migration and a shared cross-host profile lock. The original named-pipe operator interface remains; it is not a TCP listener.
+
+The new native view/storage/ownership regressions pass without inference. Real Windows acceptance exercises an actual `.lnk` and WPF controls, repeated shortcut/window ownership, reviews/human revisions, original-source history, preparation/facets/aliases/references, import, settings/model selection, actual DPAPI and backup/restore. A separate owner-profile copy check compares all sources/documents/cards/revisions/jobs/calls/receipt rows and encrypted originals. No real model calls are authorized or used in this continuation. Final package/source identities, exact Windows acceptance and primary preservation are recorded in the local delivery receipt; CI is checked on the pushed head separately.
+
+**#108 is eligible for closure on merge once the exact WPF shortcut promotion passes.** This restores the chosen primary launch path; it does not claim the old EXE has acquired a trusted publisher signature. Signed EXE distribution/updater work under #80 remains open. #76/#77 and broad model-quality/owner review gates remain open. RC7 evidence below is historical; RC8 does not add genuine model-quality evidence.
+
 Reviewed against main `f7e44c0eff2e9fa5eeaee68a187d9c9fee921df1`. This branch consolidates the earlier draft #74 and provider work. This record distinguishes verified task completion from broader release/quality acceptance. Issues close only when this PR merges into the default branch.
 
 ## Review finding corrected in RC6

@@ -1661,7 +1661,7 @@ export class CoherentController {
         await this.services.openDirectory(this.store.directory);
         break;
       case 'autostart':
-        this.services.autostart(boolean(c.enabled));
+        await this.services.autostart(boolean(c.enabled));
         break;
       case 'cleanupExports':
         await this.cleanupExports();

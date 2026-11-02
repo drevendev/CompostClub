@@ -54,7 +54,7 @@ export interface DesktopServices {
   saveBackup(raw: string): Promise<boolean | void>;
   confirm(message: string): Promise<boolean>;
   openDirectory(directory: string): Promise<void>;
-  autostart(enabled: boolean): void;
+  autostart(enabled: boolean): void | Promise<void>;
   autostartEnabled?(): boolean;
 }
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -286,7 +286,7 @@ export class DesktopController {
         await this.services.openDirectory(this.store.directory);
         break;
       case 'autostart':
-        this.services.autostart(bool(c.enabled));
+        await this.services.autostart(bool(c.enabled));
         break;
       case 'add': {
         const text = str(c.text),

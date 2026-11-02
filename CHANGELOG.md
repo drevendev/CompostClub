@@ -2,6 +2,13 @@
 
 Changes describe the source tree. A version heading does not imply an npm package, GitHub release or deployed website.
 
+## 0.2.0-rc.8 — 2026-11-02
+
+- Add a complete native WPF shell hosted by stock Windows PowerShell and installed signed Node 24, with normal `.lnk` launch, tray/window reuse and safe shutdown. No custom EXE, browser or application HTTP server is needed (#108).
+- Reuse the existing SQLite/controller/provider contracts for card review and revisions, source preparation/DNA/references, growth, imports, donor policies, budgets, full backup/restore, readable exports and maintenance. Keep the authenticated named-pipe operator interface.
+- Add shared profile ownership, bounded direct stdio transport, priority cancellation, sleep pause, native dialogs and versioned Windows DPAPI credential migration without starting Electron. Preserve the old encrypted files; removed tokens do not return through legacy migration.
+- Add native view/storage/ownership regressions, real Windows shortcut/WPF acceptance with a marked fictional profile, and a Windows CI job. All inference is blocked in native acceptance. Existing recorded HTML and model-quality limitations remain separate.
+
 ## 0.2.0-rc.7 — 2026-10-28
 
 - Correct two RC6 Sonnet format failures: new provider-2 jobs state exact field/list limits and use all bounded structural violation paths/counts in the shared repair; admission reserves that feedback before generation. Historical provider-1 contracts and original failed responses remain unchanged (#103).
