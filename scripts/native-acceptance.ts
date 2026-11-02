@@ -8,6 +8,7 @@ import { fixture, retain } from '../tests/coherent-fixtures';
 import { commit, prepareJob, makeGarden } from '../src/domain/coherent/workspace';
 import { canonical } from '../src/domain/coherent/hash';
 if (process.platform !== 'win32') throw Error('Real Windows WPF acceptance requires Windows.');
+await mkdir('.local', { recursive: true });
 const pkg = JSON.parse(await readFile('release/native-latest.json', 'utf8')) as {
   directory: string;
   sha256: string;
